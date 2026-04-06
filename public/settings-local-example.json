@@ -1,0 +1,6 @@
+{
+  "env": {
+    "SCRUMBAN_EMAIL": "seu-email@empresa.com",
+    "SCRUMBAN_PASSWORD": "sua-senha-aqui"
+  }
+}

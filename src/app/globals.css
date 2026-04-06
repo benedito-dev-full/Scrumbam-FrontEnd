@@ -1,0 +1,219 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Scrumban Semantic Colors */
+  --color-brand: var(--scrumban-brand);
+  --color-brand-light: var(--scrumban-brand-light);
+  --color-brand-muted: var(--scrumban-brand-muted);
+
+  --color-status-todo: var(--status-todo);
+  --color-status-doing: var(--status-doing);
+  --color-status-review: var(--status-review);
+  --color-status-done: var(--status-done);
+  --color-status-backlog: var(--status-backlog);
+
+  --color-status-todo-bg: var(--status-todo-bg);
+  --color-status-doing-bg: var(--status-doing-bg);
+  --color-status-review-bg: var(--status-review-bg);
+  --color-status-done-bg: var(--status-done-bg);
+  --color-status-backlog-bg: var(--status-backlog-bg);
+
+  --color-priority-urgent: var(--priority-urgent);
+  --color-priority-high: var(--priority-high);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-low: var(--priority-low);
+  --color-priority-none: var(--priority-none);
+
+  --color-type-feature: var(--type-feature);
+  --color-type-bug: var(--type-bug);
+  --color-type-improvement: var(--type-improvement);
+  --color-type-tech-debt: var(--type-tech-debt);
+
+  --color-ai-accent: var(--ai-accent);
+  --color-ai-accent-muted: var(--ai-accent-muted);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Scrumban Design System - Light */
+  --background: oklch(0.985 0.002 264);
+  --foreground: oklch(0.141 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0 0);
+  --primary: oklch(0.546 0.245 262.881);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.96 0.006 264.531);
+  --secondary-foreground: oklch(0.205 0.016 265.755);
+  --muted: oklch(0.96 0.006 264.531);
+  --muted-foreground: oklch(0.556 0.022 257.417);
+  --accent: oklch(0.96 0.006 264.531);
+  --accent-foreground: oklch(0.205 0.016 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.916 0.006 264.531);
+  --input: oklch(0.916 0.006 264.531);
+  --ring: oklch(0.546 0.245 262.881);
+
+  --sidebar: oklch(0.97 0.003 264);
+  --sidebar-foreground: oklch(0.141 0 0);
+  --sidebar-primary: oklch(0.546 0.245 262.881);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.546 0.245 262.881 / 0.08);
+  --sidebar-accent-foreground: oklch(0.546 0.245 262.881);
+  --sidebar-border: oklch(0.916 0.006 264.531);
+  --sidebar-ring: oklch(0.546 0.245 262.881);
+
+  /* --- Scrumban Semantic Colors --- */
+
+  /* Brand */
+  --scrumban-brand: oklch(0.546 0.245 262.881);
+  --scrumban-brand-light: oklch(0.96 0.04 264);
+  --scrumban-brand-muted: oklch(0.546 0.245 262.881 / 0.10);
+
+  /* Status Columns */
+  --status-backlog: oklch(0.556 0.022 257.417);
+  --status-todo: oklch(0.637 0.124 259.805);
+  --status-doing: oklch(0.623 0.214 259.815);
+  --status-review: oklch(0.768 0.189 80.375);
+  --status-done: oklch(0.696 0.17 162.48);
+
+  --status-backlog-bg: oklch(0.556 0.022 257.417 / 0.08);
+  --status-todo-bg: oklch(0.637 0.124 259.805 / 0.08);
+  --status-doing-bg: oklch(0.623 0.214 259.815 / 0.08);
+  --status-review-bg: oklch(0.768 0.189 80.375 / 0.08);
+  --status-done-bg: oklch(0.696 0.17 162.48 / 0.08);
+
+  /* Priority */
+  --priority-urgent: oklch(0.505 0.213 27.325);
+  --priority-high: oklch(0.577 0.245 27.325);
+  --priority-medium: oklch(0.768 0.189 80.375);
+  --priority-low: oklch(0.696 0.17 162.48);
+  --priority-none: oklch(0.556 0.022 257.417);
+
+  /* Task Types */
+  --type-feature: oklch(0.623 0.214 259.815);
+  --type-bug: oklch(0.577 0.245 27.325);
+  --type-improvement: oklch(0.627 0.207 293.183);
+  --type-tech-debt: oklch(0.556 0.022 257.417);
+
+  /* AI / Agent */
+  --ai-accent: oklch(0.627 0.207 293.183);
+  --ai-accent-muted: oklch(0.627 0.207 293.183 / 0.10);
+  --ai-gradient-from: oklch(0.627 0.207 293.183);
+  --ai-gradient-to: oklch(0.546 0.245 262.881);
+}
+
+.dark {
+  --background: oklch(0.130 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0.006 264);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0.006 264);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.646 0.222 262.881);
+  --primary-foreground: oklch(0.141 0 0);
+  --secondary: oklch(0.280 0.015 265.755);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.280 0.015 265.755);
+  --muted-foreground: oklch(0.750 0.020 264.531);
+  --accent: oklch(0.280 0.015 265.755);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.340 0.015 265.755);
+  --input: oklch(0.340 0.015 265.755);
+  --ring: oklch(0.646 0.222 262.881);
+
+  --sidebar: oklch(0.175 0.006 264);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.646 0.222 262.881);
+  --sidebar-primary-foreground: oklch(0.141 0 0);
+  --sidebar-accent: oklch(0.646 0.222 262.881 / 0.12);
+  --sidebar-accent-foreground: oklch(0.646 0.222 262.881);
+  --sidebar-border: oklch(0.340 0.015 265.755);
+  --sidebar-ring: oklch(0.646 0.222 262.881);
+
+  /* --- Scrumban Semantic Colors (Dark - High Contrast) --- */
+
+  /* Brand */
+  --scrumban-brand: oklch(0.646 0.222 262.881);
+  --scrumban-brand-light: oklch(0.280 0.04 264);
+  --scrumban-brand-muted: oklch(0.646 0.222 262.881 / 0.20);
+
+  /* Status -- increased luminosity + opacity for dark backgrounds */
+  --status-backlog: oklch(0.65 0.022 257.417);
+  --status-todo: oklch(0.72 0.12 259.805);
+  --status-doing: oklch(0.72 0.19 259.815);
+  --status-review: oklch(0.82 0.16 80.375);
+  --status-done: oklch(0.76 0.15 162.48);
+
+  --status-backlog-bg: oklch(0.65 0.022 257.417 / 0.20);
+  --status-todo-bg: oklch(0.72 0.12 259.805 / 0.20);
+  --status-doing-bg: oklch(0.72 0.19 259.815 / 0.20);
+  --status-review-bg: oklch(0.82 0.16 80.375 / 0.20);
+  --status-done-bg: oklch(0.76 0.15 162.48 / 0.20);
+
+  /* Priority -- dark mode */
+  --priority-urgent: oklch(0.60 0.20 27.325);
+  --priority-high: oklch(0.65 0.22 27.325);
+  --priority-medium: oklch(0.82 0.16 80.375);
+  --priority-low: oklch(0.76 0.15 162.48);
+  --priority-none: oklch(0.65 0.022 257.417);
+
+  /* Task Types -- dark mode */
+  --type-feature: oklch(0.72 0.19 259.815);
+  --type-bug: oklch(0.65 0.22 27.325);
+  --type-improvement: oklch(0.72 0.18 293.183);
+  --type-tech-debt: oklch(0.65 0.022 257.417);
+
+  /* AI / Agent -- dark mode */
+  --ai-accent: oklch(0.72 0.18 293.183);
+  --ai-accent-muted: oklch(0.72 0.18 293.183 / 0.20);
+  --ai-gradient-from: oklch(0.72 0.18 293.183);
+  --ai-gradient-to: oklch(0.646 0.222 262.881);
+}
+
+body {
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
