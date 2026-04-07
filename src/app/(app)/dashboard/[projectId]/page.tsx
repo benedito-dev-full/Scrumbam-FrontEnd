@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Clock,
   Timer,
@@ -35,7 +36,7 @@ import {
 } from "@/lib/hooks/use-dashboards";
 
 export default function ProjectDashboardPage() {
-  const params = __useParams();
+  const params = useParams();
   const projectId = params.projectId as string;
   const [period, setPeriod] = useState(30);
 
@@ -222,6 +223,3 @@ export default function ProjectDashboardPage() {
     </PageTransition>
   );
 }
-
-// Next.js useParams import workaround
-import { useParams as __useParams } from "next/navigation";
