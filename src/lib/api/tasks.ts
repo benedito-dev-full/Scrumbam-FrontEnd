@@ -4,11 +4,11 @@ import { mapApiTask, mapApiTasks } from "@/lib/adapters/api-task-adapter";
 import type { Task, CreateTaskDto, UpdateTaskDto } from "@/types";
 
 export interface TaskFilters {
-  idStatus?: string;
-  idAssignee?: string;
-  idSprint?: string;
-  idPrioridade?: string;
-  idTipoTask?: string;
+  statusId?: string;
+  assigneeId?: string;
+  sprintId?: string;
+  priorityId?: string;
+  taskTypeId?: string;
   tag?: string;
   search?: string;
 }
@@ -24,7 +24,7 @@ export const tasksApi = {
     filters?: TaskFilters,
   ): Promise<Task[]> => {
     // Remove undefined values from filters
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = { projectId };
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== "") {
@@ -32,19 +32,77 @@ export const tasksApi = {
         }
       });
     }
-    const { data } = await api.get(ENDPOINTS.PROJECT_TASKS(projectId), {
+    const { data } = await api.get(ENDPOINTS.TASKS, {
       params,
     });
     return mapApiTasks(data);
   },
 
   create: async (dto: CreateTaskDto): Promise<Task> => {
-    const { data } = await api.post(ENDPOINTS.TASKS, dto);
+    // Mapear campos PT do frontend para EN do backend
+    const payload: Record<string, unknown> = {
+      name: dto.titulo ?? dto.name,
+      projectId: dto.idProject ?? dto.projectId,
+      description: dto.descricao ?? dto.description,
+      statusId: dto.idStatus ?? dto.statusId,
+      assigneeId: dto.idAssignee ?? dto.assigneeId,
+      priorityId: dto.idPrioridade ?? dto.priorityId,
+      taskTypeId: dto.idTipoTask ?? dto.taskTypeId,
+      sprintId: dto.idSprint ?? dto.sprintId,
+      storyPoints: dto.storyPoints,
+      order: dto.order,
+      // Campos V3 mantêm o mesmo nome
+      problema: dto.problema,
+      contexto: dto.contexto,
+      solucaoProposta: dto.solucaoProposta,
+      criteriosAceite: dto.criteriosAceite,
+      naoObjetivos: dto.naoObjetivos,
+      riscos: dto.riscos,
+      canalId: dto.canalId,
+      hillPosition: dto.hillPosition,
+    };
+
+    // Remover campos undefined
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) delete payload[key];
+    });
+
+    const { data } = await api.post(ENDPOINTS.TASKS, payload);
     return mapApiTask(data);
   },
 
   update: async (taskId: string, dto: UpdateTaskDto): Promise<Task> => {
-    const { data } = await api.put(ENDPOINTS.TASK(taskId), dto);
+    // Mapear campos PT do frontend para EN do backend
+    const payload: Record<string, unknown> = {
+      name: dto.titulo ?? dto.name,
+      description: dto.descricao ?? dto.description,
+      assigneeId: dto.idAssignee ?? dto.assigneeId,
+      priorityId: dto.idPrioridade ?? dto.priorityId,
+      taskTypeId: dto.idTipoTask ?? dto.taskTypeId,
+      storyPoints: dto.estimativaHoras ?? dto.storyPoints,
+      order: dto.order,
+      // Campos V3 mantêm o mesmo nome
+      problema: dto.problema,
+      contexto: dto.contexto,
+      solucaoProposta: dto.solucaoProposta,
+      criteriosAceite: dto.criteriosAceite,
+      naoObjetivos: dto.naoObjetivos,
+      riscos: dto.riscos,
+      canalId: dto.canalId,
+      hillPosition: dto.hillPosition,
+      // Deliverables
+      prUrl: dto.prUrl,
+      deliverySummary: dto.deliverySummary,
+      filesChanged: dto.filesChanged,
+      failureReason: dto.failureReason,
+    };
+
+    // Remover campos undefined (nao enviar campos nao alterados)
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) delete payload[key];
+    });
+
+    const { data } = await api.put(ENDPOINTS.TASK(taskId), payload);
     return mapApiTask(data);
   },
 
@@ -53,7 +111,7 @@ export const tasksApi = {
     idStatus: string,
   ): Promise<MoveStatusResult> => {
     const response = await api.put(ENDPOINTS.TASK_STATUS(taskId), {
-      idStatus,
+      statusId: idStatus,
     });
     return {
       data: mapApiTask(response.data),

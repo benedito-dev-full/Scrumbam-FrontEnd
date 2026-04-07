@@ -74,8 +74,10 @@ function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { nome: string }) => projectsApi.create(data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.projects] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
+      queryClient.invalidateQueries({ queryKey: ["project-summaries"] });
+    },
   });
 }
 
@@ -84,7 +86,7 @@ function useRemoveProject() {
   return useMutation({
     mutationFn: (id: string) => projectsApi.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.projects] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
       queryClient.invalidateQueries({ queryKey: ["intentions"] });
       toast.success("Projeto desconectado");
       window.location.reload();
@@ -117,10 +119,9 @@ export default function ProjectsPage() {
     createProject.mutate(
       { nome: newName.trim() },
       {
-        onSuccess: (data: { chave: string }) => {
+        onSuccess: () => {
           setNewName("");
           setDialogOpen(false);
-          router.push(`/intentions/${data.chave}`);
         },
       },
     );

@@ -9,6 +9,8 @@ export const ENDPOINTS = {
 
   // Auth - Me
   AUTH_ME: "/auth/me",
+  AUTH_DELETE_ACCOUNT: "/auth/me",
+  AUTH_DELETE_ORG: (orgId: string) => `/auth/organizations/${orgId}`,
 
   // Organizations
   ORGANIZATIONS: "/organizations",

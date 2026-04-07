@@ -13,11 +13,20 @@ export interface RegisterRequest {
   cpfCnpj?: string; // Opcional
 }
 
-export interface RefreshRequest {
-  refresh_token: string;
-}
-
 // === Response DTOs (o que o backend RETORNA) ===
+
+export interface LoginResponse {
+  accessToken: string;
+  user: {
+    id: string;
+    entidadeId: string | null;
+    name: string;
+    email: string;
+    organizationId: string;
+    organizationName: string | null;
+    role: string;
+  };
+}
 
 export interface TokenPair {
   access_token: string;
@@ -28,7 +37,7 @@ export interface MemberInfo {
   chave: string;
   nome: string;
   email: string;
-  role?: string; // Presente no login, ausente no register (assume 'admin')
+  role?: string;
 }
 
 export interface OrganizationInfo {
@@ -36,25 +45,9 @@ export interface OrganizationInfo {
   nome: string;
 }
 
-export interface ProjectInfo {
-  chave: string;
-  nome: string;
-}
-
-export interface LoginResponse {
-  member: MemberInfo;
-  organization: OrganizationInfo | null;
-  tokens: TokenPair;
-}
-
 export interface RegisterResponse {
   organization: OrganizationInfo;
   member: MemberInfo;
-  project: ProjectInfo;
-  tokens: TokenPair;
-}
-
-export interface RefreshResponse {
   tokens: TokenPair;
 }
 

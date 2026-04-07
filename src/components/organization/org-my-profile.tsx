@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Loader2, KeyRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Save,
+  Loader2,
+  KeyRound,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,12 +19,24 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useMe, useUpdateMe } from "@/lib/hooks/use-organization";
 import { getInitials } from "@/components/organization/org-members-full";
+import { authApi } from "@/lib/api/auth";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { AxiosError } from "axios";
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Admin",
@@ -277,6 +296,152 @@ export function OrgMyProfile() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Danger zone - Delete account */}
+      <DangerZoneAccount isAdmin={me?.role === "ADMIN"} />
     </div>
+  );
+}
+
+function DangerZoneAccount({ isAdmin }: { isAdmin: boolean }) {
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const canConfirm = confirmText === "EXCLUIR" && password.length >= 6;
+
+  const handleDelete = async () => {
+    if (!canConfirm) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      await authApi.deleteAccount(password);
+      logout();
+      router.replace("/login");
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        setError(err.response?.data?.message || "Erro ao excluir conta.");
+      } else {
+        setError("Erro de conexao.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="border-destructive/50 border-l-[3px] border-l-destructive">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-destructive/10 p-3">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+            <CardDescription className="text-xs">
+              Acoes irreversiveis para sua conta
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <div>
+            <p className="text-sm font-medium">Excluir minha conta</p>
+            <p className="text-xs text-muted-foreground">
+              {isAdmin
+                ? "Como unico admin, sua organizacao tambem sera excluida"
+                : "Remove sua conta e todos os seus dados pessoais"}
+            </p>
+          </div>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setPassword(""); setConfirmText(""); setError(""); } }}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Excluir
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="text-destructive">
+                  Excluir minha conta
+                </DialogTitle>
+                <DialogDescription>
+                  Esta acao e <strong>irreversivel</strong>. Sua conta sera
+                  desativada e voce perdera acesso ao sistema.
+                  {isAdmin && (
+                    <>
+                      {" "}
+                      Como voce e o unico administrador, a{" "}
+                      <strong>organizacao inteira</strong> (membros, projetos e
+                      tarefas) tambem sera excluida.
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="delete-acc-confirm">
+                    Digite <strong>EXCLUIR</strong> para confirmar
+                  </Label>
+                  <Input
+                    id="delete-acc-confirm"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="EXCLUIR"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="delete-acc-password">
+                    Sua senha para confirmacao
+                  </Label>
+                  <Input
+                    id="delete-acc-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Sua senha"
+                    autoComplete="current-password"
+                  />
+                </div>
+                {error && (
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={!canConfirm || loading}
+                  className="gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Excluir minha conta
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

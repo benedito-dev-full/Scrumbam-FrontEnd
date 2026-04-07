@@ -29,6 +29,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   useOrgMembers,
@@ -156,11 +157,18 @@ function MembersSkeleton() {
 
 function AddMemberForm({ orgId }: { orgId: string }) {
   const addMember = useAddOrgMember(orgId);
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<OrgRole>("MEMBER");
-  const [showForm, setShowForm] = useState(false);
+
+  const resetForm = () => {
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("MEMBER");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,72 +183,74 @@ function AddMemberForm({ orgId }: { orgId: string }) {
       },
       {
         onSuccess: () => {
-          setName("");
-          setEmail("");
-          setPassword("");
-          setRole("MEMBER");
-          setShowForm(false);
+          resetForm();
+          setOpen(false);
         },
       },
     );
   };
 
-  if (!showForm) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={() => setShowForm(true)}
-      >
-        <UserPlus className="h-4 w-4" />
-        Adicionar membro
-      </Button>
-    );
-  }
-
   return (
-    <Card>
-      <CardContent className="pt-4 pb-4">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Nome</Label>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) resetForm();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Adicionar membro
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Adicionar membro</DialogTitle>
+          <DialogDescription>
+            Crie uma conta para o novo membro da organizacao
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="add-member-name">Nome completo</Label>
             <Input
-              placeholder="Nome completo"
+              id="add-member-name"
+              placeholder="Joao Silva"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-8 text-sm"
               required
               minLength={2}
+              autoFocus
             />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="add-member-email">Email</Label>
             <Input
+              id="add-member-email"
               type="email"
-              placeholder="email@empresa.com"
+              placeholder="joao@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-8 text-sm"
               required
             />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Senha inicial</Label>
+          <div className="space-y-2">
+            <Label htmlFor="add-member-password">Senha inicial</Label>
             <Input
+              id="add-member-password"
               type="password"
               placeholder="Minimo 6 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-8 text-sm"
               required
               minLength={6}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Cargo</Label>
+          <div className="space-y-2">
+            <Label>Cargo</Label>
             <Select value={role} onValueChange={(v) => setRole(v as OrgRole)}>
-              <SelectTrigger className="h-8 text-sm w-full">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -250,11 +260,18 @@ function AddMemberForm({ orgId }: { orgId: string }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2 pt-1">
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={addMember.isPending}
+            >
+              Cancelar
+            </Button>
             <Button
               type="submit"
-              size="sm"
-              className="h-8"
+              className="gap-2"
               disabled={
                 addMember.isPending ||
                 !name.trim() ||
@@ -263,27 +280,16 @@ function AddMemberForm({ orgId }: { orgId: string }) {
               }
             >
               {addMember.isPending ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                  Adicionando...
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Adicionar"
+                <UserPlus className="h-4 w-4" />
               )}
+              {addMember.isPending ? "Adicionando..." : "Adicionar membro"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={() => setShowForm(false)}
-            >
-              Cancelar
-            </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 

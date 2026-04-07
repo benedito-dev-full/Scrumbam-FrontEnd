@@ -35,17 +35,39 @@ export interface TaskTag {
 }
 
 export interface CreateTaskDto {
-  titulo: string;
+  // Campos PT (usados pelo frontend)
+  titulo?: string;
   descricao?: string;
-  idProject: string;
+  idProject?: string;
   idStatus?: string;
   idAssignee?: string;
   idPrioridade?: string;
   idTipoTask?: string;
   idSprint?: string;
+  // Campos EN (nomes do backend)
+  name?: string;
+  description?: string;
+  projectId?: string;
+  statusId?: string;
+  assigneeId?: string;
+  priorityId?: string;
+  taskTypeId?: string;
+  sprintId?: string;
+  storyPoints?: number;
+  order?: number;
+  // Campos V3 (mesmos nomes PT/EN)
+  problema?: string;
+  contexto?: string;
+  solucaoProposta?: string;
+  criteriosAceite?: string[];
+  naoObjetivos?: string[];
+  riscos?: string[];
+  canalId?: string;
+  hillPosition?: number;
 }
 
 export interface UpdateTaskDto {
+  // Campos PT (usados pelo frontend)
   titulo?: string;
   descricao?: string;
   idAssignee?: string;
@@ -53,12 +75,28 @@ export interface UpdateTaskDto {
   idTipoTask?: string;
   idSprint?: string;
   estimativaHoras?: number;
+  // Campos EN (nomes do backend)
+  name?: string;
+  description?: string;
+  assigneeId?: string;
+  priorityId?: string;
+  taskTypeId?: string;
+  storyPoints?: number;
+  order?: number;
+  // Campos V3 (mesmos nomes PT/EN)
   problema?: string;
   contexto?: string;
   solucaoProposta?: string;
-  criteriosAceite?: string;
-  naoObjetivos?: string;
-  riscos?: string;
+  criteriosAceite?: string | string[];
+  naoObjetivos?: string | string[];
+  riscos?: string | string[];
+  canalId?: string;
+  hillPosition?: number;
+  // Deliverables
+  prUrl?: string;
+  deliverySummary?: string;
+  filesChanged?: number;
+  failureReason?: string;
 }
 
 export interface MoveTaskStatusDto {

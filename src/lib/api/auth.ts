@@ -38,4 +38,18 @@ export const authApi = {
     const { data } = await api.patch(ENDPOINTS.AUTH_ME, dto);
     return data;
   },
+
+  deleteAccount: async (password: string) => {
+    const { data } = await api.delete(ENDPOINTS.AUTH_DELETE_ACCOUNT, {
+      data: { password },
+    });
+    return data;
+  },
+
+  deleteOrganization: async (orgId: string, password: string) => {
+    const { data } = await api.delete(ENDPOINTS.AUTH_DELETE_ORG(orgId), {
+      data: { password },
+    });
+    return data;
+  },
 };

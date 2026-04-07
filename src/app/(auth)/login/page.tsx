@@ -42,30 +42,24 @@ export default function LoginPage() {
     try {
       const data = await authApi.login({ email, password });
 
-      // Backend retorna { accessToken, user: { id, entidadeId, name, email, organizationId, role } }
-      const raw = data as unknown as {
-        accessToken: string;
-        user: {
-          id: string;
-          entidadeId: string | null;
-          name: string;
-          email: string;
-          organizationId: string;
-          role: string;
-        };
-      };
+      if (!data.user.entidadeId) {
+        setError(
+          "Conta com dados incompletos. Contate o administrador.",
+        );
+        return;
+      }
 
       const user: User = {
-        id: raw.user.id,
-        entidadeId: raw.user.entidadeId || raw.user.id,
-        nome: raw.user.name,
-        email: raw.user.email,
-        role: raw.user.role || "member",
-        orgId: raw.user.organizationId || "",
-        orgNome: "",
+        id: data.user.id,
+        entidadeId: data.user.entidadeId,
+        nome: data.user.name,
+        email: data.user.email,
+        role: data.user.role || "member",
+        orgId: data.user.organizationId || "",
+        orgNome: data.user.organizationName || "",
       };
 
-      login(raw.accessToken, "", user);
+      login(data.accessToken, "", user);
       router.replace("/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {
