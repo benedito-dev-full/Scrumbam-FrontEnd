@@ -11,22 +11,63 @@ export const api = axios.create({
   withCredentials: true, // Envia cookies httpOnly automaticamente
 });
 
-// Response interceptor: logout on 401 (no refresh token support)
-// Ignora rotas de auth (login/register) — 401 ali e esperado
+// Response interceptor: refresh token on 401, then retry
+// Se refresh falha, desloga o usuario
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (v: unknown) => void;
+  reject: (e: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(undefined);
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const url = error.config?.url || "";
-    const isAuthRoute = url.includes("/auth/login") || url.includes("/auth/register");
+    const originalRequest = error.config;
+    const url = originalRequest?.url || "";
+    const isAuthRoute =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh");
 
-    if (error.response?.status === 401 && !error.config._retry && !isAuthRoute) {
-      error.config._retry = true;
-      useAuthStore.getState().logout();
-      if (typeof window !== "undefined") {
-        toast.warning("Sessão expirada. Faça login novamente.", {
-          duration: 6000,
-        });
-        window.location.href = "/login";
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRoute
+    ) {
+      if (isRefreshing) {
+        // Se ja esta refreshing, enfileirar request e esperar
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => api(originalRequest));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        await api.post("/auth/refresh");
+        processQueue(null);
+        return api(originalRequest); // retry com novo cookie
+      } catch (refreshError) {
+        processQueue(refreshError);
+        useAuthStore.getState().logout();
+        if (typeof window !== "undefined") {
+          toast.warning("Sessão expirada. Faça login novamente.", {
+            duration: 6000,
+          });
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
