@@ -5,6 +5,7 @@ export const ENDPOINTS = {
   // Auth
   AUTH_LOGIN: "/auth/login",
   AUTH_REGISTER: "/auth/register",
+  AUTH_LOGOUT: "/auth/logout",
   AUTH_REFRESH: "/auth/refresh",
 
   // Auth - Me

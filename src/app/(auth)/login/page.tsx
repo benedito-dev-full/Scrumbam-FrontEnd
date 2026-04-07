@@ -59,7 +59,7 @@ export default function LoginPage() {
         orgNome: data.user.organizationName || "",
       };
 
-      login(data.accessToken, "", user);
+      login(user);
       router.replace("/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {

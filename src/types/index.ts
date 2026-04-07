@@ -4,7 +4,6 @@ export type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
-  TokenPair,
   MemberInfo,
   OrganizationInfo,
   User,

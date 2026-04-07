@@ -15,8 +15,11 @@ export interface RegisterRequest {
 
 // === Response DTOs (o que o backend RETORNA) ===
 
+/**
+ * Login response — JWT e setado como cookie httpOnly pelo backend.
+ * Body retorna apenas dados do usuario.
+ */
 export interface LoginResponse {
-  accessToken: string;
   user: {
     id: string;
     entidadeId: string | null;
@@ -26,11 +29,6 @@ export interface LoginResponse {
     organizationName: string | null;
     role: string;
   };
-}
-
-export interface TokenPair {
-  access_token: string;
-  refresh_token: string;
 }
 
 export interface MemberInfo {
@@ -45,10 +43,13 @@ export interface OrganizationInfo {
   nome: string;
 }
 
+/**
+ * Register response — JWT e setado como cookie httpOnly pelo backend.
+ * Body retorna organization e member (sem tokens).
+ */
 export interface RegisterResponse {
   organization: OrganizationInfo;
   member: MemberInfo;
-  tokens: TokenPair;
 }
 
 // === User (estado local no Zustand, montado a partir dos responses) ===

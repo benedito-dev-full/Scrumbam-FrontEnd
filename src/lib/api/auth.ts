@@ -52,4 +52,11 @@ export const authApi = {
     });
     return data;
   },
+
+  logout: async (): Promise<{ success: boolean }> => {
+    const { data } = await api.post<{ success: boolean }>(
+      ENDPOINTS.AUTH_LOGOUT,
+    );
+    return data;
+  },
 };

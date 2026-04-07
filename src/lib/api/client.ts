@@ -8,15 +8,7 @@ const API_BASE_URL =
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
-});
-
-// Request interceptor: attach JWT token
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true, // Envia cookies httpOnly automaticamente
 });
 
 // Response interceptor: logout on 401 (no refresh token support)

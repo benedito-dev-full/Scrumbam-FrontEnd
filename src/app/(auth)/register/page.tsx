@@ -70,7 +70,7 @@ export default function RegisterPage() {
         orgNome: data.organization.nome,
       };
 
-      login(data.tokens.access_token, data.tokens.refresh_token, user);
+      login(user);
       router.replace("/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {
