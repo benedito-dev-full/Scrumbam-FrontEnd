@@ -5,6 +5,13 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 ## [Unreleased]
 
 ### Added
+- **Error Pages Customizadas** — Tratamento visual de erros (Task [MEDIUM])
+  - `not-found.tsx` (404) — Server component, layout centered, Button Link Next.js
+  - `error.tsx` (500) — Client component, useEffect para logging, botões Tentar/Voltar
+  - `global-error.tsx` (erro no layout raiz) — Client component, html/body próprios, design minimal hardcoded
+  - WCAG AA compliant (contrast ratios, keyboard accessible)
+  - Score: 8.5/10
+
 - **Session Expiration Toast** — Feedback visual ao logout por 401
   - Toast warning "Sessão expirada. Faça login novamente." por 6 segundos
   - Melhora UX ao interceptar respostas 401 (exceto rotas auth)
