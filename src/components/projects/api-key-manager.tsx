@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Key, Copy, Check, Trash2, ShieldAlert } from "lucide-react";
+import { Key, Copy, Check, Trash2, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,6 +34,7 @@ export function ApiKeyManager({ projectId }: ApiKeyManagerProps) {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showFullKey, setShowFullKey] = useState(false);
 
   const handleGenerate = () => {
     generateMutation.mutate(undefined, {
@@ -101,7 +102,16 @@ export function ApiKeyManager({ projectId }: ApiKeyManagerProps) {
     );
   }
 
-  // Has key — show prefix + badge + revoke button
+  const handleCopyExistingKey = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!keyInfo?.key) return;
+    navigator.clipboard.writeText(keyInfo.key);
+    setCopied(true);
+    toast.success("API Key copiada");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Has key — show prefix/full key + badge + actions
   return (
     <>
       <div
@@ -110,7 +120,9 @@ export function ApiKeyManager({ projectId }: ApiKeyManagerProps) {
       >
         <div className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-mono text-muted-foreground">
           <Key className="h-3 w-3 shrink-0" />
-          <span className="truncate max-w-[120px]">{keyInfo.prefix}</span>
+          <span className={showFullKey ? "break-all" : "truncate max-w-[120px]"}>
+            {showFullKey && keyInfo.key ? keyInfo.key : keyInfo.prefix}
+          </span>
         </div>
         <Badge
           variant="outline"
@@ -118,6 +130,31 @@ export function ApiKeyManager({ projectId }: ApiKeyManagerProps) {
         >
           Ativa
         </Badge>
+        {keyInfo.key && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowFullKey(!showFullKey);
+            }}
+            title={showFullKey ? "Ocultar key" : "Ver key completa"}
+          >
+            {showFullKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+          </Button>
+        )}
+        {keyInfo.key && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleCopyExistingKey}
+            title="Copiar key"
+          >
+            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

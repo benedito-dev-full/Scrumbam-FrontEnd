@@ -5,6 +5,7 @@ import { ENDPOINTS } from "./endpoints";
 
 export interface ApiKeyInfo {
   hasKey: boolean;
+  key: string | null;
   prefix: string | null;
   createdAt: string | null;
   createdBy: string | null;
