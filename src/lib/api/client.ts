@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuthStore } from "../stores/auth-store";
 
 const API_BASE_URL =
@@ -18,40 +19,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: auto-refresh on 401
+// Response interceptor: logout on 401 (no refresh token support)
+// Ignora rotas de auth (login/register) — 401 ali e esperado
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const url = error.config?.url || "";
+    const isAuthRoute = url.includes("/auth/login") || url.includes("/auth/register");
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        if (!refreshToken) {
-          useAuthStore.getState().logout();
-          if (typeof window !== "undefined") {
-            window.location.href = "/login";
-          }
-          return Promise.reject(error);
-        }
-
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
+    if (error.response?.status === 401 && !error.config._retry && !isAuthRoute) {
+      error.config._retry = true;
+      useAuthStore.getState().logout();
+      if (typeof window !== "undefined") {
+        toast.warning("Sessão expirada. Faça login novamente.", {
+          duration: 6000,
         });
-
-        useAuthStore
-          .getState()
-          .setTokens(data.tokens.access_token, data.tokens.refresh_token);
-
-        originalRequest.headers.Authorization = `Bearer ${data.tokens.access_token}`;
-        return api(originalRequest);
-      } catch (_refreshError) {
-        useAuthStore.getState().logout();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
+        window.location.href = "/login";
       }
     }
 
