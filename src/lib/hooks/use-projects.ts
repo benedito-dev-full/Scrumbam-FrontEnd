@@ -18,10 +18,11 @@ import type {
 // ---- Projects ----
 
 export function useProjects() {
-  const orgId = useAuthStore.getState().user?.orgId;
+  const orgId = useAuthStore((s) => s.user?.orgId);
   return useQuery({
-    queryKey: QUERY_KEYS.projects,
+    queryKey: [...QUERY_KEYS.projects, orgId],
     queryFn: () => projectsApi.list(orgId || undefined),
+    enabled: !!orgId,
   });
 }
 
