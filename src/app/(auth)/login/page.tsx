@@ -109,12 +109,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
-              <span className="text-xs text-muted-foreground cursor-not-allowed">
-                Esqueceu a senha?
-              </span>
-            </div>
+            <Label htmlFor="password">Senha</Label>
             <Input
               id="password"
               type="password"
