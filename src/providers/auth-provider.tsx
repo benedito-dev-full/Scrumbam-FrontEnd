@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             orgNome: me.organizationName,
           });
         })
-        .catch(() => {
+        .catch((err) => {
+          // 429 = rate limit, nao e erro de auth — ignorar
+          if (err?.response?.status === 429) return;
           // Cookie expirado ou invalido — limpar state e redirect
           logout();
           router.replace("/login");
