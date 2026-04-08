@@ -409,7 +409,9 @@ GET /tasks?projectId={PROJECT_ID}
 
 Filtrar tasks com status READY.
 
-**Se nenhuma READY:** ir para A4 (Resumo Final).
+**REGRA CRITICA:** NUNCA pegar tasks do INBOX. INBOX sao rascunhos e ideias — podem ser alteradas ou deletadas a qualquer momento. NUNCA mover INBOX para READY. NUNCA preencher campos de tasks INBOX para promove-las. O modo autonomo trabalha EXCLUSIVAMENTE com tasks READY.
+
+**Se nenhuma READY:** ir para A4 (Resumo Final). NAO tentar promover tasks do INBOX.
 
 ### A2.3 Selecionar Task
 
@@ -642,6 +644,7 @@ Estas regras sao INVIOLAVEIS. O modo autonomo opera com autonomia limitada — p
 | NUNCA deletar arquivos de seed | Pode quebrar inicializacao |
 | NUNCA alterar `.env` de producao | Fora do escopo |
 | NUNCA instalar dependencias major sem justificativa | Risco de breaking changes |
+| NUNCA pegar tasks do INBOX | INBOX sao rascunhos/ideias, nao estao prontas. NUNCA mover INBOX->READY, NUNCA preencher campos para promover, NUNCA trabalhar em INBOX. So READY. |
 
 ### A3.2 Build como Gate
 
@@ -744,6 +747,7 @@ Investigue o padrao antes de reiniciar o modo autonomo.
 16. **Build falhou 3x:** FAILED e pular
 17. **Ambiguidade critica:** FAILED com motivo, nao perguntar
 18. **Commits direto em main** com safeguards (build DEVE passar, conventional commits)
+19. **NUNCA pegar tasks do INBOX** — INBOX sao rascunhos. So trabalhar READY. Se fila READY vazia, encerrar sessao.
 
 ---
 
