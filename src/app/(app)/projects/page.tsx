@@ -89,7 +89,6 @@ function useRemoveProject() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
       queryClient.invalidateQueries({ queryKey: ["intentions"] });
       toast.success("Projeto desconectado");
-      window.location.reload();
     },
     onError: () => {
       toast.error("Erro ao desconectar projeto");
