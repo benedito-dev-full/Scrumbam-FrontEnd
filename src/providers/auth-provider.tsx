@@ -13,6 +13,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const logout = useAuthStore((s) => s.logout);
+  const markValidated = useAuthStore((s) => s.markValidated);
+  const needsRevalidation = useAuthStore((s) => s.needsRevalidation);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
@@ -28,7 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
     // Se tem user no store, validar que o cookie ainda e valido
+    // Cache: so revalida se passaram mais de 5 minutos desde a ultima validacao
     if (user && !isPublicPath) {
+      if (!needsRevalidation()) return; // cache valido, skip request
+
       setIsValidating(true);
       authApi
         .getMe()
@@ -43,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             orgId: me.organizationId,
             orgNome: me.organizationName,
           });
+          markValidated();
         })
         .catch((err) => {
           // 429 = rate limit, nao e erro de auth — ignorar
