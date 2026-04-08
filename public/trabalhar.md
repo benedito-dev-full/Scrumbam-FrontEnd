@@ -319,278 +319,431 @@ Criar e confirmar.
 
 Ativado quando `$ARGUMENTS` contem "modo trabalhando", "autonomo", "modo auto", ou "trabalhar autonomo".
 
-Neste modo voce opera como **agent worker autonomo**: busca intencoes READY, executa o workflow completo de agents, e cicla ate acabar a fila ou atingir o limite de 5 tasks por sessao.
+Neste modo voce opera como **engenheiro de software autonomo noturno**: busca intencoes READY, executa o workflow completo de agents, e cicla ate acabar a fila ou atingir o limite de tempo. O dev esta dormindo — voce NAO pergunta, voce DECIDE.
 
 ---
 
-## A1. Confirmacao de Entrada
+## A1. Inicializacao da Sessao
+
+### A1.1 Confirmacao de Entrada
 
 Ao entrar no modo autonomo, mostrar:
 
 ```
 MODO TRABALHANDO ativado para projeto {NOME}.
-Vou buscar intencoes READY e executar o workflow completo.
-Limite: 5 tasks por sessao.
-Para interromper: envie qualquer mensagem.
+Configuracao:
+  Limite: 8 horas ou fila vazia (o que vier primeiro)
+  Strategist: SEMPRE (bypass apenas para micro-tasks)
+  Reviewer threshold: score >= 8 para aprovar
+  Resiliencia: task falha = pula, sessao continua
+  Seguranca: NUNCA DONE, NUNCA force push, NUNCA altera migrations
+Iniciando...
 ```
 
----
+Registrar timestamp de inicio da sessao: `SESSION_START = agora`.
+Inicializar contadores: `consecutive_failures = 0`, `total_tasks = 0`.
 
-## A2. Verificar EXECUTING Residual
+### A1.2 Resolver EXECUTING Residual (Automatico)
 
-Antes de comecar, verificar se ha tasks abandonadas de sessao anterior:
+Verificar se ha tasks em EXECUTING:
 
 ```bash
 GET /tasks?projectId={PROJECT_ID}
 ```
 
-Filtrar da resposta as tasks com status EXECUTING (usando o mapa code->id do Passo 3).
+Filtrar tasks com status EXECUTING.
 
 **Se encontrar tasks EXECUTING:**
-```
-Task #{ID} ({TITULO}) esta em EXECUTING.
-Pode ser de uma sessao anterior interrompida.
-Opcoes:
-  1. Continuar trabalhando nela
-  2. Marcar como FAILED (motivo: sessao anterior interrompida)
-  3. Voltar para READY
-```
-Aguardar resposta do dev antes de prosseguir.
+- Assumir que sao de sessao anterior interrompida
+- Parar timer: `POST /tasks/{ID}/work/stop`
+- Mover para READY: `PUT /tasks/{ID}/status { "statusId": "{ID_READY}" }`
+- Reportar: `Task #{ID} ({TITULO}) estava EXECUTING — movida para READY (sessao anterior interrompida)`
 
-**Se NAO encontrar:** prosseguir para o ciclo principal.
+**REGRA:** NAO perguntar ao dev. Decisao automatica: voltar para READY.
 
-Tambem reportar tasks em VALIDATING pendentes de teste:
+### A1.3 Reportar Estado Inicial
+
 ```
-VALIDATING pendentes de teste manual: N
+Estado do projeto:
+  READY: {N} tasks disponiveis
+  EXECUTING: {N} (resolvidas -> READY)
+  VALIDATING: {N} pendentes de teste manual
+  FAILED: {N}
+Iniciando ciclo principal...
 ```
 
 ---
 
-## A3. Ciclo Principal (max 5 iteracoes)
+## A2. Ciclo Principal (Sem Limite de Tasks)
 
-Para cada iteracao (contagem de 1 a 5):
+O ciclo roda ate uma das condicoes de parada:
+1. Fila READY vazia (todas processadas ou puladas)
+2. Tempo de sessao >= 8 horas
+3. Dev envia mensagem (interrupcao manual)
+4. Cool-down ativado (3 FAILEDs consecutivos — ver A2.10)
+5. Contexto grande demais (limitacao tecnica)
 
-### A3.1 Buscar READY
+### A2.1 Verificar Condicoes de Parada
+
+Antes de cada iteracao:
+
+```
+SE (agora - SESSION_START) >= 8 horas:
+  Reportar: "Limite de 8 horas atingido."
+  Ir para A4 (Resumo Final)
+
+SE consecutive_failures >= 3:
+  Reportar: "3 falhas consecutivas. Possivel problema sistemico."
+  Ir para A4 (Resumo Final) com flag COOL_DOWN
+
+SE contexto ficando grande (estimativa propria do Claude):
+  Reportar: "Contexto da sessao esta grande. Encerrando para preservar qualidade."
+  Ir para A4 (Resumo Final) com flag CONTEXT_LIMIT
+```
+
+### A2.2 Buscar READY
 
 ```bash
 GET /tasks?projectId={PROJECT_ID}
 ```
 
-Filtrar da resposta as tasks com status READY (usando o mapa code->id do Passo 3).
+Filtrar tasks com status READY.
 
-**Se nenhuma READY:** encerrar e ir para A5 (Resumo Final).
+**Se nenhuma READY:** ir para A4 (Resumo Final).
 
-### A3.2 Selecionar 1 Task
+### A2.3 Selecionar Task
 
-Avaliar as tasks READY e selecionar UMA baseado nos seguintes criterios, em ordem de prioridade:
+Avaliar as tasks READY e selecionar baseado em:
 
-**Criterios de selecao (quem pega primeiro):**
+**Criterios de selecao (ordem de prioridade):**
 1. Prioridade URGENT (-424) primeiro
 2. Prioridade HIGH (-421) segundo
 3. Prioridade MEDIUM (-422) terceiro
 4. Prioridade LOW (-423) por ultimo
 5. Dentro da mesma prioridade: BUG (-432) antes de Feature/Melhoria
-6. Mesmo tipo: menor estimativa (campo estimativa, se preenchido)
+6. Mesmo tipo: menor estimativa (se preenchida)
 7. Desempate final: mais antiga (menor ID = FIFO)
 
 **Criterios de exclusao (pular com aviso):**
 - Estimativa > 8h (muito complexa para modo autonomo)
-- Sem campo `problema` preenchido (sub-refinada, precisa de mais contexto)
-- Task requer repo diferente do atual (ex: task de frontend e estamos no backend)
+- Sem campo `problema` preenchido (sub-refinada)
+- Task requer repo diferente do atual (ex: task de frontend no backend)
 
-Se todas as READY forem puladas: encerrar e ir para A5.
+**Verificacao de dependencia:** Se a task anterior falhou, verificar se a proxima candidata parece depender dela (mesmo modulo + titulo relacionado). Se sim, pular com aviso: "Task #{ID} pulada: possivel dependencia da task #{ID_FAILED} que falhou."
 
-### A3.3 Reportar Selecao
+Se TODAS as READY forem puladas: ir para A4.
+
+### A2.4 Reportar Selecao
 
 ```
-[CICLO {N}/5] Selecionei:
+[TASK {N_TOTAL}] Selecionei:
   #{ID} | {TITULO} | {TIPO} | Prioridade: {PRIORIDADE}
   Problema: {problema (primeiros 100 chars)}
   Estimativa: {estimativa}h
+  Inicio: {HH:MM}
 ```
 
-### A3.4 Marcar EXECUTING
+### A2.5 Marcar EXECUTING + Timer
 
 ```bash
 PUT /tasks/{ID}/status
 Body: { "statusId": "{ID_EXECUTING}" }
-```
 
-Se falhar (API fora, token expirado): tentar re-autenticar 1x. Se falhar de novo: reportar erro e encerrar sessao.
-
-### A3.5 Iniciar Timer
-
-```bash
 POST /tasks/{ID}/work/start
 ```
 
-### A3.6 Executar Workflow de Agents
+Se API falhar: tentar re-autenticar 1x. Se falhar de novo: marcar task como pulada e continuar para proxima.
 
-Executar a sequencia completa de agents do Scrumban. Invocar cada agent usando o Agent tool com o `subagent_type` correspondente (strategist, implementer, reviewer, documenter). Estes agents estao configurados no projeto scrumban-be.
+### A2.6 Executar Workflow de Agents
 
-**Determinar se precisa de Strategist:**
-- Se a task tem estimativa > 2h OU o campo `solucaoProposta` e generico/vago -> invocar Strategist primeiro
-- Se a task e simples (< 2h, solucaoProposta claro e especifico) -> pular direto para Implementer
+#### Decisao: Strategist ou Bypass?
 
-**Sequencia:**
+O Strategist e SEMPRE invocado, EXCETO se TODOS os 4 criterios abaixo sao verdadeiros:
 
-#### Agent 1: Strategist (condicional)
+1. Estimativa da task < 30 minutos (ou campo vazio + titulo sugere micro-task)
+2. Campo `problema` esta preenchido com descricao especifica
+3. Campo `solucaoProposta` esta preenchido com abordagem clara
+4. Campo `criteriosAceite` tem pelo menos 1 criterio
 
-Invocar o agent `strategist` passando como contexto:
-- Titulo e descricao da intencao
-- Campo `problema`
-- Campo `solucaoProposta`
-- Campo `criteriosAceite`
-- Campo `naoObjetivos` (se houver)
-- Campo `riscos` (se houver)
-- O projeto e repo local
+Se TODOS os 4 atendem: bypass do Strategist permitido (raro).
+Se QUALQUER UM falha: Strategist OBRIGATORIO.
 
-O Strategist criara um plano em `workspace/plans/`.
+**Na duvida: invocar Strategist.** Pular e ULTIMO CASO.
 
-Se o Strategist falhar ou nao produzir plano: reportar e continuar com Implementer usando os campos da intencao como guia.
+#### Agent 1: Strategist (quase sempre)
+
+Invocar o agent `strategist` passando:
+- Titulo, descricao, problema, solucaoProposta, criteriosAceite, naoObjetivos, riscos
+- Projeto e repo local
+
+O Strategist cria plano em `workspace/plans/`.
+
+**Se Strategist falhar:** NAO abortar. Usar campos da intencao como guia para o Implementer. Reportar: "Strategist falhou, usando campos da intencao diretamente."
 
 #### Agent 2: Implementer
 
-Invocar o agent `implementer` passando como contexto:
-- O plano do Strategist (se foi criado) OU os campos da intencao diretamente
-- O projeto e repo local
+Invocar o agent `implementer` passando:
+- Plano do Strategist (se criado) OU campos da intencao
+- Projeto e repo local
 
-O Implementer escrevera codigo e o build DEVE passar (hook automatico valida).
-
-**Se o build falhar:** o Implementer tenta corrigir automaticamente (ate 3 tentativas via hook).
-Se apos 3 tentativas o build ainda falha:
-- Parar timer: `POST /tasks/{ID}/work/stop`
-- Marcar FAILED: `PUT /tasks/{ID}/status { "statusId": "{ID_FAILED}" }`
-- Atualizar motivo: `PUT /tasks/{ID} { "failureReason": "Build falhou apos 3 tentativas: {erro}" }`
-- Reportar e continuar para proxima task
+**Se build falhar:**
+- Implementer tenta corrigir automaticamente (ate 3 tentativas via hook)
+- Se apos 3 tentativas o build ainda falha:
+  - Parar timer: `POST /tasks/{ID}/work/stop`
+  - Marcar FAILED: `PUT /tasks/{ID}/status { "statusId": "{ID_FAILED}" }`
+  - Atualizar motivo: `PUT /tasks/{ID} { "failureReason": "Build falhou apos 3 tentativas: {erro}" }`
+  - Incrementar `consecutive_failures`
+  - Reportar e continuar para proxima task
 
 #### Agent 3: Reviewer
 
-Invocar o agent `reviewer` passando como contexto:
-- O codigo implementado (diff ou arquivos modificados)
-- O plano ou intencao original
-- Criterios de aceite da task
+Invocar o agent `reviewer` passando:
+- Codigo implementado (diff ou arquivos modificados)
+- Plano ou intencao original
+- Criterios de aceite
 
-O Reviewer avalia e atribui score.
+**Threshold de qualidade: score >= 8 para aprovar.**
 
-**Se REJECTED (score < 6):**
-- Reportar issues encontrados
-- Invocar Implementer novamente para corrigir
-- Invocar Reviewer novamente (segunda tentativa)
-- Se rejeitado 2x consecutivas:
-  - Parar timer: `POST /tasks/{ID}/work/stop`
-  - Marcar FAILED: `PUT /tasks/{ID}/status { "statusId": "{ID_FAILED}" }`
-  - Atualizar motivo: `PUT /tasks/{ID} { "failureReason": "Reviewer rejeitou 2x: {issues}" }`
-  - Reportar e continuar para proxima task
+**Fluxo de retry:**
 
-**Se APPROVED (score >= 6):** continuar para Documenter.
+```
+Reviewer avalia -> score
+  |
+  +--> score >= 8: APPROVED -> continuar para Documenter
+  |
+  +--> score >= 6 E score < 8: NEEDS IMPROVEMENT
+  |     |
+  |     +--> Tentativa 1: Invocar Implementer com feedback do Reviewer
+  |     |     Invocar Reviewer novamente
+  |     |     +--> score >= 8: APPROVED -> Documenter
+  |     |     +--> score < 8: Tentativa 2
+  |     |
+  |     +--> Tentativa 2: Invocar Implementer com feedback acumulado
+  |           Invocar Reviewer novamente
+  |           +--> score >= 8: APPROVED -> Documenter
+  |           +--> score < 8: FAILED (esgotou tentativas)
+  |
+  +--> score < 6: REJECTED
+        |
+        +--> Tentativa 1: Invocar Implementer com feedback critico
+        |     Invocar Reviewer novamente
+        |     +--> score >= 8: APPROVED
+        |     +--> score < 6 de novo: FAILED imediato (2 rejeicoes criticas)
+```
+
+**Resumo: maximo 2 retries. Se apos 2 retries score < 8: FAILED.**
+
+**Se FAILED no Reviewer:**
+- Parar timer
+- Marcar FAILED com motivo: "Reviewer: score {X}/10 apos {N} tentativas. Issues: {lista}"
+- Incrementar `consecutive_failures`
+- Continuar para proxima task
 
 #### Agent 4: Documenter
 
-Invocar o agent `documenter` passando como contexto:
+Invocar o agent `documenter` passando:
 - O que foi implementado
 - Arquivos modificados
-- O plano/intencao original
+- Plano/intencao original
 
 O Documenter atualiza docs, CHANGELOG, e cria commit com conventional commits.
 
-### A3.7 Parar Timer
+**Se Documenter falhar:** NAO marcar task como FAILED. O codigo ja esta implementado e revisado. Reportar warning e continuar.
+
+### A2.7 Finalizar Task
 
 ```bash
+# Parar timer
 POST /tasks/{ID}/work/stop
-```
 
-### A3.8 Atualizar Deliverables
-
-Calcular os deliverables baseado no trabalho realizado:
-
-```bash
+# Atualizar deliverables
 PUT /tasks/{ID}
 Body: {
   "deliverySummary": "{Resumo do que foi feito}",
   "filesChanged": {numero de arquivos modificados/criados}
 }
-```
 
-Se houve commit/PR, incluir `prUrl` tambem.
-
-### A3.9 Marcar VALIDATING
-
-REGRA CRITICA: NUNCA marcar DONE. Sempre VALIDATING — o dev testa manualmente e decide.
-
-```bash
+# NUNCA DONE — sempre VALIDATING
 PUT /tasks/{ID}/status
 Body: { "statusId": "{ID_VALIDATING}" }
 ```
 
-### A3.10 Reportar Conclusao do Ciclo
+Resetar `consecutive_failures = 0` (task concluida com sucesso quebra a sequencia de falhas).
+Registrar tempo: `task_duration = agora - task_start_time`.
+
+### A2.8 Reportar Conclusao da Task
 
 ```
-[CICLO {N}/5] Concluido
-  Task: #{ID} | {TITULO}
-  Agents: Strategist({status}) -> Implementer({status}) -> Reviewer({score}/10) -> Documenter({status})
+[TASK {N_TOTAL}] Concluida
+  #{ID} | {TITULO}
+  Agents: Strategist({status}) -> Implementer({status}) -> Reviewer({score}/10, {tentativas} tentativa(s)) -> Documenter({status})
+  Tempo: {task_duration} (estimativa era {estimativa}h)
   Status: VALIDATING (aguarda teste manual)
   ----
 ```
 
-Status possiveis para cada agent: `ok`, `pulado`, `falhou`.
+Status possiveis: `ok`, `bypass`, `falhou`, `warning`.
 
-### A3.11 Proximo Ciclo
+### A2.9 Relatorio de Progresso (a cada 5 tasks concluidas)
 
-Verificar:
-- Atingiu limite de 5 tasks? -> Ir para A5 (Resumo Final)
-- Ainda tem capacidade? -> Voltar para A3.1 (Buscar READY)
-
----
-
-## A4. Tratamento de Erros
-
-| Cenario | Acao |
-|---------|------|
-| Build falha no Implementer | Implementer tenta corrigir (max 3 tentativas). Se nao resolve: FAILED com motivo detalhado |
-| Reviewer rejeita 2x | Task vai FAILED com motivo "Reviewer rejeitou: {issues}" |
-| API do Scrumban fora do ar | Tentar reconectar 1x. Se falhar: reportar estado e encerrar sessao |
-| Token expirado mid-session | Re-autenticar automaticamente (Passo 2) e continuar |
-| Task muito complexa (>8h) | Pular com aviso: "Task #{ID} pulada: estimativa {N}h excede limite de 8h para modo autonomo" |
-| Task sub-refinada (sem problema) | Pular com aviso: "Task #{ID} pulada: campo 'problema' nao preenchido" |
-| Task requer outro repo | Pular com aviso: "Task #{ID} pulada: requer {frontend/backend}, repo atual e {tipo}" |
-| Contexto ficando grande | Reportar: "Contexto esta grande. Recomendo encerrar e iniciar nova sessao com /trabalhar modo trabalhando" |
-
----
-
-## A5. Resumo Final da Sessao
-
-Ao encerrar (fila vazia, limite atingido, ou interrupcao):
+A cada 5 tasks VALIDATING (nao contando FAILED ou puladas), mostrar mini-resumo:
 
 ```
-SESSAO CONCLUIDA
+--- PROGRESSO (5 tasks concluidas) ---
+  Sessao: {tempo_total} de 8h
+  Concluidas: {N} VALIDATING
+  Falharam: {N} FAILED
+  Puladas: {N}
+  READY restantes: {N}
+  Media tempo/task: {media}
+  Proxima: #{ID} | {TITULO}
+--------------------------------------
+```
+
+### A2.10 Cool-Down (3 FAILEDs Consecutivos)
+
+Se `consecutive_failures >= 3`:
+
+```
+ALERTA: 3 falhas consecutivas detectadas.
+Possivel problema sistemico (build quebrado? dependencia faltando? API instavel?).
+
+Ultimas 3 falhas:
+  #{ID1}: {motivo}
+  #{ID2}: {motivo}
+  #{ID3}: {motivo}
+
+Encerrando sessao para evitar desperdicio.
+O dev deve investigar o padrao de falhas antes de reiniciar.
+```
+
+Ir para A4 (Resumo Final) com flag COOL_DOWN.
+
+### A2.11 Proximo Ciclo
+
+Voltar para A2.1 (Verificar Condicoes de Parada).
+
+---
+
+## A3. Medidas de Seguranca (Diretrizes de Engenheiro Senior)
+
+Estas regras sao INVIOLAVEIS. O modo autonomo opera com autonomia limitada — pode decidir COMO implementar, mas NAO pode executar acoes destrutivas.
+
+### A3.1 Regras Absolutas
+
+| Regra | Motivo |
+|-------|--------|
+| NUNCA marcar DONE | Apenas VALIDATING. Dev testa e decide |
+| NUNCA fazer `git push --force` | Perde historico, potencialmente destrutivo |
+| NUNCA fazer `git reset --hard` em commits publicos | Irreversivel |
+| NUNCA executar `prisma migrate reset` | Apaga todo o banco |
+| NUNCA executar `prisma db push --accept-data-loss` | Perde dados |
+| NUNCA modificar migrations existentes | Criar nova migration se necessario |
+| NUNCA deletar arquivos de seed | Pode quebrar inicializacao |
+| NUNCA alterar `.env` de producao | Fora do escopo |
+| NUNCA instalar dependencias major sem justificativa | Risco de breaking changes |
+
+### A3.2 Build como Gate
+
+- Build DEVE passar antes de Reviewer avaliar
+- Se build falhar 3x na mesma task: FAILED e pular
+- Comando: `npm run build` (TypeScript strict, 0 errors obrigatorio)
+
+### A3.3 Commits
+
+- SEMPRE usar conventional commits (ver `devari-conventional-commits.md`)
+- Commits atomicos por task (1 task = 1 commit principal, commits auxiliares permitidos)
+- Commit direto em main com safeguards (build DEVE passar, conventional commits)
+
+### A3.4 Decisoes Autonomas
+
+Quando encontrar ambiguidade em uma task:
+
+1. **Ambiguidade menor** (ex: nome de variavel, posicao de arquivo): tomar a decisao mais alinhada com os padroes existentes. Documentar no deliverySummary.
+
+2. **Ambiguidade media** (ex: 2 abordagens validas): escolher a mais conservadora (menos mudancas, menos risco). Documentar a decisao E a alternativa no plano do Strategist.
+
+3. **Ambiguidade critica** (ex: a task contradiz outra, ou o escopo e completamente indefinido): marcar FAILED com motivo "Ambiguidade critica: {descricao}. Dev precisa refinar." e pular.
+
+**REGRA:** NUNCA perguntar ao dev. Decidir ou FAILED.
+
+### A3.5 Limites de Escopo por Task
+
+- Se durante implementacao descobrir que o escopo e muito maior que o estimado (3x+): FAILED com motivo "Escopo real muito maior que estimativa. Precisa re-planejar."
+- Se a task requer mudancas em modulos NAO mencionados na intencao: documentar no deliverySummary, implementar apenas se impacto baixo (< 3 arquivos extras).
+- Se a task requer novas migrations: permitido, mas documentar claramente no deliverySummary.
+
+---
+
+## A4. Resumo Final da Sessao
+
+Ao encerrar (por qualquer motivo), gerar resumo completo:
+
+```
+================================================================
+SESSAO AUTONOMA CONCLUIDA
+================================================================
+
+Motivo de encerramento: {FILA_VAZIA | TEMPO_LIMITE | INTERRUPCAO | COOL_DOWN | CONTEXT_LIMIT}
+Duracao total: {HH:MM}
+
+RESULTADOS:
   Tasks processadas: {N}
   Concluidas (VALIDATING): {N}
   Falharam (FAILED): {N}
   Puladas: {N}
-  READY restantes na fila: {N}
+
+DETALHES DAS TASKS CONCLUIDAS:
+  #{ID1} | {TITULO} | Score: {X}/10 | Tempo: {MM}min
+  ...
+
+DETALHES DAS TASKS FALHADAS:
+  #{ID3} | {TITULO} | Motivo: {motivo resumido}
+  ...
+
+ESTADO DO PROJETO:
+  READY restantes: {N}
   VALIDATING pendentes de teste: {N}
+  FAILED acumulados: {N}
+
+METRICAS DA SESSAO:
+  Tempo medio por task: {MM}min
+  Taxa de sucesso: {N_VALIDATING}/{N_PROCESSADAS} ({%})
+  Strategist invocado: {N}/{N_PROCESSADAS} ({%})
+
+================================================================
+ACAO NECESSARIA: Teste manualmente as {N} tasks em VALIDATING.
+================================================================
 ```
 
-Se houve tasks VALIDATING, lembrar:
+Se houve COOL_DOWN, adicionar:
 ```
-Lembre-se de testar manualmente as tasks em VALIDATING antes de aprova-las (DONE).
+ALERTA: Sessao encerrada por 3 falhas consecutivas.
+Investigue o padrao antes de reiniciar o modo autonomo.
 ```
 
 ---
 
-## Regras do Modo Autonomo
+## A5. Regras do Modo Autonomo (Resumo)
 
-1. NUNCA marcar DONE — sempre VALIDATING (dev testa manualmente)
-2. SEMPRE workflow completo de agents: Strategist (condicional) -> Implementer -> Reviewer -> Documenter
-3. Max 5 tasks por sessao (safety valve contra uso excessivo de creditos)
-4. Dev interrompe com qualquer mensagem — reportar estado atual e parar
-5. SEMPRE iniciar timer ao pegar task e parar ao concluir/falhar
-6. SEMPRE atualizar deliverables (deliverySummary, filesChanged) antes de marcar VALIDATING
-7. SEMPRE reportar cada ciclo com formato padronizado
-8. Se encontrar ambiguidade na task que nao pode resolver sozinho: pausar e perguntar ao dev
-9. Chamadas de API que falham: tentar 1x reconectar/re-autenticar antes de abortar
-10. Nao pegar tasks de estimativa > 8h ou sem campo problema preenchido
+1. **NUNCA marcar DONE** — sempre VALIDATING (dev testa manualmente)
+2. **NUNCA perguntar ao dev** — decidir autonomamente ou marcar FAILED
+3. **Strategist SEMPRE** — bypass apenas se: estimativa < 30min E problema+solucao+criterios todos preenchidos
+4. **Workflow completo:** Strategist -> Implementer -> Reviewer -> Documenter
+5. **Reviewer threshold: score >= 8** — abaixo disso, retry (max 2 tentativas)
+6. **Limite: 8 horas OU fila vazia** — sem cap de tasks
+7. **Resiliencia:** task falhou = FAILED com motivo + proxima task. Sessao NUNCA para por 1 task
+8. **Cool-down:** 3 FAILEDs consecutivos = encerrar sessao com alerta
+9. **SEMPRE iniciar timer** ao pegar task e parar ao concluir/falhar
+10. **SEMPRE atualizar deliverables** antes de marcar VALIDATING
+11. **SEMPRE reportar cada task** com formato padronizado
+12. **SEMPRE conventional commits** (nunca force push)
+13. **Relatorio de progresso** a cada 5 tasks concluidas
+14. **Verificacao de dependencia:** se task anterior falhou, verificar se proxima depende dela
+15. **EXECUTING residual:** automaticamente voltar para READY (sem perguntar)
+16. **Build falhou 3x:** FAILED e pular
+17. **Ambiguidade critica:** FAILED com motivo, nao perguntar
+18. **Commits direto em main** com safeguards (build DEVE passar, conventional commits)
 
 ---
 
