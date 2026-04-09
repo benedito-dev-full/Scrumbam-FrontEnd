@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Clock,
   Timer,
@@ -12,7 +12,10 @@ import {
   Layers,
   Activity,
   LayoutDashboard,
+  FileDown,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -20,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
@@ -42,6 +46,7 @@ import {
   useCfd,
   useWipAge,
 } from "@/lib/hooks/use-dashboards";
+import { reportsApi } from "@/lib/api/reports";
 
 export default function DashboardPage() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
@@ -49,6 +54,7 @@ export default function DashboardPage() {
     null,
   );
   const [period, setPeriod] = useState(30);
+  const [isExporting, setIsExporting] = useState(false);
 
   usePageTitle("Dashboard");
 
@@ -103,20 +109,43 @@ export default function DashboardPage() {
 
   const selectedProject = projects.find((p) => p.chave === projectId);
 
+  const handleExportPdf = useCallback(async () => {
+    if (!projectId) return;
+    setIsExporting(true);
+    try {
+      const blob = await reportsApi.downloadProjectPdf(projectId, {
+        periodDays: period,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-projeto-${projectId}-${period}d.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("PDF exportado com sucesso");
+    } catch {
+      toast.error("Erro ao exportar PDF. Tente novamente.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [projectId, period]);
+
   return (
     <PageTransition className="space-y-8">
       {/* Header com seletor de projeto */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Metricas de fluxo e performance
             {selectedProject ? ` — ${selectedProject.nome}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Select value={projectId ?? ""} onValueChange={setSelectedProjectId}>
-            <SelectTrigger className="w-[200px] text-sm">
+            <SelectTrigger className="flex-1 sm:flex-none sm:w-[200px] text-sm">
               <SelectValue placeholder="Selecionar projeto" />
             </SelectTrigger>
             <SelectContent>
@@ -128,6 +157,22 @@ export default function DashboardPage() {
             </SelectContent>
           </Select>
           <PeriodSelector value={period} onChange={setPeriod} />
+          {projectId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="min-w-[44px] min-h-[44px] sm:min-h-0"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Exportar PDF</span>
+            </Button>
+          )}
         </div>
       </div>
 

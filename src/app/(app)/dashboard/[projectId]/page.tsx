@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
   Clock,
@@ -12,7 +12,11 @@ import {
   TrendingUp,
   Layers,
   Activity,
+  FileDown,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
@@ -34,13 +38,37 @@ import {
   useCfd,
   useWipAge,
 } from "@/lib/hooks/use-dashboards";
+import { reportsApi } from "@/lib/api/reports";
 
 export default function ProjectDashboardPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const [period, setPeriod] = useState(30);
+  const [isExporting, setIsExporting] = useState(false);
 
   usePageTitle("Dashboard do Time");
+
+  const handleExportPdf = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const blob = await reportsApi.downloadProjectPdf(projectId, {
+        periodDays: period,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-projeto-${projectId}-${period}d.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("PDF exportado com sucesso");
+    } catch {
+      toast.error("Erro ao exportar PDF. Tente novamente.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [projectId, period]);
 
   const teamDash = useTeamDashboard(projectId);
   const flowDash = useFlowDashboard(projectId, period);
@@ -54,18 +82,32 @@ export default function ProjectDashboardPage() {
   return (
     <PageTransition className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Dashboard do Time
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Metricas de fluxo e performance do projeto
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <ViewsToggle projectId={projectId} currentView="timeline" />
           <PeriodSelector value={period} onChange={setPeriod} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={isExporting}
+            className="min-w-[44px] min-h-[44px] sm:min-h-0"
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">Exportar PDF</span>
+          </Button>
         </div>
       </div>
 
