@@ -109,7 +109,7 @@ function WipAgeCard({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-md p-3 text-sm transition-colors ${
+      className={`flex flex-col sm:flex-row sm:items-center justify-between rounded-md p-3 text-sm transition-colors gap-2 sm:gap-0 ${
         isAging
           ? "border-l-[3px] border-l-[var(--priority-high)] border border-[var(--priority-high)]/20 bg-[var(--priority-high)]/5"
           : "border border-border bg-card"
@@ -121,7 +121,7 @@ function WipAgeCard({
         )}
         <span className="truncate font-medium">{card.titulo}</span>
       </div>
-      <div className="flex items-center gap-3 shrink-0 ml-2">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 sm:ml-2">
         <Badge variant="outline" className="text-xs">
           {card.columnName}
         </Badge>
@@ -132,7 +132,7 @@ function WipAgeCard({
         </span>
         <Link
           href="/intentions"
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0"
           title="Ver intencoes"
         >
           <ExternalLink className="h-3.5 w-3.5" />

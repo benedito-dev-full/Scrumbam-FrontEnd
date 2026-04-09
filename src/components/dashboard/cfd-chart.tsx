@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyMetrics } from "./empty-metrics";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import type { CfdResponse } from "@/types";
 
 /**
@@ -75,6 +76,8 @@ function formatDateLabel(date: string): string {
 }
 
 export function CfdChart({ data, isLoading }: CfdChartProps) {
+  const isMobile = useIsMobile();
+
   // Transform nested data into flat format for Recharts
   const { chartData, columnNames } = useMemo(() => {
     if (!data || data.days.length === 0) {
@@ -126,6 +129,9 @@ export function CfdChart({ data, isLoading }: CfdChartProps) {
     );
   }
 
+  const chartHeight = isMobile ? 200 : 280;
+  const fontSize = isMobile ? 10 : 12;
+
   return (
     <Card>
       <CardHeader>
@@ -134,18 +140,19 @@ export function CfdChart({ data, isLoading }: CfdChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           <AreaChart data={chartData}>
             <XAxis
               dataKey="date"
-              fontSize={11}
+              fontSize={fontSize}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
-              interval="preserveStartEnd"
+              interval={isMobile ? Math.ceil(chartData.length / 5) : "preserveStartEnd"}
             />
             <YAxis
               allowDecimals={false}
-              fontSize={12}
+              fontSize={fontSize}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
+              width={isMobile ? 30 : undefined}
             />
             <Tooltip
               contentStyle={{
@@ -156,9 +163,9 @@ export function CfdChart({ data, isLoading }: CfdChartProps) {
               }}
             />
             <Legend
-              wrapperStyle={{ fontSize: 12 }}
+              wrapperStyle={{ fontSize: isMobile ? 10 : 12 }}
               iconType="rect"
-              iconSize={10}
+              iconSize={isMobile ? 8 : 10}
             />
             {columnNames.map((name, index) => {
               const color = getColumnColor(name, index);

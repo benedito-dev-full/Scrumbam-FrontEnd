@@ -128,19 +128,20 @@ export function IntentionList({ projectId }: IntentionListProps) {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-[var(--ai-accent)]" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-[var(--ai-accent)] shrink-0" />
             Intencoes
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Documente suas intencoes e deixe projetos executarem
           </p>
         </div>
         <Link href="/intentions/new">
-          <Button className="gap-2 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white">
-            <Plus className="h-4 w-4" /> Nova Intencao
+          <Button className="gap-2 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white shrink-0 px-2.5 sm:px-4">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nova Intencao</span>
           </Button>
         </Link>
       </div>

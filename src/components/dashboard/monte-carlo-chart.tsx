@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EmptyMetrics } from "./empty-metrics";
 import { useForecast } from "@/lib/hooks/use-forecast";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import { TrendingUp, Calendar, Target } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,6 +36,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function MonteCarloChart({ projectId }: MonteCarloChartProps) {
+  const isMobile = useIsMobile();
   const [items, setItems] = useState(10);
   const [confidence, setConfidence] = useState(85);
 
@@ -160,14 +162,14 @@ export function MonteCarloChart({ projectId }: MonteCarloChartProps) {
             </div>
 
             {/* Percentile Bars */}
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={isMobile ? 160 : 200}>
               <BarChart data={chartData} layout="vertical">
                 <XAxis type="category" dataKey="date" hide />
                 <YAxis
                   type="category"
                   dataKey="label"
-                  width={140}
-                  fontSize={12}
+                  width={isMobile ? 90 : 140}
+                  fontSize={isMobile ? 10 : 12}
                   tick={{ fill: "hsl(var(--muted-foreground))" }}
                 />
                 <Tooltip

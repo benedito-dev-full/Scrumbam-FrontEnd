@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyMetrics } from "./empty-metrics";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import type { ThroughputResponse } from "@/types";
 
 interface ThroughputChartProps {
@@ -26,6 +27,10 @@ function formatWeekLabel(week: string): string {
 }
 
 export function ThroughputChart({ data, isLoading }: ThroughputChartProps) {
+  const isMobile = useIsMobile();
+  const chartHeight = isMobile ? 180 : 250;
+  const fontSize = isMobile ? 10 : 12;
+
   if (isLoading) {
     return (
       <Card>
@@ -72,17 +77,19 @@ export function ThroughputChart({ data, isLoading }: ThroughputChartProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           <BarChart data={chartData}>
             <XAxis
               dataKey="week"
-              fontSize={12}
+              fontSize={fontSize}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
+              interval={isMobile ? "preserveStartEnd" : 0}
             />
             <YAxis
               allowDecimals={false}
-              fontSize={12}
+              fontSize={fontSize}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
+              width={isMobile ? 30 : undefined}
             />
             <Tooltip
               contentStyle={{

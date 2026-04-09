@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyMetrics } from "./empty-metrics";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import type { MemberCount } from "@/types";
 
 interface MemberDistributionProps {
@@ -22,6 +23,8 @@ export function MemberDistribution({
   data,
   isLoading,
 }: MemberDistributionProps) {
+  const isMobile = useIsMobile();
+
   if (isLoading) {
     return (
       <Card>
@@ -51,7 +54,7 @@ export function MemberDistribution({
   }
 
   const chartData = data.map((m) => ({
-    name: m.memberNome,
+    name: isMobile && m.memberNome.length > 10 ? m.memberNome.slice(0, 10) + "..." : m.memberNome,
     count: m.count,
   }));
 
@@ -67,12 +70,12 @@ export function MemberDistribution({
       <CardContent>
         <ResponsiveContainer width="100%" height={chartHeight}>
           <BarChart data={chartData} layout="vertical">
-            <XAxis type="number" allowDecimals={false} fontSize={12} />
+            <XAxis type="number" allowDecimals={false} fontSize={isMobile ? 10 : 12} />
             <YAxis
               type="category"
               dataKey="name"
-              width={100}
-              fontSize={12}
+              width={isMobile ? 70 : 100}
+              fontSize={isMobile ? 10 : 12}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
             />
             <Tooltip

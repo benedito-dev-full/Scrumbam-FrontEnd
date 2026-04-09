@@ -330,7 +330,7 @@ function InboxItem({
           {/* Ready button */}
           <Button
             size="sm"
-            className="gap-1.5 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white h-8 text-xs"
+            className="gap-1.5 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white h-9 sm:h-8 text-xs min-w-[44px]"
             onClick={handleMoveToReady}
             disabled={isMoving}
           >
@@ -343,7 +343,7 @@ function InboxItem({
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/30 h-8 text-xs"
+              className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/30 h-9 sm:h-8 text-xs min-w-[44px]"
               onClick={() => setDiscardDialogOpen(true)}
             >
               <Trash2 className="h-3.5 w-3.5" />

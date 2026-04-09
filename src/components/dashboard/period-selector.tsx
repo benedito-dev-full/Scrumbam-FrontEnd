@@ -17,12 +17,13 @@ const PERIOD_OPTIONS = [
 interface PeriodSelectorProps {
   value: number;
   onChange: (period: number) => void;
+  className?: string;
 }
 
-export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
+export function PeriodSelector({ value, onChange, className }: PeriodSelectorProps) {
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className={className ?? "flex-1 sm:flex-none sm:w-[180px]"}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

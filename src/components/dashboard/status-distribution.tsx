@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyMetrics } from "./empty-metrics";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import type { StatusCount } from "@/types";
 import { STATUS } from "@/lib/constants";
 
@@ -32,6 +33,8 @@ export function StatusDistribution({
   data,
   isLoading,
 }: StatusDistributionProps) {
+  const isMobile = useIsMobile();
+
   if (isLoading) {
     return (
       <Card>
@@ -76,12 +79,12 @@ export function StatusDistribution({
       <CardContent>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData} layout="vertical">
-            <XAxis type="number" allowDecimals={false} fontSize={12} />
+            <XAxis type="number" allowDecimals={false} fontSize={isMobile ? 10 : 12} />
             <YAxis
               type="category"
               dataKey="name"
-              width={80}
-              fontSize={12}
+              width={isMobile ? 60 : 80}
+              fontSize={isMobile ? 10 : 12}
               tick={{ fill: "hsl(var(--muted-foreground))" }}
             />
             <Tooltip

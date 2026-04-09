@@ -153,17 +153,19 @@ export default function ProjectsPage() {
 
   return (
     <PageTransition className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Projetos</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Projetos</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {projects?.length || 0} projeto(s) conectado(s)
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2" asChild>
+          <Button variant="outline" className="gap-2 text-xs sm:text-sm" asChild>
             <Link href="/projects/setup">
-              <BookOpen className="h-4 w-4" /> Guia de Conexao
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Guia de Conexao</span>
+              <span className="sm:hidden">Guia</span>
             </Link>
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -208,7 +210,7 @@ export default function ProjectsPage() {
           <p className="mt-2 text-sm text-muted-foreground max-w-sm">
             Projetos conectados puxam e executam intencoes de forma autonoma.
           </p>
-          <div className="mt-6 flex items-start gap-6 text-left text-sm text-muted-foreground">
+          <div className="mt-6 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 text-left text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--scrumban-brand-muted)] text-xs font-bold text-[var(--scrumban-brand)]">
                 1
@@ -352,11 +354,11 @@ function ProjectCard({
               </Badge>
             )}
           </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0"
+              className="h-9 w-9 sm:h-7 sm:w-7 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onNavigate(`/dashboard/${project.chave}`);
@@ -367,7 +369,7 @@ function ProjectCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-9 w-9 sm:h-7 sm:w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={(e) => {
                 e.stopPropagation();
                 onDisconnect(project.chave);
@@ -375,7 +377,7 @@ function ProjectCard({
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+            <Button variant="ghost" size="sm" className="h-9 w-9 sm:h-7 sm:w-7 p-0">
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>

@@ -61,21 +61,21 @@ export function BreadcrumbNav() {
   if (crumbs.length === 0) return null;
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+    <nav className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground" aria-label="Navegacao breadcrumb">
       {crumbs.map((crumb, index) => (
-        <span key={index} className="flex items-center gap-1.5">
+        <span key={index} className="flex items-center gap-1 sm:gap-1.5">
           {index > 0 && (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+            <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40" />
           )}
           {crumb.href ? (
             <Link
               href={crumb.href}
-              className="hover:text-foreground transition-colors truncate max-w-[120px]"
+              className="hover:text-foreground transition-colors truncate max-w-[80px] sm:max-w-[120px]"
             >
               {crumb.label}
             </Link>
           ) : (
-            <span className="text-foreground font-medium truncate max-w-[140px]">
+            <span className="text-foreground font-medium truncate max-w-[100px] sm:max-w-[140px]">
               {crumb.label}
             </span>
           )}

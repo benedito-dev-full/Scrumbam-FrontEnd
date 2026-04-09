@@ -1,9 +1,12 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Filter } from "lucide-react";
 import type { IntentionFilters } from "@/types/intention";
 import { useProjects } from "@/lib/hooks/use-projects";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -19,20 +22,78 @@ interface Props {
 
 export function IntentionFiltersBar({ filters, onChange }: Props) {
   const { data: projects } = useProjects();
+  const isMobile = useIsMobile();
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Count active filters (excluding search)
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.status && filters.status !== "all") count++;
+    if (filters.priority && filters.priority !== "all") count++;
+    if (filters.type && filters.type !== "all") count++;
+    if (filters.canal && filters.canal !== "all") count++;
+    if (filters.projectSlug && filters.projectSlug !== "all") count++;
+    return count;
+  }, [filters]);
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar intencoes..."
-          value={filters.searchTerm ?? ""}
-          onChange={(e) => onChange({ ...filters, searchTerm: e.target.value })}
-          className="pl-9 w-[200px] h-9"
-        />
+    <div className="space-y-2">
+      {/* Search + filter toggle row */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 sm:flex-none">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar intencoes..."
+            value={filters.searchTerm ?? ""}
+            onChange={(e) => onChange({ ...filters, searchTerm: e.target.value })}
+            className="pl-9 w-full sm:w-[200px] h-9"
+          />
+        </div>
+
+        {/* Mobile: filter toggle button */}
+        {isMobile && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 shrink-0"
+            onClick={() => setShowFilters(!showFilters)}
+            aria-label="Mostrar filtros"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </Button>
+        )}
+
+        {/* Desktop: inline selects */}
+        {!isMobile && <FilterSelects filters={filters} onChange={onChange} projects={projects} />}
       </div>
 
+      {/* Mobile: expandable filter grid */}
+      {isMobile && showFilters && (
+        <div className="grid grid-cols-2 gap-2">
+          <FilterSelects filters={filters} onChange={onChange} projects={projects} isMobileGrid />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Extracted filter selects to avoid duplication
+function FilterSelects({
+  filters,
+  onChange,
+  projects,
+  isMobileGrid,
+}: {
+  filters: IntentionFilters;
+  onChange: (filters: IntentionFilters) => void;
+  projects: Array<{ chave: string; nome: string }> | undefined;
+  isMobileGrid?: boolean;
+}) {
+  const triggerClass = isMobileGrid ? "w-full" : "";
+
+  return (
+    <>
       {/* Status V3 */}
       <Select
         value={filters.status ?? "all"}
@@ -40,7 +101,7 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
           onChange({ ...filters, status: v as IntentionFilters["status"] })
         }
       >
-        <SelectTrigger size="sm" className="w-[140px]">
+        <SelectTrigger size="sm" className={isMobileGrid ? triggerClass : "w-[140px]"}>
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -61,7 +122,7 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
           onChange({ ...filters, priority: v as IntentionFilters["priority"] })
         }
       >
-        <SelectTrigger size="sm" className="w-[130px]">
+        <SelectTrigger size="sm" className={isMobileGrid ? triggerClass : "w-[130px]"}>
           <SelectValue placeholder="Prioridade" />
         </SelectTrigger>
         <SelectContent>
@@ -80,7 +141,7 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
           onChange({ ...filters, type: v as IntentionFilters["type"] })
         }
       >
-        <SelectTrigger size="sm" className="w-[130px]">
+        <SelectTrigger size="sm" className={isMobileGrid ? triggerClass : "w-[130px]"}>
           <SelectValue placeholder="Tipo" />
         </SelectTrigger>
         <SelectContent>
@@ -98,7 +159,7 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
           onChange({ ...filters, canal: v as IntentionFilters["canal"] })
         }
       >
-        <SelectTrigger size="sm" className="w-[140px]">
+        <SelectTrigger size="sm" className={isMobileGrid ? triggerClass : "w-[140px]"}>
           <SelectValue placeholder="Canal" />
         </SelectTrigger>
         <SelectContent>
@@ -116,7 +177,7 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
         value={filters.projectSlug ?? "all"}
         onValueChange={(v) => onChange({ ...filters, projectSlug: v })}
       >
-        <SelectTrigger size="sm" className="w-[160px]">
+        <SelectTrigger size="sm" className={isMobileGrid ? triggerClass : "w-[160px]"}>
           <SelectValue placeholder="Projeto" />
         </SelectTrigger>
         <SelectContent>
@@ -128,6 +189,6 @@ export function IntentionFiltersBar({ filters, onChange }: Props) {
           ))}
         </SelectContent>
       </Select>
-    </div>
+    </>
   );
 }

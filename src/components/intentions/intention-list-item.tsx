@@ -179,10 +179,17 @@ export function IntentionListItem({ intention }: Props) {
               {intention.failureReason}
             </span>
           )}
+
+          {/* Mobile: inline time info */}
+          <span className="md:hidden text-[11px] text-muted-foreground tabular-nums">
+            {isExecuting && intention.executingAt
+              ? elapsedSince(intention.executingAt)
+              : timeAgo(intention.updatedAt)}
+          </span>
         </div>
       </div>
 
-      {/* Right side -- context info */}
+      {/* Right side -- context info (desktop: separate column, mobile: inline) */}
       <div className="hidden md:flex items-center gap-3 shrink-0">
         {/* EXECUTING: elapsed time */}
         {isExecuting && intention.executingAt && (
