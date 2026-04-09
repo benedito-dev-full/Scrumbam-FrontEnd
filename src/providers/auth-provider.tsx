@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: me.role,
             orgId: me.organizationId,
             orgNome: me.organizationName,
+            onboardingCompleted: me.onboardingCompleted ?? false,
           });
           markValidated();
         })

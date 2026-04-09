@@ -49,6 +49,15 @@ export default function LoginPage() {
         return;
       }
 
+      // Buscar dados completos via /auth/me (inclui onboardingCompleted)
+      let onboardingCompleted = false;
+      try {
+        const me = await authApi.getMe();
+        onboardingCompleted = me.onboardingCompleted ?? false;
+      } catch {
+        // Se falhar, assume false (wizard aparece — safe default)
+      }
+
       const user: User = {
         id: data.user.id,
         entidadeId: data.user.entidadeId,
@@ -57,6 +66,7 @@ export default function LoginPage() {
         role: data.user.role || "member",
         orgId: data.user.organizationId || "",
         orgNome: data.user.organizationName || "",
+        onboardingCompleted,
       };
 
       login(user);

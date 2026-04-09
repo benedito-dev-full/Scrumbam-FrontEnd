@@ -62,4 +62,5 @@ export interface User {
   role: string; // member.role || 'admin' (register assume admin)
   orgId: string; // organization.chave
   orgNome: string; // organization.nome
+  onboardingCompleted?: boolean; // true se usuario ja completou o onboarding
 }
