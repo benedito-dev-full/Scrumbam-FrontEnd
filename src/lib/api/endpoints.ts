@@ -119,4 +119,11 @@ export const ENDPOINTS = {
 
   // API Keys (per-project)
   PROJECT_API_KEY: (id: string) => `/projects/${id}/api-key`,
+
+  // Search (global unified search)
+  SEARCH: "/search",
+
+  // Reports
+  REPORT_PROJECT_PDF: (projectId: string) =>
+    `/reports/projects/${projectId}/pdf`,
 } as const;

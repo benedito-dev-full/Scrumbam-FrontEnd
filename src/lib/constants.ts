@@ -203,4 +203,5 @@ export const QUERY_KEYS = {
   orgMembers: (orgId: string) => ["org-members", orgId] as const,
   me: ["me"] as const,
   apiKey: (projectId: string) => ["api-key", projectId] as const,
+  search: (query: string) => ["search", query] as const,
 } as const;
