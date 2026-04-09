@@ -17,19 +17,19 @@ const STATUS_STYLES: Record<
   { label: string; cssVar: string; bgClass: string }
 > = {
   [STATUS.TODO]: {
-    label: "TODO",
+    label: "A Fazer",
     cssVar: "--status-todo",
     bgClass:
       "bg-[var(--status-todo)]/10 text-[var(--status-todo)] border-[var(--status-todo)]/20",
   },
   [STATUS.DOING]: {
-    label: "DOING",
+    label: "Em Andamento",
     cssVar: "--status-doing",
     bgClass:
       "bg-[var(--status-doing)]/10 text-[var(--status-doing)] border-[var(--status-doing)]/20",
   },
   [STATUS.DONE]: {
-    label: "DONE",
+    label: "Concluido",
     cssVar: "--status-done",
     bgClass:
       "bg-[var(--status-done)]/10 text-[var(--status-done)] border-[var(--status-done)]/20",

@@ -25,15 +25,15 @@ export const TASK_TYPE = {
 export const STATUS_CONFIG: Record<string, { label: string; cssVar: string }> =
   {
     [STATUS.TODO]: {
-      label: "To Do",
+      label: "A Fazer",
       cssVar: "--status-todo",
     },
     [STATUS.DOING]: {
-      label: "Doing",
+      label: "Em Andamento",
       cssVar: "--status-doing",
     },
     [STATUS.DONE]: {
-      label: "Done",
+      label: "Concluido",
       cssVar: "--status-done",
     },
   };

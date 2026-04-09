@@ -21,36 +21,36 @@ const STATUS_CONFIG: Record<
     className: "bg-muted text-muted-foreground",
   },
   ready: {
-    label: "Ready",
+    label: "Pronta",
     className: "bg-[var(--status-todo-bg)] text-[var(--status-todo)]",
   },
   executing: {
-    label: "Executing",
+    label: "Executando",
     className:
       "bg-[var(--ai-accent-muted)] text-[var(--ai-accent)] border-[var(--ai-accent)]/20",
   },
   done: {
-    label: "Done",
+    label: "Concluida",
     className: "bg-[var(--status-done-bg)] text-[var(--status-done)]",
   },
   failed: {
-    label: "Failed",
+    label: "Falhou",
     className: "bg-destructive/10 text-destructive",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Cancelada",
     className: "bg-muted text-muted-foreground",
   },
   discarded: {
-    label: "Discarded",
+    label: "Descartada",
     className: "bg-muted text-muted-foreground",
   },
   validating: {
-    label: "Validating",
+    label: "Validando",
     className: "bg-[var(--status-review-bg)] text-[var(--status-review)]",
   },
   validated: {
-    label: "Validated",
+    label: "Validada",
     className: "bg-[var(--status-done-bg)] text-[var(--status-done)]",
   },
 };

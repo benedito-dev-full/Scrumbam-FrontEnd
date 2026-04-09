@@ -28,7 +28,6 @@ interface IntentionDetailProps {
   projectId: string;
 }
 
-// Status config inline to avoid depending on mock-data exports for display logic
 const STATUS_DISPLAY: Record<
   string,
   { label: string; icon: string; bgClass: string }
@@ -39,32 +38,32 @@ const STATUS_DISPLAY: Record<
     bgClass: "bg-muted/50 text-muted-foreground",
   },
   ready: {
-    label: "Ready",
+    label: "Pronta",
     icon: "\u2705",
     bgClass: "bg-[var(--status-todo-bg)] text-[var(--status-todo)]",
   },
   executing: {
-    label: "Executing",
+    label: "Executando",
     icon: "\u26A1",
     bgClass: "bg-[var(--ai-accent-muted)] text-[var(--ai-accent)]",
   },
   done: {
-    label: "Done",
+    label: "Concluida",
     icon: "\u2714\uFE0F",
     bgClass: "bg-[var(--status-done-bg)] text-[var(--status-done)]",
   },
   failed: {
-    label: "Failed",
+    label: "Falhou",
     icon: "\u274C",
     bgClass: "bg-destructive/10 text-destructive",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Cancelada",
     icon: "\uD83D\uDEAB",
     bgClass: "bg-muted/50 text-muted-foreground",
   },
   discarded: {
-    label: "Discarded",
+    label: "Descartada",
     icon: "\uD83D\uDDD1\uFE0F",
     bgClass: "bg-muted/50 text-muted-foreground",
   },

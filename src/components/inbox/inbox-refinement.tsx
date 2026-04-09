@@ -335,7 +335,7 @@ function InboxItem({
             disabled={isMoving}
           >
             <ArrowRight className="h-3.5 w-3.5" />
-            {isMoving ? "Movendo..." : "Ready"}
+            {isMoving ? "Movendo..." : "Pronta"}
           </Button>
 
           {/* Discard button */}
