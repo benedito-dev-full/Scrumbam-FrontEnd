@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Save,
-  Loader2,
-  KeyRound,
-  Trash2,
-  AlertTriangle,
-} from "lucide-react";
+import { Save, Loader2, KeyRound, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useMe, useUpdateMe } from "@/lib/hooks/use-organization";
 import { getInitials } from "@/components/organization/org-members-full";
+import { OrgTelegramLink } from "@/components/organization/org-telegram-link";
 import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { AxiosError } from "axios";
@@ -297,6 +292,9 @@ export function OrgMyProfile() {
         </CardContent>
       </Card>
 
+      {/* Telegram link */}
+      <OrgTelegramLink />
+
       {/* Danger zone - Delete account */}
       <DangerZoneAccount isAdmin={me?.role === "ADMIN"} />
     </div>
@@ -359,7 +357,17 @@ function DangerZoneAccount({ isAdmin }: { isAdmin: boolean }) {
                 : "Remove sua conta e todos os seus dados pessoais"}
             </p>
           </div>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setPassword(""); setConfirmText(""); setError(""); } }}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) {
+                setPassword("");
+                setConfirmText("");
+                setError("");
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm" className="gap-2">
                 <Trash2 className="h-4 w-4" />

@@ -126,4 +126,9 @@ export const ENDPOINTS = {
   // Reports
   REPORT_PROJECT_PDF: (projectId: string) =>
     `/reports/projects/${projectId}/pdf`,
+
+  // Channels - Telegram
+  TELEGRAM_PAIRING: "/channels/telegram/pairing",
+  TELEGRAM_STATUS: "/channels/telegram/status",
+  TELEGRAM_UNLINK: "/channels/telegram/unlink",
 } as const;
