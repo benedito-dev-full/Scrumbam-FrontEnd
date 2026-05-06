@@ -140,4 +140,14 @@ export const ENDPOINTS = {
   AGENT: (id: string) => `/agents/${id}`,
   AGENT_REGENERATE_TOKEN: (id: string) =>
     `/agents/${id}/regenerate-install-token`,
+
+  // Automation - Vinculo Projeto<->Agente (Fase 2)
+  PROJECT_AGENT_LINK: (id: string) => `/projects/${id}/agent-link`,
+  PROJECT_AGENT_STATUS: (id: string) => `/projects/${id}/agent-status`,
+  PROJECT_EXECUTIONS: (id: string) => `/projects/${id}/executions`,
+  PROJECT_GIT_CREDENTIALS: (id: string) => `/projects/${id}/git-credentials`,
+  PROJECT_GIT_CREDENTIALS_GENERATE: (id: string) =>
+    `/projects/${id}/git-credentials/generate`,
+  PROJECT_GIT_CREDENTIALS_APPLY: (id: string) =>
+    `/projects/${id}/git-credentials/apply-config`,
 } as const;

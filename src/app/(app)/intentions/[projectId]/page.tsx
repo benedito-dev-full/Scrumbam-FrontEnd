@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import {
   Box,
@@ -16,6 +16,7 @@ import {
   User as UserIcon,
   Hash,
   PenSquare,
+  Cpu,
 } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
@@ -115,6 +116,14 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             >
               <Bell className="h-3.5 w-3.5" />
             </button>
+            <Link
+              href={`/projects/${projectId}/automation`}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Automacao do projeto"
+              title="Automacao"
+            >
+              <Cpu className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </header>
 
@@ -153,8 +162,12 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab />}
             {activeTab === "issues" && <IssuesTab issues={issuesList} />}
-            {activeTab === "insights" && <ProjectInsights projectId={projectId} />}
-            {activeTab === "reports" && <ProjectReports projectId={projectId} />}
+            {activeTab === "insights" && (
+              <ProjectInsights projectId={projectId} />
+            )}
+            {activeTab === "reports" && (
+              <ProjectReports projectId={projectId} />
+            )}
           </div>
 
           {/* Right side panel (Properties) */}
@@ -256,11 +269,30 @@ function PropertiesStrip() {
   return (
     <div className="flex flex-wrap items-center gap-2 text-[12px]">
       <span className="text-muted-foreground mr-1">Properties</span>
-      <ChipButton icon={CircleDashed} label="Backlog" iconClass="text-amber-400" />
-      <ChipButton icon={MoreHorizontal} label="No priority" stub title="Gap #5" />
-      <ChipButton icon={UserIcon} label="Lead" stub title="Sem assignee no schema do project" />
+      <ChipButton
+        icon={CircleDashed}
+        label="Backlog"
+        iconClass="text-amber-400"
+      />
+      <ChipButton
+        icon={MoreHorizontal}
+        label="No priority"
+        stub
+        title="Gap #5"
+      />
+      <ChipButton
+        icon={UserIcon}
+        label="Lead"
+        stub
+        title="Sem assignee no schema do project"
+      />
       <ChipButton icon={Calendar} label="Target date" />
-      <ChipButton icon={Hash} label="Devari Tecnologia" stub title="Gap #1 (Teams)" />
+      <ChipButton
+        icon={Hash}
+        label="Devari Tecnologia"
+        stub
+        title="Gap #1 (Teams)"
+      />
       <button
         type="button"
         className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -547,7 +579,9 @@ function StatusIcon({ status }: { status: IntentionStatus }) {
   if (isDone) {
     return <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />;
   }
-  return <CircleDashed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+  return (
+    <CircleDashed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+  );
 }
 
 function formatRelative(iso: string): string {
