@@ -34,6 +34,7 @@ A cada nova tela do Linear que for clonada:
 | `/project/<id>/overview` (Project detail) | Em análise — gaps 10–16 abaixo |
 | `/issue/<code>/<slug>` (Issue detail) | Em análise — gaps 17–20 abaixo |
 | `/settings/account/preferences` | Em análise — gaps 21–23 abaixo |
+| `/settings/account/profile` | Em análise — gaps 24–25 abaixo |
 
 ---
 
@@ -345,6 +346,34 @@ A cada nova tela do Linear que for clonada:
   - (a) Implementar conector GitHub/GitLab (OAuth + webhook listener). Trabalho consideravel.
   - (b) Suporte basico via webhook outbound (DWebhook ja existe) — Linear-like nao.
   - (c) Pular ate decisao de produto.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 24. Profile picture / avatar URL
+
+- **Onde apareceu:** `/settings/account/profile` linha "Profile picture". Linear permite upload de foto. Quando vazio, mostra iniciais (ex.: "BB").
+- **Schema atual:** `DEntidade` nao tem campo `avatarUrl`, `fotoUrl` ou similar.
+- **Impacto no frontend:** Avatar mostra apenas iniciais geradas a partir do nome. Sem upload.
+- **Opções:**
+  - (a) `DEntidade.avatarUrl String?` (migration). Upload precisa de storage (S3, Cloudinary, etc.) — feature lateral.
+  - (b) Guardar em `DEntidade.dados.avatarUrl` (Json). Sem migration.
+  - (c) Manter so iniciais — Linear-like minimal.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 25. Username distinto de email
+
+- **Onde apareceu:** `/settings/account/profile` campo "Username — One word, like a nickname or first name". Linear usa username em mentions (`@benedito`), URLs (`/u/benedito`) etc.
+- **Schema atual:** `DUserGroup.login` existe (string unique), mas e usado como credencial de login (pode ser email ou nickname). Nao ha campo `username` separado em `DEntidade`.
+- **Impacto no frontend:** Campo fica disabled como stub. Mentions e perfis publicos por slug nao funcionam ate decisao.
+- **Opções:**
+  - (a) `DEntidade.username String? @unique` (migration). Separa identidade publica de credencial.
+  - (b) Reusar `DUserGroup.login` como username quando nao for email-format.
+  - (c) Pular ate ter mentions / perfis publicos.
 - **Status:** `pendente`
 - **Decisão:** —
 

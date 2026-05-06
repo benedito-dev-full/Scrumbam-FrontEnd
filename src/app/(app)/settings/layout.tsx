@@ -41,7 +41,6 @@ const GROUPS: NavGroup[] = [
         href: "/settings/account/profile",
         label: "Profile",
         icon: UserIcon,
-        stub: true,
       },
       {
         href: "/settings/account/notifications",
