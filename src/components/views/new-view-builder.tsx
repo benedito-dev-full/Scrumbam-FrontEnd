@@ -152,21 +152,25 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
 
         {/* Composer card (Linear: tudo num bloco cinza unico) */}
         <div className="px-6 pt-5 pb-4">
-          <div className="rounded-lg bg-card/60 border border-border/60 overflow-hidden">
-            {/* Linha 1: icon + name + save controls */}
-            <div className="flex items-center gap-3 px-4 pt-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
+          <div className="rounded-lg bg-card/60 overflow-hidden">
+            {/* Composer block — tudo num unico bg sem dividers internos */}
+            <div className="grid grid-cols-[28px_1fr_auto] items-start gap-x-3 gap-y-1 px-4 py-3.5">
+              {/* Icon (alinhado com o name) */}
+              <div className="row-start-1 col-start-1 flex h-7 w-7 items-center justify-center rounded-md bg-muted">
                 <Layers className="h-3.5 w-3.5 text-cyan-400" />
               </div>
+
+              {/* Name input */}
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="View name"
                 autoFocus
-                className="h-7 flex-1 text-[15px] font-medium border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+                className="row-start-1 col-start-2 h-7 text-[15px] font-medium border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
               />
 
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Save controls (rowspan-1, col-3) */}
+              <div className="row-start-1 col-start-3 flex items-center gap-2 shrink-0 h-7">
                 <span className="text-[12px] text-muted-foreground">
                   Save to
                 </span>
@@ -231,29 +235,23 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                   Save
                 </button>
               </div>
-            </div>
 
-            {/* Linha 2: description (alinhada com o input do nome) */}
-            <div className="flex items-center gap-3 px-4 pt-1 pb-3">
-              <div className="w-7 shrink-0" />
+              {/* Description — col 2, abaixo do name, mesmo bg, sem divider */}
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Description (optional)"
-                className="h-6 flex-1 text-[12px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+                className="row-start-2 col-start-2 col-span-2 h-6 text-[12px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
               />
             </div>
 
-            {/* Divider sutil */}
-            <div className="h-px bg-border/60" />
-
-            {/* Linha 3: tabs Issues/Projects + filter icons */}
-            <div className="flex items-center justify-between px-4 py-2">
+            {/* Tabs row — UNICO divider no card todo, antes das tabs */}
+            <div className="flex items-center justify-between px-4 py-2 border-t border-border/40">
               <div className="flex items-center gap-1">
                 <Link
                   href="/views/issues/new"
                   className={cn(
-                    "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
+                    "rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors",
                     type === "issues"
                       ? "bg-background text-foreground"
                       : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
@@ -264,7 +262,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                 <Link
                   href="/views/projects/new"
                   className={cn(
-                    "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
+                    "rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors",
                     type === "projects"
                       ? "bg-background text-foreground"
                       : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
@@ -278,7 +276,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                   type="button"
                   disabled
                   title="Filtros estruturados — gap #2"
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-background/40 text-muted-foreground/60 cursor-not-allowed"
                   aria-label="Filter"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -287,7 +285,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                   type="button"
                   disabled
                   title="Display options — em breve"
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-background/40 text-muted-foreground/60 cursor-not-allowed"
                   aria-label="Display"
                 >
                   <Settings2 className="h-3.5 w-3.5" />
