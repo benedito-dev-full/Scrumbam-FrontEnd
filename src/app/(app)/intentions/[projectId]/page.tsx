@@ -22,6 +22,8 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions } from "@/lib/hooks/use-intentions";
+import { ProjectInsights } from "@/components/projects/project-insights";
+import { ProjectReports } from "@/components/projects/project-reports";
 import { cn } from "@/lib/utils";
 import type {
   IntentionDocument,
@@ -33,12 +35,14 @@ import type {
 // Tabs
 // ============================================================
 
-type TabKey = "overview" | "activity" | "issues";
+type TabKey = "overview" | "activity" | "issues" | "insights" | "reports";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "activity", label: "Activity" },
   { key: "issues", label: "Issues" },
+  { key: "insights", label: "Insights" },
+  { key: "reports", label: "Reports" },
 ];
 
 interface ProjectPageProps {
@@ -149,6 +153,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab />}
             {activeTab === "issues" && <IssuesTab issues={issuesList} />}
+            {activeTab === "insights" && <ProjectInsights projectId={projectId} />}
+            {activeTab === "reports" && <ProjectReports projectId={projectId} />}
           </div>
 
           {/* Right side panel (Properties) */}
