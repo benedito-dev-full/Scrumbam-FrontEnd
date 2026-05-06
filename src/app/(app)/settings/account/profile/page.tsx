@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function ProfilePage() {
-  usePageTitle("Profile");
+  usePageTitle("Perfil");
   const { user, logout } = useAuth();
   const setUser = useAuthStore((s) => s.setUser);
 
@@ -97,12 +97,12 @@ export default function ProfilePage() {
     <PageTransition>
       <div className="px-8 py-8">
         <div className="mx-auto max-w-3xl space-y-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
 
           {/* Profile card */}
           <div className="rounded-md border border-border bg-card overflow-hidden">
             {/* Profile picture */}
-            <Row label="Profile picture" description="Gap #24 — sem upload">
+            <Row label="Foto de perfil" description="Gap #24 — sem upload">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-[12px] font-medium text-white"
                 title="Iniciais geradas a partir do nome"
@@ -161,7 +161,7 @@ export default function ProfilePage() {
             </Row>
 
             {/* Full name */}
-            <Row label="Full name">
+            <Row label="Nome completo">
               <div className="flex items-center gap-2">
                 <Input
                   value={fullName}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
             {/* Username (stub) */}
             <Row
               label="Username"
-              description="One word, like a nickname or first name"
+              description="Uma palavra, tipo apelido ou primeiro nome"
               stub
               title="Gap #25 — campo username nao existe no schema"
               noBorder
@@ -211,16 +211,16 @@ export default function ProfilePage() {
 
           {/* Workspace access */}
           <section className="space-y-3">
-            <h2 className="text-base font-medium">Workspace access</h2>
+            <h2 className="text-base font-medium">Acesso ao workspace</h2>
             <div className="rounded-md border border-border bg-card overflow-hidden">
-              <Row label="Remove yourself from workspace" noBorder>
+              <Row label="Sair deste workspace" noBorder>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setConfirmLeave(true)}
                   className="text-[12px] text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  Leave workspace
+                  Sair do workspace
                 </Button>
               </Row>
             </div>

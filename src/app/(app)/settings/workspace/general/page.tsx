@@ -51,6 +51,7 @@ const FISCAL_MONTHS = [
 
 export default function WorkspaceGeneralPage() {
   usePageTitle("Workspace");
+  // (Workspace mantido — jargao consolidado)
   const { user, logout } = useAuth();
   const setUser = useAuthStore((s) => s.setUser);
   const queryClient = useQueryClient();
@@ -134,7 +135,7 @@ export default function WorkspaceGeneralPage() {
             {/* Logo */}
             <Row
               label="Logo"
-              description="Recommended size is 256x256px"
+              description="Tamanho recomendado: 256x256px"
               hint="Gap #30 — upload em /settings/branding"
             >
               <Link
@@ -150,7 +151,7 @@ export default function WorkspaceGeneralPage() {
             </Row>
 
             {/* Name */}
-            <Row label="Name">
+            <Row label="Nome">
               <div className="flex items-center gap-2">
                 <Input
                   value={name}
@@ -201,11 +202,11 @@ export default function WorkspaceGeneralPage() {
 
           {/* ============ TIME & REGION ============ */}
           <section className="space-y-3">
-            <h2 className="text-base font-medium">Time & region</h2>
+            <h2 className="text-base font-medium">Hora e regiao</h2>
             <div className="rounded-md border border-border bg-card overflow-hidden">
               <Row
-                label="First month of the fiscal year"
-                description="Used when grouping projects and issues quarterly, half-yearly, and yearly"
+                label="Primeiro mes do ano fiscal"
+                description="Usado para agrupar projetos e issues por trimestre, semestre e ano"
                 stub
                 hint="Gap #32"
               >
@@ -223,8 +224,8 @@ export default function WorkspaceGeneralPage() {
                 </Select>
               </Row>
               <Row
-                label="Region"
-                description="Set when a workspace is created and cannot be changed"
+                label="Regiao"
+                description="Definida na criacao do workspace e nao pode ser alterada"
                 stub
                 hint="Gap #32 — backend usa America/Sao_Paulo fixo"
                 noBorder
@@ -238,10 +239,10 @@ export default function WorkspaceGeneralPage() {
 
           {/* ============ WELCOME MESSAGE (paywall stub) ============ */}
           <section className="space-y-3">
-            <h2 className="text-base font-medium">Welcome message</h2>
+            <h2 className="text-base font-medium">Mensagem de boas-vindas</h2>
             <div className="rounded-md border border-border bg-card overflow-hidden">
               <Row
-                label="Configure welcome message"
+                label="Configurar mensagem de boas-vindas"
                 stub
                 hint="Gap #33 — feature Enterprise"
                 noBorder
@@ -256,14 +257,14 @@ export default function WorkspaceGeneralPage() {
           {/* ============ DANGER ZONE ============ */}
           <section className="space-y-3">
             <h2 className="text-base font-medium text-destructive">
-              Danger zone
+              Zona de perigo
             </h2>
             <div className="rounded-md border border-destructive/30 bg-card overflow-hidden">
               <div className="flex items-center justify-between gap-6 px-4 py-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium">Delete workspace</p>
+                  <p className="text-[13px] font-medium">Excluir workspace</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5">
-                    Schedule workspace to be permanently deleted
+                    Agendar exclusao permanente do workspace
                   </p>
                 </div>
                 <Button
@@ -272,7 +273,7 @@ export default function WorkspaceGeneralPage() {
                   onClick={() => setConfirmDelete(true)}
                   className="text-[12px] text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  Delete workspace
+                  Excluir workspace
                 </Button>
               </div>
             </div>

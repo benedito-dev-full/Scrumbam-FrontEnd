@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function InitiativesSettingsPage() {
-  usePageTitle("Initiatives");
+  usePageTitle("Iniciativas");
 
   // Local toggle (gap #3 — sem feature flag persistida no backend)
   const [enabled, setEnabled] = usePreference("initiativesEnabled", false);
@@ -23,17 +23,18 @@ export default function InitiativesSettingsPage() {
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Initiatives
+              Iniciativas
             </h1>
             <p className="text-[13px] text-muted-foreground">
-              Initiatives group multiple projects that contribute toward the
-              same strategic effort. Use initiatives to plan and coordinate
-              larger streams of work and monitor their progress at scale.{" "}
+              Iniciativas agrupam multiplos projetos que contribuem para o
+              mesmo esforco estrategico. Use iniciativas para planejar e
+              coordenar grandes frentes de trabalho e monitorar progresso em
+              escala.{" "}
               <Link
                 href="#"
                 className="text-foreground hover:underline inline-flex items-center gap-0.5"
               >
-                Docs
+                Documentacao
                 <ExternalLink className="h-3 w-3" />
               </Link>
             </p>
@@ -45,15 +46,15 @@ export default function InitiativesSettingsPage() {
             <p>
               Gap #3 — sem modelo <code>DInitiative</code> no schema. Toggle
               abaixo persiste em localStorage como preview; ativar de verdade
-              exige migration + endpoint para criar/listar initiatives.
+              exige migration + endpoint para criar/listar iniciativas.
             </p>
           </div>
 
           {/* Enable toggle */}
           <div className="rounded-md border border-border bg-card overflow-hidden">
             <Row
-              label="Enable Initiatives"
-              description="Visible to all non-guest workspace members"
+              label="Ativar iniciativas"
+              description="Visivel para todos os membros do workspace (exceto convidados)"
               control={
                 <Switch checked={enabled} onCheckedChange={setEnabled} />
               }
@@ -64,27 +65,27 @@ export default function InitiativesSettingsPage() {
           {/* Initiative updates section */}
           <section className="space-y-3">
             <div className="space-y-1">
-              <h2 className="text-base font-medium">Initiative updates</h2>
+              <h2 className="text-base font-medium">Atualizacoes da iniciativa</h2>
               <p className="text-[12px] text-muted-foreground leading-relaxed">
-                Short status reports about the progress and health of your
-                initiative. Updates are ideally written regularly by the owner.
-                Subscribers receive these updates directly in their inbox. You
-                can also configure a Slack channel where all initiative
-                updates are posted.
+                Relatorios curtos sobre o progresso e a saude da sua
+                iniciativa. Idealmente escritos regularmente pelo responsavel.
+                Inscritos recebem essas atualizacoes direto no inbox. Voce
+                tambem pode configurar um canal Slack onde todas as atualizacoes
+                de iniciativas sao postadas.
               </p>
             </div>
 
             <div className="space-y-3">
               <div>
-                <h3 className="text-[13px] font-medium">Update schedule</h3>
+                <h3 className="text-[13px] font-medium">Frequencia das atualizacoes</h3>
                 <p className="text-[12px] text-muted-foreground mt-0.5">
-                  Configure how often updates are expected on initiatives.
-                  Initiative owners will receive reminders to post updates.
+                  Configure com que frequencia atualizacoes sao esperadas. Os
+                  responsaveis recebem lembretes para postar.
                 </p>
               </div>
               <div className="rounded-md border border-border bg-card overflow-hidden">
                 <Row
-                  label="No expectation for updates"
+                  label="Sem expectativa de atualizacoes"
                   control={
                     <Button
                       variant="outline"
@@ -93,7 +94,7 @@ export default function InitiativesSettingsPage() {
                       title="Gap #3 / #10 — sem persistencia"
                       className="text-[12px] h-8"
                     >
-                      Edit
+                      Editar
                     </Button>
                   }
                   noBorder
@@ -105,16 +106,16 @@ export default function InitiativesSettingsPage() {
 
           {/* Slack notifications */}
           <section className="space-y-3">
-            <h2 className="text-base font-medium">Slack notifications</h2>
+            <h2 className="text-base font-medium">Notificacoes Slack</h2>
             <div className="rounded-md border border-border bg-card overflow-hidden">
               <Row
                 label={
                   <span className="flex items-center gap-2">
                     <Slack className="h-4 w-4 text-muted-foreground" />
-                    Send initiative updates to a Slack channel
+                    Enviar atualizacoes de iniciativas para um canal Slack
                   </span>
                 }
-                description="Connect a channel to send all initiative updates to"
+                description="Conecte um canal para receber todas as atualizacoes"
                 control={
                   <Button
                     variant="outline"
@@ -123,7 +124,7 @@ export default function InitiativesSettingsPage() {
                     title="Gap #28 — Slack integration nao existe"
                     className="text-[12px] h-8"
                   >
-                    Connect
+                    Conectar
                     <ExternalLink className="ml-1.5 h-3 w-3" />
                   </Button>
                 }

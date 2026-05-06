@@ -31,21 +31,21 @@ interface NavGroup {
 
 const GROUPS: NavGroup[] = [
   {
-    label: "Account",
+    label: "Conta",
     items: [
       {
         href: "/settings/account/preferences",
-        label: "Preferences",
+        label: "Preferencias",
         icon: SlidersHorizontal,
       },
       {
         href: "/settings/account/profile",
-        label: "Profile",
+        label: "Perfil",
         icon: UserIcon,
       },
       {
         href: "/settings/account/notifications",
-        label: "Notifications",
+        label: "Notificacoes",
         icon: Bell,
       },
     ],
@@ -55,32 +55,32 @@ const GROUPS: NavGroup[] = [
     items: [
       {
         href: "/settings/workspace/general",
-        label: "General",
+        label: "Geral",
         icon: Building2,
       },
       {
         href: "/settings/workspace/members",
-        label: "Members",
+        label: "Membros",
         icon: Users,
       },
     ],
   },
   {
-    label: "Projects",
+    label: "Projetos",
     items: [
       {
         href: "/settings/projects/statuses",
-        label: "Statuses",
+        label: "Status",
         icon: Hexagon,
       },
     ],
   },
   {
-    label: "Features",
+    label: "Recursos",
     items: [
       {
         href: "/settings/initiatives",
-        label: "Initiatives",
+        label: "Iniciativas",
         icon: Target,
       },
     ],
@@ -89,7 +89,7 @@ const GROUPS: NavGroup[] = [
     label: "Workspace (legado)",
     items: [
       { href: "/settings/branding", label: "Branding", icon: Palette },
-      { href: "/settings/channels", label: "Channels", icon: Radio },
+      { href: "/settings/channels", label: "Canais", icon: Radio },
       { href: "/settings/webhooks", label: "Webhooks", icon: Webhook },
     ],
   },
@@ -112,7 +112,7 @@ export default function SettingsLayout({
             className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-3 w-3" />
-            Back to app
+            Voltar ao app
           </Link>
         </div>
 
@@ -131,6 +131,7 @@ export default function SettingsLayout({
                       <Link
                         href={item.href}
                         title={item.stub ? "Em breve" : undefined}
+                        aria-label={item.label}
                         className={cn(
                           "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
                           active

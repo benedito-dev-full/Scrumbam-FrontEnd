@@ -43,14 +43,14 @@ import type { OrgMember, OrgRole } from "@/types";
 type RoleFilter = "all" | "ADMIN" | "MEMBER" | "VIEWER";
 
 const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
-  { value: "all", label: "All" },
+  { value: "all", label: "Todos" },
   { value: "ADMIN", label: "Admins" },
-  { value: "MEMBER", label: "Members" },
-  { value: "VIEWER", label: "Viewers" },
+  { value: "MEMBER", label: "Membros" },
+  { value: "VIEWER", label: "Visualizadores" },
 ];
 
 export default function MembersPage() {
-  usePageTitle("Members");
+  usePageTitle("Membros");
   const { user } = useAuth();
   const orgId = user?.orgId;
   const isAdmin = user?.role?.toUpperCase() === "ADMIN";
@@ -102,7 +102,7 @@ export default function MembersPage() {
     <PageTransition>
       <div className="px-8 py-8">
         <div className="mx-auto max-w-5xl space-y-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Membros</h1>
 
           {/* Toolbar */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -112,7 +112,7 @@ export default function MembersPage() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by name or email"
+                  placeholder="Buscar por nome ou email"
                   className="h-8 pl-8 text-[13px]"
                 />
               </div>
@@ -162,12 +162,12 @@ export default function MembersPage() {
           {/* Table */}
           <div>
             <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_100px_80px_90px_90px_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
-              <div>Name</div>
+              <div>Nome</div>
               <div>Email</div>
               <div>Status</div>
-              <div>Teams</div>
-              <div>Joined</div>
-              <div>Last seen</div>
+              <div>Times</div>
+              <div>Entrou em</div>
+              <div>Visto por ultimo</div>
               <div></div>
             </div>
 
@@ -179,7 +179,7 @@ export default function MembersPage() {
               </div>
             ) : (
               <>
-                <GroupHeader label="Active" count={filtered.length} />
+                <GroupHeader label="Ativos" count={filtered.length} />
                 {filtered.map((m) => (
                   <MemberRow
                     key={m.id}
@@ -416,7 +416,7 @@ function GroupHeader({ label, count }: { label: string; count: number }) {
 function SkeletonRows() {
   return (
     <>
-      <GroupHeader label="Active" count={0} />
+      <GroupHeader label="Ativos" count={0} />
       {[1, 2, 3].map((i) => (
         <div
           key={i}

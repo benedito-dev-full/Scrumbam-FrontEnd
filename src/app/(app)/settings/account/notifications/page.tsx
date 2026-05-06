@@ -37,8 +37,8 @@ const CHANNELS: Channel[] = [
   {
     key: "in-app",
     icon: Inbox,
-    label: "In-app",
-    status: "Always on — vai para o Inbox",
+    label: "No app",
+    status: "Sempre ativo — vai para o Inbox",
     enabled: true,
     href: "/intentions/inbox",
   },
@@ -54,7 +54,7 @@ const CHANNELS: Channel[] = [
     key: "email",
     icon: Mail,
     label: "Email",
-    status: "Disabled",
+    status: "Desativado",
     enabled: false,
     stub: true,
     gapNote: "Gap #26 — confirmar worker SMTP no backend",
@@ -63,7 +63,7 @@ const CHANNELS: Channel[] = [
     key: "desktop",
     icon: Monitor,
     label: "Desktop",
-    status: "Disabled",
+    status: "Desativado",
     enabled: false,
     stub: true,
     gapNote: "Gap #27 — sem Web Push / Service Worker",
@@ -72,7 +72,7 @@ const CHANNELS: Channel[] = [
     key: "mobile",
     icon: Smartphone,
     label: "Mobile",
-    status: "Disabled",
+    status: "Desativado",
     enabled: false,
     stub: true,
     gapNote: "Gap #27 — sem app mobile",
@@ -80,7 +80,7 @@ const CHANNELS: Channel[] = [
 ];
 
 export default function NotificationsPage() {
-  usePageTitle("Notifications");
+  usePageTitle("Notificacoes");
 
   // Only this single toggle has UI-only effect; rest are stubs (gap #29)
   const [showUpdatesInSidebar, setShowUpdatesInSidebar] = usePreference(
@@ -93,13 +93,13 @@ export default function NotificationsPage() {
       <div className="px-8 py-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Notifications
+            Notificacoes
           </h1>
 
           {/* ============ NOTIFICATION CHANNELS ============ */}
           <section className="space-y-3">
             <div className="space-y-1">
-              <h2 className="text-base font-medium">Notification channels</h2>
+              <h2 className="text-base font-medium">Canais de notificacao</h2>
               <p className="text-[12px] text-muted-foreground">
                 Escolha como ser notificado sobre atividade do workspace.
                 Notificacoes sempre vao para seu Inbox.
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
           {/* ============ UPDATES FROM SCRUMBAN (stub bloco inteiro) ============ */}
           <section className="space-y-3">
             <div className="space-y-1">
-              <h2 className="text-base font-medium">Updates from Scrumban</h2>
+              <h2 className="text-base font-medium">Atualizacoes do Scrumban</h2>
               <p className="text-[12px] text-muted-foreground">
                 Anuncios e mudancas importantes do produto.
                 <span className="ml-1 text-muted-foreground/70">
@@ -131,14 +131,14 @@ export default function NotificationsPage() {
             <SubGroup title="Changelog">
               <div className="rounded-md border border-border bg-card overflow-hidden">
                 <ToggleRow
-                  label="Show updates in sidebar"
-                  description="Highlight new features and improvements in the app sidebar"
+                  label="Mostrar novidades na sidebar"
+                  description="Destaca novas features e melhorias na sidebar do app"
                   checked={showUpdatesInSidebar}
                   onChange={setShowUpdatesInSidebar}
                 />
                 <ToggleRow
-                  label="Changelog newsletter"
-                  description="Receive an email twice a month highlighting new features"
+                  label="Newsletter de changelog"
+                  description="Receba um email duas vezes por mes com as novidades"
                   checked={false}
                   stub
                   noBorder
@@ -149,8 +149,8 @@ export default function NotificationsPage() {
             <SubGroup title="Marketing">
               <div className="rounded-md border border-border bg-card overflow-hidden">
                 <ToggleRow
-                  label="Marketing and onboarding"
-                  description="Occasional emails to help you get the most out of Scrumban"
+                  label="Marketing e onboarding"
+                  description="Emails ocasionais para ajudar voce a tirar o maximo do Scrumban"
                   checked={false}
                   stub
                   noBorder
@@ -158,23 +158,23 @@ export default function NotificationsPage() {
               </div>
             </SubGroup>
 
-            <SubGroup title="Other updates">
+            <SubGroup title="Outras atualizacoes">
               <div className="rounded-md border border-border bg-card overflow-hidden">
                 <ToggleRow
-                  label="Invite accepted"
-                  description="Email when invitees accept an invite"
+                  label="Convite aceito"
+                  description="Email quando convidados aceitam o convite"
                   checked={false}
                   stub
                 />
                 <ToggleRow
-                  label="Privacy and legal updates"
-                  description="Email when privacy policies or terms of service change"
+                  label="Privacidade e atualizacoes legais"
+                  description="Email quando politicas de privacidade ou termos de servico mudarem"
                   checked={false}
                   stub
                 />
                 <ToggleRow
-                  label="Data processing agreement (DPA)"
-                  description="Email when our DPA changes"
+                  label="Acordo de processamento de dados (DPA)"
+                  description="Email quando nosso DPA mudar"
                   checked={false}
                   stub
                   noBorder

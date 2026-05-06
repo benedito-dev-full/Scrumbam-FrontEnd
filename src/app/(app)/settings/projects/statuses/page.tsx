@@ -56,11 +56,11 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     key: "planned",
-    label: "Planned",
+    label: "Planejado",
     description: "Aprovado, agendado para iniciar",
     statuses: [
       {
-        name: "Planned",
+        name: "Planejado",
         icon: Circle,
         iconClass: "text-zinc-400",
         schemaValue: null,
@@ -69,11 +69,11 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     key: "in-progress",
-    label: "In Progress",
+    label: "Em andamento",
     description: "Em execucao",
     statuses: [
       {
-        name: "In Progress",
+        name: "Em andamento",
         icon: CircleDotDashed,
         iconClass: "text-amber-400",
         schemaValue: "active",
@@ -82,11 +82,11 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     key: "completed",
-    label: "Completed",
+    label: "Concluido",
     description: "Concluido com sucesso",
     statuses: [
       {
-        name: "Completed",
+        name: "Concluido",
         icon: CheckCircle2,
         iconClass: "text-violet-500",
         schemaValue: "completed",
@@ -95,11 +95,11 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     key: "canceled",
-    label: "Canceled",
+    label: "Cancelado",
     description: "Arquivado / cancelado",
     statuses: [
       {
-        name: "Canceled",
+        name: "Cancelado",
         icon: XCircle,
         iconClass: "text-zinc-500",
         schemaValue: "archived",
@@ -109,7 +109,7 @@ const CATEGORIES: CategoryDef[] = [
 ];
 
 export default function ProjectStatusesPage() {
-  usePageTitle("Project statuses");
+  usePageTitle("Status de projeto");
   const { data: projects } = useProjects();
 
   // Count projects per status string
@@ -129,11 +129,11 @@ export default function ProjectStatusesPage() {
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Project statuses
+              Status de projeto
             </h1>
             <p className="text-[13px] text-muted-foreground">
-              Project statuses define the workflow that projects go through
-              from start to completion.
+              Status de projeto definem o workflow pelo qual os projetos passam
+              do inicio a conclusao.
             </p>
           </div>
 
@@ -143,8 +143,8 @@ export default function ProjectStatusesPage() {
             <p>
               Gap #37 — schema atual usa{" "}
               <code className="rounded bg-black/30 px-1">DProject.status</code>{" "}
-              como string solta (active/archived/completed). Os 5 buckets
-              abaixo sao Linear-style read-only; customizar status de project
+              como string livre (active/archived/completed). As 5 categorias
+              abaixo sao Linear-style read-only; customizar status de projeto
               e adicionar novos exige migration.
             </p>
           </div>
@@ -178,7 +178,7 @@ function CategoryCard({
       <button
         type="button"
         disabled
-        title={`${cat.label} — adicionar status novo (gap #37)`}
+        title={`${cat.label} — adicionar novo status (gap #37)`}
         className={cn(
           "flex w-full items-center justify-between gap-2 rounded-md border border-border bg-card/40 px-4 py-2.5",
           "text-[13px] font-medium text-muted-foreground cursor-not-allowed",
@@ -216,7 +216,7 @@ function StatusRow({
       title={
         hasMapping
           ? `Mapeado para DProject.status = "${s.schemaValue}"`
-          : "Bucket vazio no schema atual"
+          : "Categoria vazia no schema atual"
       }
     >
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -226,7 +226,7 @@ function StatusRow({
         <p className="text-[13px] font-medium">{s.name}</p>
         {hasMapping && (
           <p className="text-[11px] text-muted-foreground">
-            {count} {count === 1 ? "project" : "projects"}
+            {count} {count === 1 ? "projeto" : "projetos"}
           </p>
         )}
       </div>

@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function PreferencesPage() {
-  usePageTitle("Preferences");
+  usePageTitle("Preferencias");
 
   // Theme via next-themes
   const { theme, setTheme } = useTheme();
@@ -62,59 +62,59 @@ export default function PreferencesPage() {
     <PageTransition>
       <div className="px-8 py-8">
         <div className="mx-auto max-w-3xl space-y-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Preferences</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Preferencias</h1>
 
-          {/* ============ GENERAL ============ */}
-          <Section title="General">
+          {/* ============ GERAL ============ */}
+          <Section title="Geral">
             <Card>
               <Row
-                label="Default home view"
-                description="Select which view to display when launching Scrumban"
+                label="Tela inicial padrao"
+                description="Escolha qual tela exibir ao abrir o Scrumban"
                 control={
                   <SelectControl
                     value={defaultHomeView}
                     onChange={setDefaultHomeView}
                     options={[
-                      { value: "active", label: "Active issues" },
+                      { value: "active", label: "Issues ativas" },
                       { value: "inbox", label: "Inbox" },
-                      { value: "myIssues", label: "My issues" },
-                      { value: "projects", label: "Projects" },
+                      { value: "myIssues", label: "Minhas issues" },
+                      { value: "projects", label: "Projetos" },
                     ]}
                   />
                 }
               />
               <Row
-                label="Display names"
-                description="Select how names are displayed in the interface"
+                label="Exibicao de nomes"
+                description="Como os nomes aparecem na interface"
                 control={
                   <SelectControl
                     value={displayNames}
                     onChange={setDisplayNames}
                     options={[
-                      { value: "fullName", label: "Full name" },
+                      { value: "fullName", label: "Nome completo" },
                       { value: "username", label: "Username" },
-                      { value: "firstName", label: "First name" },
+                      { value: "firstName", label: "Primeiro nome" },
                     ]}
                   />
                 }
               />
               <Row
-                label="First day of the week"
-                description="Used for date pickers"
+                label="Primeiro dia da semana"
+                description="Usado nos seletores de data"
                 control={
                   <SelectControl
                     value={firstDayOfWeek}
                     onChange={setFirstDayOfWeek}
                     options={[
-                      { value: "sunday", label: "Sunday" },
-                      { value: "monday", label: "Monday" },
+                      { value: "sunday", label: "Domingo" },
+                      { value: "monday", label: "Segunda" },
                     ]}
                   />
                 }
               />
               <Row
-                label="Convert text emoticons into emojis"
-                description="Strings like :) will be converted to 🙂"
+                label="Converter emoticons em emojis"
+                description="Sequencias como :) viram 🙂"
                 control={
                   <Switch
                     checked={convertEmoticons}
@@ -123,8 +123,8 @@ export default function PreferencesPage() {
                 }
               />
               <Row
-                label="Send comment on..."
-                description="Choose which key press is used to submit a comment"
+                label="Enviar comentario com..."
+                description="Tecla usada para enviar um comentario"
                 control={
                   <SelectControl
                     value={sendCommentOn}
@@ -140,12 +140,12 @@ export default function PreferencesPage() {
             </Card>
           </Section>
 
-          {/* ============ INTERFACE & THEME ============ */}
-          <Section title="Interface and theme">
+          {/* ============ INTERFACE E TEMA ============ */}
+          <Section title="Interface e tema">
             <Card>
               <Row
-                label="App sidebar"
-                description="Customize sidebar item visibility, ordering, and badge style"
+                label="Sidebar"
+                description="Personalize visibilidade, ordem e estilo dos itens da sidebar"
                 control={
                   <button
                     type="button"
@@ -153,28 +153,28 @@ export default function PreferencesPage() {
                     title="Em breve"
                     className="text-[12px] text-muted-foreground cursor-not-allowed"
                   >
-                    Customize
+                    Personalizar
                   </button>
                 }
               />
               <Row
-                label="Font size"
-                description="Adjust the size of text across the app"
+                label="Tamanho da fonte"
+                description="Ajusta o tamanho do texto em todo o app"
                 control={
                   <SelectControl
                     value={fontSize}
                     onChange={setFontSize}
                     options={[
-                      { value: "small", label: "Small" },
-                      { value: "default", label: "Default" },
-                      { value: "large", label: "Large" },
+                      { value: "small", label: "Pequena" },
+                      { value: "default", label: "Padrao" },
+                      { value: "large", label: "Grande" },
                     ]}
                   />
                 }
               />
               <Row
-                label="Use pointer cursors"
-                description="Change the cursor to a pointer when hovering over interactive elements"
+                label="Cursor de ponteiro"
+                description="Mostra cursor de ponteiro ao passar sobre elementos clicaveis"
                 control={
                   <Switch
                     checked={pointerCursors}
@@ -187,40 +187,40 @@ export default function PreferencesPage() {
 
             <Card>
               <Row
-                label="Interface theme"
-                description="Select or customize your interface color scheme"
+                label="Tema da interface"
+                description="Escolha ou personalize o esquema de cores"
                 control={
                   <SelectControl
                     value={theme ?? "system"}
                     onChange={setTheme}
                     options={[
-                      { value: "system", label: "System preference" },
-                      { value: "light", label: "Light" },
-                      { value: "dark", label: "Dark" },
+                      { value: "system", label: "Padrao do sistema" },
+                      { value: "light", label: "Claro" },
+                      { value: "dark", label: "Escuro" },
                     ]}
                   />
                 }
               />
               <Row
-                label="Light"
-                description="Theme to use for light system appearance"
+                label="Claro"
+                description="Tema usado quando o sistema esta em modo claro"
                 control={
                   <SelectControl
                     value="light"
                     onChange={() => {}}
-                    options={[{ value: "light", label: "Light" }]}
+                    options={[{ value: "light", label: "Claro" }]}
                     disabled
                   />
                 }
               />
               <Row
-                label="Dark"
-                description="Theme to use for dark system appearance"
+                label="Escuro"
+                description="Tema usado quando o sistema esta em modo escuro"
                 control={
                   <SelectControl
                     value="dark"
                     onChange={() => {}}
-                    options={[{ value: "dark", label: "Dark" }]}
+                    options={[{ value: "dark", label: "Escuro" }]}
                     disabled
                   />
                 }
@@ -230,8 +230,8 @@ export default function PreferencesPage() {
 
             <Card>
               <Row
-                label="Code theme"
-                description="Syntax highlighting em diffs e code viewers"
+                label="Tema do codigo"
+                description="Syntax highlighting em diffs e visualizadores de codigo"
                 stub
                 title="Em breve — depende de termos diff/code blocks na UI"
                 control={
@@ -247,12 +247,12 @@ export default function PreferencesPage() {
             </Card>
           </Section>
 
-          {/* ============ DESKTOP APPLICATION ============ */}
-          <Section title="Desktop application">
+          {/* ============ APP DESKTOP ============ */}
+          <Section title="App desktop">
             <Card>
               <Row
-                label="Open in desktop app"
-                description="Automatically open links in desktop app when possible"
+                label="Abrir no app desktop"
+                description="Abrir links automaticamente no app desktop quando possivel"
                 stub
                 title="Gap #22 — sem app desktop"
                 control={<Switch checked={false} disabled />}
@@ -261,8 +261,8 @@ export default function PreferencesPage() {
             </Card>
           </Section>
 
-          {/* ============ CODING TOOLS ============ */}
-          <Section title="Coding tools">
+          {/* ============ FERRAMENTAS DE CODIGO ============ */}
+          <Section title="Ferramentas de codigo">
             <Card>
               <Link
                 href="/integrations"
@@ -270,10 +270,10 @@ export default function PreferencesPage() {
               >
                 <div>
                   <p className="text-[13px] font-medium">
-                    Configure coding tools
+                    Configurar ferramentas de codigo
                   </p>
                   <p className="text-[12px] text-muted-foreground mt-0.5">
-                    Configure tools which can be opened from Scrumban (MCP, etc.)
+                    Configure ferramentas que abrem do Scrumban (MCP, etc.)
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -281,12 +281,12 @@ export default function PreferencesPage() {
             </Card>
           </Section>
 
-          {/* ============ AUTOMATIONS & WORKFLOWS ============ */}
-          <Section title="Automations and workflows">
+          {/* ============ AUTOMACOES E WORKFLOWS ============ */}
+          <Section title="Automacoes e workflows">
             <Card>
               <Row
-                label="Auto-assign to self"
-                description="When creating new issues, always assign them to yourself by default"
+                label="Atribuir a si mesmo automaticamente"
+                description="Ao criar issues, atribuir automaticamente para voce"
                 control={
                   <Switch
                     checked={autoAssignToSelf}
@@ -295,36 +295,36 @@ export default function PreferencesPage() {
                 }
               />
               <Row
-                label="Git attachment format"
-                description="The format of GitHub/GitLab attachments on issues"
+                label="Formato de anexo Git"
+                description="Formato dos anexos GitHub/GitLab nas issues"
                 stub
                 title="Gap #23 — sem integracao Git"
                 control={
                   <SelectControl
                     value="title"
                     onChange={() => {}}
-                    options={[{ value: "title", label: "Title" }]}
+                    options={[{ value: "title", label: "Titulo" }]}
                     disabled
                   />
                 }
               />
               <Row
-                label="On git branch copy, move issue to started status"
-                description="After copying the git branch name, issue status is moved to first started workflow status"
+                label="Ao copiar branch git, mover para iniciada"
+                description="Apos copiar o nome da branch, status muda para o primeiro estado de iniciado"
                 stub
                 title="Gap #23 — sem integracao Git"
                 control={<Switch checked={false} disabled />}
               />
               <Row
-                label="On open in coding tool, move issue to started status"
-                description="After opening an issue in a coding tool, status is moved to first started"
+                label="Ao abrir em IDE, mover para iniciada"
+                description="Apos abrir issue na IDE, status muda para iniciada"
                 stub
                 title="Gap #23 — sem integracao Git"
                 control={<Switch checked={false} disabled />}
               />
               <Row
-                label="On move to started status, assign to yourself"
-                description="When you move an unassigned issue to started, it will be automatically assigned to you"
+                label="Ao mover para iniciada, atribuir a si mesmo"
+                description="Mover issue sem responsavel para iniciada atribui automaticamente para voce"
                 control={
                   <Switch
                     checked={onMoveStartedAssignSelf}
@@ -333,8 +333,8 @@ export default function PreferencesPage() {
                 }
               />
               <Row
-                label="Auto-convert draft pull requests"
-                description="Mark draft PRs as ready for review when a review is requested or PR is approved"
+                label="Auto-converter PRs em rascunho"
+                description="Marcar PRs em rascunho como prontos quando review for solicitado ou aprovado"
                 stub
                 title="Gap #23 — sem integracao Git"
                 control={<Switch checked={false} disabled />}
