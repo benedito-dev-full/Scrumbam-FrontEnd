@@ -9,7 +9,6 @@ import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
   useOrgMembers,
-  useAddOrgMember,
   useRemoveOrgMember,
   useUpdateMemberRole,
 } from "@/lib/hooks/use-organization";
@@ -37,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InviteWorkspaceModal } from "@/components/settings/invite-workspace-modal";
 import { cn } from "@/lib/utils";
 import type { OrgMember, OrgRole } from "@/types";
 
@@ -195,10 +195,9 @@ export default function MembersPage() {
         </div>
       </div>
 
-      <InviteDialog
+      <InviteWorkspaceModal
         open={inviteOpen}
         onOpenChange={setInviteOpen}
-        orgId={orgId}
       />
     </PageTransition>
   );
@@ -442,156 +441,3 @@ function SkeletonRows() {
   );
 }
 
-// ============================================================
-// Invite dialog
-// ============================================================
-
-function InviteDialog({
-  open,
-  onOpenChange,
-  orgId,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  orgId: string | undefined;
-}) {
-  const addMember = useAddOrgMember(orgId);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<OrgRole>("MEMBER");
-
-  const reset = () => {
-    setName("");
-    setEmail("");
-    setPassword("");
-    setRole("MEMBER");
-  };
-
-  const submit = () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      toast.error("Preencha nome, email e senha");
-      return;
-    }
-    addMember.mutate(
-      {
-        name: name.trim(),
-        email: email.trim(),
-        password: password.trim(),
-        role,
-      },
-      {
-        onSuccess: () => {
-          reset();
-          onOpenChange(false);
-        },
-      },
-    );
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Adicionar membro</DialogTitle>
-          <DialogDescription>
-            Gap #36 — sem invite-flow por email; admin define a senha inicial.
-            O membro pode trocar depois em Profile.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          <Field label="Nome">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Joao Silva"
-              autoFocus
-            />
-          </Field>
-          <Field label="Email">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="joao@empresa.com"
-            />
-          </Field>
-          <Field label="Senha inicial">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 8 caracteres"
-            />
-          </Field>
-          <Field label="Role">
-            <Select
-              value={role}
-              onValueChange={(v) => setRole(v as OrgRole)}
-            >
-              <SelectTrigger className="h-9 text-[13px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ADMIN" className="text-[13px]">
-                  Admin
-                </SelectItem>
-                <SelectItem value="MEMBER" className="text-[13px]">
-                  Member
-                </SelectItem>
-                <SelectItem value="VIEWER" className="text-[13px]">
-                  Viewer
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              reset();
-              onOpenChange(false);
-            }}
-            className="text-[12px]"
-          >
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            onClick={submit}
-            disabled={addMember.isPending}
-            className="text-[12px]"
-          >
-            {addMember.isPending ? (
-              <>
-                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                Adicionando...
-              </>
-            ) : (
-              "Adicionar"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[12px] font-medium">{label}</label>
-      {children}
-    </div>
-  );
-}
