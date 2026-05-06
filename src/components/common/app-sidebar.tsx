@@ -2,121 +2,270 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { useState, useCallback } from "react";
+import {
+  Search,
+  PenSquare,
+  ChevronDown,
+  ChevronRight,
+  HelpCircle,
+  LogOut,
+  Settings,
+  User as UserIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrumbanLogo } from "./scrumban-logo";
-import { navSections, isNavItemActive } from "@/lib/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  navTopItems,
+  navSections,
+  isNavItemActive,
+  type NavItem,
+  type NavSection,
+} from "@/lib/navigation";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  const initials = user?.nome
-    ? user.nome
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "U";
+  const orgInitials = (user?.orgNome || "DT")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const orgShort =
+    user?.orgNome && user.orgNome.length > 16
+      ? user.orgNome.slice(0, 14) + ".."
+      : user?.orgNome || "Workspace";
+
+  const toggle = useCallback((label: string) => {
+    setCollapsed((s) => ({ ...s, [label]: !s[label] }));
+  }, []);
+
+  const openCommandPalette = useCallback(() => {
+    const isMac =
+      typeof navigator !== "undefined" &&
+      navigator.platform.toUpperCase().includes("MAC");
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "k",
+        metaKey: isMac,
+        ctrlKey: !isMac,
+        bubbles: true,
+      }),
+    );
+  }, []);
 
   return (
-    <aside className="hidden md:flex h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar">
-      {/* Logo section */}
-      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-        <ScrumbanLogo size="sm" />
-        {user?.orgNome && (
-          <span className="ml-auto text-[10px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5 truncate max-w-[80px]">
-            Free
-          </span>
-        )}
+    <aside className="hidden md:flex h-screen w-[232px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      {/* Workspace switcher + actions */}
+      <div className="flex items-center gap-1 px-3 pt-3 pb-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1.5 py-1 hover:bg-sidebar-accent transition-colors"
+              aria-label="Menu do workspace"
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
+                {orgInitials}
+              </span>
+              <span className="truncate text-[13px] font-medium">
+                {orgShort}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-60">
+            <DropdownMenuLabel>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] font-medium">
+                  {user?.nome || "Usuario"}
+                </span>
+                <span className="text-[11px] text-muted-foreground truncate">
+                  {user?.email || ""}
+                </span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled className="text-[13px]">
+              <UserIcon className="mr-2 h-3.5 w-3.5" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled className="text-[13px]">
+              <Settings className="mr-2 h-3.5 w-3.5" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={logout}
+              className="text-[13px] text-destructive focus:text-destructive"
+            >
+              <LogOut className="mr-2 h-3.5 w-3.5" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          aria-label="Buscar"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          aria-label="Compor"
+        >
+          <PenSquare className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      {/* Org name */}
-      {user?.orgNome && (
-        <div className="px-4 py-2 border-b border-sidebar-border">
-          <p className="text-xs font-medium text-sidebar-foreground truncate">
-            {user.orgNome}
-          </p>
-        </div>
-      )}
+      {/* Top items (Inbox, My issues) */}
+      <nav className="px-2">
+        <ul className="space-y-px">
+          {navTopItems.map((item) => (
+            <SidebarLink
+              key={item.href}
+              item={item}
+              active={isNavItemActive(pathname, item.href)}
+            />
+          ))}
+        </ul>
+      </nav>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-3">
-        {navSections.map((section, sectionIdx) => (
-          <div key={section.label} className={cn(sectionIdx > 0 && "mt-4")}>
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              {section.label}
-            </p>
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const isActive = isNavItemActive(pathname, item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors relative",
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                    )}
-                  >
-                    {/* Active indicator bar */}
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--scrumban-brand)]" />
-                    )}
-                    <item.icon
-                      className={cn(
-                        "h-4 w-4 shrink-0",
-                        isActive ? item.iconColor : "text-muted-foreground",
-                      )}
-                    />
-                    {item.label}
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span className="ml-auto text-[10px] font-bold tabular-nums bg-amber-500/15 text-amber-700 dark:text-amber-300 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+      {/* Sections */}
+      <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
+        {navSections.map((section) => (
+          <Section
+            key={section.label}
+            section={section}
+            pathname={pathname}
+            collapsed={!!collapsed[section.label || ""]}
+            onToggle={() => toggle(section.label || "")}
+          />
         ))}
       </nav>
 
-      {/* User footer */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Avatar className="h-8 w-8 ring-2 ring-sidebar-border">
-              <AvatarFallback className="text-xs bg-[var(--scrumban-brand-muted)] text-[var(--scrumban-brand)] font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            {/* Online dot */}
-            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-sidebar-foreground truncate">
-              {user?.nome || "Usuario"}
-            </p>
-            <p className="text-[10px] text-muted-foreground truncate capitalize">
-              {user?.role || ""}
-            </p>
-          </div>
-          <button
-            onClick={logout}
-            className="text-muted-foreground/40 hover:text-sidebar-foreground transition-colors p-1 rounded-md hover:bg-sidebar-accent"
-            title="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-sidebar-border px-3 py-2">
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          aria-label="Ajuda"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+        >
+          <span className="text-amber-400">↑</span> Free plan
+        </button>
       </div>
     </aside>
+  );
+}
+
+function Section({
+  section,
+  pathname,
+  collapsed,
+  onToggle,
+}: {
+  section: NavSection;
+  pathname: string;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="mt-3 first:mt-0">
+      {section.label && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="group flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+          ) : (
+            <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+          )}
+          <span>{section.label}</span>
+        </button>
+      )}
+
+      {!collapsed && (
+        <ul className="space-y-px">
+          {section.team ? (
+            <li>
+              <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[13px] font-medium">
+                <section.team.icon
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    section.team.iconColor || "text-muted-foreground",
+                  )}
+                />
+                <span className="truncate">{section.team.name}</span>
+                <ChevronDown className="ml-auto h-3 w-3 text-muted-foreground/60" />
+              </div>
+              <ul className="ml-2 mt-px space-y-px border-l border-sidebar-border pl-2">
+                {section.items.map((item) => (
+                  <SidebarLink
+                    key={item.href}
+                    item={item}
+                    active={isNavItemActive(pathname, item.href)}
+                  />
+                ))}
+              </ul>
+            </li>
+          ) : (
+            section.items.map((item) => (
+              <SidebarLink
+                key={item.href}
+                item={item}
+                active={isNavItemActive(pathname, item.href)}
+              />
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+  return (
+    <li>
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
+          active
+            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+            : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+        )}
+      >
+        <item.icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{item.label}</span>
+        {item.badge !== undefined && item.badge > 0 && (
+          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+            {item.badge}
+          </span>
+        )}
+      </Link>
+    </li>
   );
 }

@@ -1,31 +1,28 @@
 "use client";
 
 import {
-  FolderKanban,
+  Box,
   Plus,
-  LayoutDashboard,
-  ArrowRight,
-  Sparkles,
-  Wifi,
-  Trash2,
-  BookOpen,
+  SlidersHorizontal,
+  Settings2,
+  PanelRight,
+  Layers,
+  CircleDashed,
+  Calendar,
+  User as UserIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
-import { useProjects, useProjectSummaries } from "@/lib/hooks/use-projects";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useProjects } from "@/lib/hooks/use-projects";
 import { projectsApi } from "@/lib/api/projects";
 import { QUERY_KEYS } from "@/lib/constants";
-import type { ProjectSummary } from "@/types/project";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ApiKeyManager } from "@/components/projects/api-key-manager";
 import {
   Dialog,
   DialogContent,
@@ -33,42 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-
-// ============================================================
-// Relative time helper
-// ============================================================
-
-function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "agora";
-  if (minutes < 60) return `ha ${minutes}min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `ha ${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "ontem";
-  return `ha ${days} dias`;
-}
-
-// ============================================================
-// Connection status badge config
-// ============================================================
-
-const CONNECTION_STATUS_CONFIG = {
-  active: {
-    label: "Ativo",
-    className: "text-green-500 border-green-500/30 bg-green-500/10",
-  },
-  idle: {
-    label: "Recente",
-    className: "text-yellow-500 border-yellow-500/30 bg-yellow-500/10",
-  },
-  inactive: {
-    label: "Inativo",
-    className: "text-muted-foreground border-border bg-muted",
-  },
-} as const;
+import { cn } from "@/lib/utils";
 
 function useCreateProject() {
   const queryClient = useQueryClient();
@@ -77,41 +39,18 @@ function useCreateProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
       queryClient.invalidateQueries({ queryKey: ["project-summaries"] });
-    },
-  });
-}
-
-function useRemoveProject() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => projectsApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
-      queryClient.invalidateQueries({ queryKey: ["intentions"] });
-      toast.success("Projeto desconectado");
-    },
-    onError: () => {
-      toast.error("Erro ao desconectar projeto");
+      toast.success("Project criado");
     },
   });
 }
 
 export default function ProjectsPage() {
-  usePageTitle("Projetos");
+  usePageTitle("Projects");
   const router = useRouter();
-  const orgId = useAuthStore.getState().user?.orgId;
   const { data: projects, isLoading } = useProjects();
-  const { data: summaries } = useProjectSummaries(orgId || undefined);
   const createProject = useCreateProject();
-  const removeProject = useRemoveProject();
   const [newName, setNewName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  // O(1) lookup map: projectId -> summary
-  const summaryMap = useMemo(
-    () => new Map(summaries?.map((s) => [s.projectId, s])),
-    [summaries],
-  );
 
   const handleCreate = () => {
     if (!newName.trim()) return;
@@ -126,61 +65,29 @@ export default function ProjectsPage() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <PageTransition className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Projetos</h1>
-            <p className="text-sm text-muted-foreground">Carregando...</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-5 w-32 bg-muted rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 w-20 bg-muted rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </PageTransition>
-    );
-  }
-
   return (
-    <PageTransition className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Projetos</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {projects?.length || 0} projeto(s) conectado(s)
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2 text-xs sm:text-sm" asChild>
-            <Link href="/projects/setup">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Guia de Conexao</span>
-              <span className="sm:hidden">Guia</span>
-            </Link>
-          </Button>
+    <PageTransition className="h-full">
+      <div className="flex h-full flex-col">
+        {/* Page header */}
+        <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
+          <h1 className="text-[13px] font-medium">Projects</h1>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white">
-                <Plus className="h-4 w-4" /> Conectar Projeto
-              </Button>
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                aria-label="Criar project"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Criar novo projeto</DialogTitle>
+                <DialogTitle>New project</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3 pt-2">
                 <Input
-                  placeholder="Nome do projeto"
+                  placeholder="Project name"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -191,205 +98,263 @@ export default function ProjectsPage() {
                   onClick={handleCreate}
                   disabled={!newName.trim() || createProject.isPending}
                 >
-                  {createProject.isPending ? "Criando..." : "Criar Projeto"}
+                  {createProject.isPending ? "Creating..." : "Create project"}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+        </header>
 
-      {!projects?.length ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-8 md:p-12 text-center">
-          <div className="rounded-full bg-[var(--scrumban-brand-muted)] p-4">
-            <FolderKanban className="h-10 w-10 text-[var(--scrumban-brand)]" />
+        {/* Tab + filter row */}
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-md bg-accent px-2 py-1 text-[12px] font-medium text-foreground"
+            >
+              All projects
+            </button>
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Layers"
+            >
+              <Layers className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <h3 className="mt-4 text-lg font-bold">
-            Conecte seu primeiro projeto
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            Projetos conectados puxam e executam intencoes de forma autonoma.
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 text-left text-sm text-muted-foreground">
-            <div className="flex items-start gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--scrumban-brand-muted)] text-xs font-bold text-[var(--scrumban-brand)]">
-                1
-              </span>
-              <span>Conecte um projeto</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--scrumban-brand-muted)] text-xs font-bold text-[var(--scrumban-brand)]">
-                2
-              </span>
-              <span>Disponibilize intencoes</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--scrumban-brand-muted)] text-xs font-bold text-[var(--scrumban-brand)]">
-                3
-              </span>
-              <span>Acompanhe resultados</span>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center gap-3">
-            <Button className="gap-2" onClick={() => setDialogOpen(true)}>
-              <Sparkles className="h-4 w-4" /> Conectar Primeiro Projeto
-            </Button>
-            <Button variant="outline" className="gap-2" asChild>
-              <Link href="/projects/setup">
-                <BookOpen className="h-4 w-4" /> Ver guia completo
-              </Link>
-            </Button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Filter"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Display options"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Toggle panel"
+            >
+              <PanelRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map(
-            (project: {
-              chave: string;
-              nome: string;
-              descricao?: string | null;
-              taskCount?: number;
-            }) => (
-              <ProjectCard
-                key={project.chave}
-                project={project}
-                summary={summaryMap.get(project.chave)}
-                onNavigate={(path) => router.push(path)}
-                onDisconnect={(id) => {
-                  if (
-                    confirm("Tem certeza que deseja desconectar este projeto?")
-                  ) {
-                    removeProject.mutate(id);
-                  }
-                }}
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto">
+          {/* Column headers */}
+          <div className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
+            <div>Name</div>
+            <div>Health</div>
+            <div>Priority</div>
+            <div>Lead</div>
+            <div>Target date</div>
+            <div className="text-right pr-2">Issues</div>
+            <div>Status</div>
+          </div>
+
+          {/* Rows */}
+          {isLoading ? (
+            <SkeletonRows />
+          ) : !projects?.length ? (
+            <EmptyState onCreate={() => setDialogOpen(true)} />
+          ) : (
+            projects.map((p) => (
+              <ProjectRow
+                key={p.chave}
+                project={p}
+                onClick={() => router.push(`/intentions/${p.chave}`)}
               />
-            ),
+            ))
           )}
         </div>
-      )}
+      </div>
     </PageTransition>
   );
 }
 
-// ============================================================
-// ProjectCard -- uses real data from summaries API
-// ============================================================
-
-function ProjectCard({
+function ProjectRow({
   project,
-  summary,
-  onNavigate,
-  onDisconnect,
+  onClick,
 }: {
   project: {
     chave: string;
     nome: string;
-    descricao?: string | null;
+    dataFim?: string | null;
     taskCount?: number;
+    responsavel?: { chave: string; nome: string } | null;
   };
-  summary?: ProjectSummary;
-  onNavigate: (path: string) => void;
-  onDisconnect: (id: string) => void;
+  onClick: () => void;
 }) {
-  const user = useAuthStore.getState().user;
-  const isAdmin = user?.role?.toUpperCase() === "ADMIN";
+  // Status como % de progresso: stub 0% ate API expor count(done)/count(total).
+  // Gap registrado em LINEAR_PIVOT_GAPS.md.
+  const progress = 0;
 
-  const throughput = summary?.weeklyThroughput ?? 0;
-  const lastActivity = summary?.lastActivity
-    ? {
-        time: formatRelativeTime(summary.lastActivity.timestamp),
-        title: summary.lastActivity.intentionTitle,
-      }
+  // Health e Priority sao gaps de schema -> stub.
+  // Lead = responsavel (DProject.idOwner).
+
+  const targetDate = project.dataFim
+    ? new Date(project.dataFim).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
     : null;
-  const connectionStatus = summary?.connectionStatus ?? "inactive";
-  const statusConfig = CONNECTION_STATUS_CONFIG[connectionStatus];
+
+  const leadInitials = project.responsavel?.nome
+    ? project.responsavel.nome
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : null;
 
   return (
-    <Card
-      className="group cursor-pointer border transition-all hover:shadow-lg hover:border-[var(--scrumban-brand)]/40 hover:-translate-y-0.5"
-      onClick={() => onNavigate(`/intentions/${project.chave}`)}
+    <button
+      type="button"
+      onClick={onClick}
+      className="grid w-full grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-4 py-2 text-left text-[13px] hover:bg-accent/40 transition-colors"
     >
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--scrumban-brand-muted)]">
-            <FolderKanban className="h-4 w-4 text-[var(--scrumban-brand)]" />
-          </div>
-          <h3 className="text-base font-bold tracking-tight">{project.nome}</h3>
-        </div>
+      <div className="flex items-center gap-2 min-w-0">
+        <Box className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="truncate">{project.nome}</span>
+      </div>
 
-        {/* Connection status -- dynamic based on last activity */}
-        <Badge
-          variant="outline"
-          className={`text-[10px] gap-1 ${statusConfig.className}`}
+      {/* Health (stub) */}
+      <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[12px]">
+        <CircleDashed className="h-3.5 w-3.5" />
+        <span>No updates</span>
+      </div>
+
+      {/* Priority (stub) */}
+      <div className="text-muted-foreground/60 text-[12px]">---</div>
+
+      {/* Lead */}
+      <div>
+        {leadInitials ? (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+            {leadInitials}
+          </div>
+        ) : (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-muted-foreground/40 text-muted-foreground/40">
+            <UserIcon className="h-3 w-3" />
+          </div>
+        )}
+      </div>
+
+      {/* Target date */}
+      <div>
+        {targetDate ? (
+          <span className="text-[12px] text-muted-foreground">{targetDate}</span>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-5 w-5 items-center justify-center rounded border border-dashed border-muted-foreground/40 text-muted-foreground/40 hover:border-muted-foreground/70 hover:text-muted-foreground/70"
+            aria-label="Definir target date"
+          >
+            <Calendar className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
+      {/* Issues count */}
+      <div className="text-right pr-2 tabular-nums text-[12px] text-muted-foreground">
+        {project.taskCount ?? 0}
+      </div>
+
+      {/* Status (% progresso) */}
+      <ProgressBadge value={progress} />
+    </button>
+  );
+}
+
+function ProgressBadge({ value }: { value: number }) {
+  const radius = 6;
+  const circ = 2 * Math.PI * radius;
+  const dash = (value / 100) * circ;
+
+  return (
+    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+      <svg width="16" height="16" viewBox="0 0 16 16" className="shrink-0">
+        <circle
+          cx="8"
+          cy="8"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="2 2"
+          opacity="0.4"
+        />
+        {value > 0 && (
+          <circle
+            cx="8"
+            cy="8"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeDasharray={`${dash} ${circ}`}
+            transform="rotate(-90 8 8)"
+            className="text-[var(--scrumban-brand)]"
+          />
+        )}
+      </svg>
+      <span className="tabular-nums">{value}%</span>
+    </div>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <>
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-4 py-2 animate-pulse"
         >
-          <Wifi className="h-3 w-3" />
-          {statusConfig.label}
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {project.descricao && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {project.descricao}
-          </p>
-        )}
-
-        {/* API Key — ADMIN only */}
-        {isAdmin && <ApiKeyManager projectId={project.chave} />}
-
-        {/* Stats row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              className="bg-[var(--status-doing)]/10 text-[var(--status-doing)] text-xs"
-            >
-              {project.taskCount ?? 0} intencoes
-            </Badge>
-            {throughput > 0 && (
-              <Badge
-                variant="outline"
-                className="text-[10px] text-green-500 border-green-500/20"
-              >
-                {throughput} intencoes/semana
-              </Badge>
-            )}
-          </div>
-          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 sm:h-7 sm:w-7 p-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                onNavigate(`/dashboard/${project.chave}`);
-              }}
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 sm:h-7 sm:w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDisconnect(project.chave);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-9 w-9 sm:h-7 sm:w-7 p-0">
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <div className="h-4 w-32 bg-muted rounded" />
+          <div className="h-3 w-20 bg-muted rounded" />
+          <div className="h-3 w-8 bg-muted rounded" />
+          <div className="h-5 w-5 bg-muted rounded-full" />
+          <div className="h-3 w-16 bg-muted rounded" />
+          <div className="h-3 w-6 bg-muted rounded ml-auto" />
+          <div className="h-3 w-10 bg-muted rounded" />
         </div>
+      ))}
+    </>
+  );
+}
 
-        {/* Last activity */}
-        {lastActivity && (
-          <p className="text-[11px] text-muted-foreground truncate border-t border-border pt-2">
-            {lastActivity.time} — {lastActivity.title}
-          </p>
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+        <Box className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <h3 className="mt-4 text-sm font-medium">No projects yet</h3>
+      <p className="mt-1 text-[12px] text-muted-foreground">
+        Create your first project to get started.
+      </p>
+      <button
+        type="button"
+        onClick={onCreate}
+        className={cn(
+          "mt-4 inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1 text-[12px] font-medium",
+          "text-background hover:opacity-90 transition-opacity",
         )}
-      </CardContent>
-    </Card>
+      >
+        <Plus className="h-3 w-3" />
+        New project
+      </button>
+    </div>
   );
 }

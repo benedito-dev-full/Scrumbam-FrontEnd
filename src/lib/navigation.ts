@@ -1,158 +1,85 @@
 import {
   Inbox,
-  ScrollText,
-  Plus,
-  BarChart3,
-  PieChart,
-  FolderOpen,
-  Activity,
-  BookOpen,
-  Building2,
-  Settings,
-  Radio,
+  CircleDot,
+  Box,
+  Layers,
+  MoreHorizontal,
+  Play,
+  Download,
+  UserPlus,
+  Target,
+  Zap,
+  Code2,
 } from "lucide-react";
 
 export interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
   badge?: number;
+  /** True quando o item depende de feature ainda nao suportada pelo schema */
+  stub?: boolean;
 }
 
 export interface NavSection {
-  label: string;
+  /** Vazio = sem header, items aparecem soltos no topo */
+  label?: string;
+  /** Linear "Your teams" tem header com triangulo expansivel */
+  collapsible?: boolean;
+  /** Linear "Your teams" tem item-pai (team name) com filhos identados */
+  team?: { name: string; icon: React.ComponentType<{ className?: string }>; iconColor?: string };
   items: NavItem[];
 }
 
+/**
+ * Sidebar items "soltos" no topo (sem secao). Linear: Inbox, My issues.
+ */
+export const navTopItems: NavItem[] = [
+  { href: "/intentions/inbox", label: "Inbox", icon: Inbox },
+  { href: "/intentions", label: "My issues", icon: CircleDot },
+];
+
+/**
+ * Secoes principais da sidebar — espelham Linear (Workspace / Your teams / Try).
+ */
 export const navSections: NavSection[] = [
   {
-    label: "Intencoes",
+    label: "Workspace",
+    collapsible: true,
     items: [
-      {
-        href: "/intentions/inbox",
-        label: "Inbox",
-        icon: Inbox,
-        iconColor: "text-muted-foreground",
-      },
-      {
-        href: "/intentions",
-        label: "Lista",
-        icon: ScrollText,
-        iconColor: "text-[var(--scrumban-brand)]",
-      },
-      {
-        href: "/intentions/new",
-        label: "Nova",
-        icon: Plus,
-        iconColor: "text-sky-500 dark:text-sky-400",
-      },
+      { href: "/projects", label: "Projects", icon: Box },
+      { href: "/views", label: "Views", icon: Layers, stub: true },
+      { href: "/more", label: "More", icon: MoreHorizontal, stub: true },
     ],
   },
   {
-    label: "Insights",
+    label: "Your teams",
+    collapsible: true,
+    team: { name: "Devari Tecnologia", icon: Play, iconColor: "text-emerald-500" },
     items: [
-      {
-        href: "/dashboard",
-        label: "Dashboard",
-        icon: BarChart3,
-        iconColor: "text-blue-500 dark:text-blue-400",
-      },
-      {
-        href: "/analytics",
-        label: "Analytics",
-        icon: PieChart,
-        iconColor: "text-purple-500 dark:text-purple-400",
-      },
+      { href: "/team/issues", label: "Issues", icon: CircleDot, stub: true },
+      { href: "/team/projects", label: "Projects", icon: Box, stub: true },
+      { href: "/team/views", label: "Views", icon: Layers, stub: true },
     ],
   },
   {
-    label: "Projetos",
+    label: "Try",
+    collapsible: true,
     items: [
-      {
-        href: "/projects",
-        label: "Conectados",
-        icon: FolderOpen,
-        iconColor: "text-cyan-500 dark:text-cyan-400",
-      },
-      {
-        href: "/projects/activity",
-        label: "Atividade",
-        icon: Activity,
-        iconColor: "text-orange-500 dark:text-orange-400",
-      },
-      {
-        href: "/projects/setup",
-        label: "Setup",
-        icon: BookOpen,
-        iconColor: "text-emerald-500 dark:text-emerald-400",
-      },
-    ],
-  },
-  {
-    label: "Organizacao",
-    items: [
-      {
-        href: "/organization",
-        label: "Organizacao",
-        icon: Building2,
-        iconColor: "text-indigo-500 dark:text-indigo-400",
-      },
-    ],
-  },
-  {
-    label: "Sistema",
-    items: [
-      {
-        href: "/settings",
-        label: "Configuracoes",
-        icon: Settings,
-        iconColor: "text-muted-foreground",
-      },
-      {
-        href: "/settings/channels",
-        label: "Canais",
-        icon: Radio,
-        iconColor: "text-green-500 dark:text-green-400",
-      },
+      { href: "/import", label: "Import issues", icon: Download, stub: true },
+      { href: "/invite", label: "Invite people", icon: UserPlus, stub: true },
+      { href: "/initiatives", label: "Initiatives", icon: Target, stub: true },
+      { href: "/connect/cursor", label: "Connect Cursor", icon: Zap, stub: true },
+      { href: "/connect/codex", label: "Connect Codex", icon: Code2, stub: true },
     ],
   },
 ];
 
 /**
- * Determines if a nav item should be marked as active based on the current pathname.
- *
- * Special handling for /intentions: does NOT activate for /intentions/new
- * or /intentions/hill-chart (those are separate sidebar items).
- * Activates for /intentions, /intentions/{projectId}, /intentions/{projectId}/{intentionId}.
- *
- * Special handling for /settings: does NOT activate for /settings/channels.
- *
- * Special handling for /projects: does NOT activate for /projects/activity.
+ * Active matcher. Linear ativa o item exato do path; subrotas tambem ativam o pai.
  */
 export function isNavItemActive(pathname: string, href: string): boolean {
   if (pathname === href) return true;
-
-  // /intentions should NOT match /intentions/new, /intentions/hill-chart, or /intentions/inbox
-  if (href === "/intentions") {
-    if (pathname.startsWith("/intentions/new")) return false;
-    if (pathname.startsWith("/intentions/hill-chart")) return false;
-    if (pathname.startsWith("/intentions/inbox")) return false;
-    return pathname.startsWith("/intentions/");
-  }
-
-  // /settings should NOT match /settings/channels (separate nav item)
-  if (href === "/settings") {
-    if (pathname.startsWith("/settings/channels")) return false;
-    return pathname.startsWith("/settings/");
-  }
-
-  // /projects should NOT match /projects/activity or /projects/setup (separate nav items)
-  if (href === "/projects") {
-    if (pathname.startsWith("/projects/activity")) return false;
-    if (pathname.startsWith("/projects/setup")) return false;
-    return pathname.startsWith("/projects/");
-  }
-
+  if (href === "/") return false;
   return pathname.startsWith(href + "/");
 }
