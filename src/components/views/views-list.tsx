@@ -24,7 +24,7 @@ type ViewType = "issues" | "projects";
 
 const TABS: { key: ViewType; label: string; href: string }[] = [
   { key: "issues", label: "Issues", href: "/views/issues" },
-  { key: "projects", label: "Projects", href: "/views/projects" },
+  { key: "projects", label: "Projetos", href: "/views/projects" },
 ];
 
 interface ViewsListProps {
@@ -51,12 +51,12 @@ export function ViewsList({ type }: ViewsListProps) {
       <div className="flex h-full flex-col">
         {/* Header */}
         <header className="flex h-11 shrink-0 items-center justify-between px-8 border-b border-border">
-          <h1 className="text-[13px] font-medium">Views</h1>
+          <h1 className="text-[13px] font-medium">Visualizacoes</h1>
           <Link
             href={`/views/${type}/new`}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Criar view"
-            title="Nova view"
+            aria-label="Nova visualizacao"
+            title="Nova visualizacao"
           >
             <Plus className="h-3.5 w-3.5" />
           </Link>
@@ -86,7 +86,7 @@ export function ViewsList({ type }: ViewsListProps) {
           <button
             type="button"
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Display options"
+            aria-label="Opcoes de exibicao"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
           </button>
@@ -99,9 +99,9 @@ export function ViewsList({ type }: ViewsListProps) {
             <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200 dark:text-amber-300">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <p>
-                Gap #2 — views salvas em <code>localStorage</code> ate backend
-                ter <code>DView</code>. Compartilhamento entre devices/users
-                ainda nao funciona.
+                Gap #2 — visualizacoes salvas em <code>localStorage</code> ate
+                backend ter <code>DView</code>. Compartilhamento entre devices
+                e usuarios ainda nao funciona.
               </p>
             </div>
           </div>
@@ -109,10 +109,10 @@ export function ViewsList({ type }: ViewsListProps) {
           {/* Column headers */}
           <div className="grid grid-cols-[minmax(0,1fr)_180px_28px] items-center gap-3 border-b border-border px-8 py-2 mt-4 text-[11px] font-medium text-muted-foreground">
             <div className="flex items-center gap-1">
-              Name
+              Nome
               <ChevronDown className="h-3 w-3" />
             </div>
-            <div>Owner</div>
+            <div>Responsavel</div>
             <div></div>
           </div>
 
@@ -157,8 +157,8 @@ function PersonalGroup({
   return (
     <>
       <GroupHeader
-        title="Personal views"
-        subtitle={`Only visible to ${ownerName ?? "you"}`}
+        title="Visualizacoes pessoais"
+        subtitle={`Visivel apenas para ${ownerName ?? "voce"}`}
         icon={
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-medium text-white">
             {ownerInitials}
@@ -167,14 +167,14 @@ function PersonalGroup({
         addHref={`/views/${type}/new`}
       />
       {views.length === 0 ? (
-        <EmptyRow message="Sem personal views ainda" />
+        <EmptyRow message="Sem visualizacoes pessoais ainda" />
       ) : (
         views.map((v) => (
           <ViewRow
             key={v.id}
             view={v}
             type={type}
-            scopeLabel="Personal"
+            scopeLabel="Pessoal"
             onRemove={onRemove}
           />
         ))
@@ -195,14 +195,14 @@ function WorkspaceGroup({
   return (
     <>
       <GroupHeader
-        title="Workspace views"
+        title="Visualizacoes do workspace"
         subtitle="Compartilhadas com a organizacao"
         icon={<Layers className="h-3.5 w-3.5 text-cyan-400" />}
         addHref={`/views/${type}/new`}
         addParams={{ scope: "workspace" } as Record<string, LocalViewScope>}
       />
       {views.length === 0 ? (
-        <EmptyRow message="Sem workspace views ainda" />
+        <EmptyRow message="Sem visualizacoes do workspace ainda" />
       ) : (
         views.map((v) => (
           <ViewRow
@@ -297,8 +297,8 @@ function ViewRow({
         type="button"
         onClick={() => onRemove(view.id)}
         className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all"
-        aria-label="Remove view"
-        title="Remove (apenas local)"
+        aria-label="Remover visualizacao"
+        title="Remover (apenas local)"
       >
         <Trash2 className="h-3 w-3" />
       </button>

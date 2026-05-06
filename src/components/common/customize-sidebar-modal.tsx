@@ -48,10 +48,10 @@ interface SidebarItemConfig {
 
 const PERSONAL_ITEMS: SidebarItemConfig[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
-  { key: "myIssues", label: "My issues", icon: CircleDot },
+  { key: "myIssues", label: "Minhas issues", icon: CircleDot },
   {
     key: "drafts",
-    label: "Drafts",
+    label: "Rascunhos",
     icon: FileText,
     decorative: true,
     hint: "Sem rota /drafts no schema",
@@ -59,28 +59,28 @@ const PERSONAL_ITEMS: SidebarItemConfig[] = [
 ];
 
 const WORKSPACE_ITEMS: SidebarItemConfig[] = [
-  { key: "projects", label: "Projects", icon: Box },
-  { key: "views", label: "Views", icon: Layers },
-  { key: "members", label: "Members", icon: Users },
+  { key: "projects", label: "Projetos", icon: Box },
+  { key: "views", label: "Visualizacoes", icon: Layers },
+  { key: "members", label: "Membros", icon: Users },
   {
     key: "teams",
-    label: "Teams",
+    label: "Times",
     icon: Building2,
     decorative: true,
-    hint: "Gap #1 — Teams nao existe",
+    hint: "Gap #1 — Times nao existem",
   },
 ];
 
 const VISIBILITY_OPTIONS: { value: ItemVisibility; label: string }[] = [
-  { value: "always", label: "Always show" },
-  { value: "showWhenBadged", label: "Show when badged" },
-  { value: "hide", label: "Don't show" },
+  { value: "always", label: "Sempre mostrar" },
+  { value: "showWhenBadged", label: "Mostrar com badge" },
+  { value: "hide", label: "Nao mostrar" },
 ];
 
 const BADGE_OPTIONS: { value: BadgeStyle; label: string; preview: string }[] = [
-  { value: "count", label: "Count", preview: "1" },
-  { value: "dot", label: "Dot", preview: "•" },
-  { value: "none", label: "None", preview: "—" },
+  { value: "count", label: "Contagem", preview: "1" },
+  { value: "dot", label: "Ponto", preview: "•" },
+  { value: "none", label: "Nenhum", preview: "—" },
 ];
 
 export function CustomizeSidebarModal({
@@ -94,12 +94,13 @@ export function CustomizeSidebarModal({
       <DialogContent className="sm:max-w-lg p-0 gap-0" showCloseButton={false}>
         {/* Header */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h2 className="text-[14px] font-medium">Customize sidebar</h2>
+          <h2 className="text-[14px] font-medium">Personalizar sidebar</h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             aria-label="Fechar"
+            title="Fechar"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -111,7 +112,7 @@ export function CustomizeSidebarModal({
           <div className="rounded-md border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between gap-4 px-4 py-3">
               <span className="text-[13px] font-medium">
-                Default badge style
+                Estilo padrao do badge
               </span>
               <Select
                 value={state.badgeStyle}
@@ -141,7 +142,7 @@ export function CustomizeSidebarModal({
           </div>
 
           {/* Personal */}
-          <Section title="Personal">
+          <Section title="Pessoal">
             {PERSONAL_ITEMS.map((item) => (
               <ItemRow
                 key={item.key}
@@ -213,6 +214,7 @@ function ItemRow({
       <button
         type="button"
         title="Reordenar (em breve)"
+        aria-label="Reordenar"
         className="flex h-5 w-3 items-center justify-center text-muted-foreground/40 hover:text-muted-foreground cursor-grab"
       >
         <GripVertical className="h-3 w-3" />
@@ -222,7 +224,7 @@ function ItemRow({
         {item.label}
         {item.decorative && (
           <span className="ml-1.5 text-[10px] text-muted-foreground/70">
-            (visual)
+            (so visual)
           </span>
         )}
       </span>

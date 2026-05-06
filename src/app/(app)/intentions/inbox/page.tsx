@@ -23,6 +23,7 @@ import type { InAppNotification } from "@/types";
 
 export default function InboxPage() {
   usePageTitle("Inbox");
+  // (Inbox e mantido em ingles — jargao consolidado)
   const { data: notifications, isLoading } = useInAppNotifications(50);
   const markRead = useMarkAsRead();
   const markAllRead = useMarkAllAsRead();
@@ -66,14 +67,14 @@ export default function InboxPage() {
               <button
                 type="button"
                 className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Filter"
+                aria-label="Filtros"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
                 className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Display options"
+                aria-label="Opcoes de exibicao"
               >
                 <Settings2 className="h-3.5 w-3.5" />
               </button>
@@ -242,8 +243,8 @@ function EmptyDetail() {
         className="h-20 w-20 text-muted-foreground/30"
         strokeWidth={1.25}
       />
-      <p className="mt-4 text-[13px] text-muted-foreground">No notifications</p>
-      <p className="mt-1 text-[12px] text-muted-foreground/70">Need a break?</p>
+      <p className="mt-4 text-[13px] text-muted-foreground">Sem notificacoes</p>
+      <p className="mt-1 text-[12px] text-muted-foreground/70">Hora de uma pausa?</p>
     </div>
   );
 }
@@ -255,8 +256,8 @@ function ListEmpty() {
         className="h-12 w-12 text-muted-foreground/30"
         strokeWidth={1.25}
       />
-      <p className="mt-3 text-[13px] text-muted-foreground">No notifications</p>
-      <p className="mt-1 text-[12px] text-muted-foreground/70">Need a break?</p>
+      <p className="mt-3 text-[13px] text-muted-foreground">Sem notificacoes</p>
+      <p className="mt-1 text-[12px] text-muted-foreground/70">Hora de uma pausa?</p>
     </div>
   );
 }

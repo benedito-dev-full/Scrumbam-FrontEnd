@@ -38,14 +38,14 @@ import type {
 type TabKey = "assigned" | "created" | "subscribed" | "activity";
 
 const TABS: { key: TabKey; label: string; stub?: boolean }[] = [
-  { key: "assigned", label: "Assigned" },
-  { key: "created", label: "Created" },
-  { key: "subscribed", label: "Subscribed", stub: true },
-  { key: "activity", label: "Activity" },
+  { key: "assigned", label: "Atribuidas" },
+  { key: "created", label: "Criadas" },
+  { key: "subscribed", label: "Inscrito", stub: true },
+  { key: "activity", label: "Atividade" },
 ];
 
 export default function MyIssuesPage() {
-  usePageTitle("My issues");
+  usePageTitle("Minhas issues");
   const { user } = useAuth();
   const { data: projects } = useProjects();
   const { data: intentions, isLoading } = useIntentions({ projectSlug: "all" });
@@ -117,21 +117,21 @@ export default function MyIssuesPage() {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Filter"
+              aria-label="Filtros"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Display options"
+              aria-label="Opcoes de exibicao"
             >
               <Settings2 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Toggle panel"
+              aria-label="Alternar painel"
             >
               <PanelRight className="h-3.5 w-3.5" />
             </button>
@@ -185,23 +185,23 @@ function groupByDate(
   const monthAgo = startOfDay(addDays(today, -30));
 
   const buckets: Record<string, DateGroupData["items"]> = {
-    Today: [],
-    Yesterday: [],
-    "This week": [],
-    "Last 30 days": [],
-    Older: [],
+    Hoje: [],
+    Ontem: [],
+    "Esta semana": [],
+    "Ultimos 30 dias": [],
+    Anteriores: [],
   };
 
   for (const item of items) {
     const d = new Date(item.updatedAt);
-    if (d >= today) buckets.Today.push(item);
-    else if (d >= yesterday) buckets.Yesterday.push(item);
-    else if (d >= weekAgo) buckets["This week"].push(item);
-    else if (d >= monthAgo) buckets["Last 30 days"].push(item);
-    else buckets.Older.push(item);
+    if (d >= today) buckets["Hoje"].push(item);
+    else if (d >= yesterday) buckets["Ontem"].push(item);
+    else if (d >= weekAgo) buckets["Esta semana"].push(item);
+    else if (d >= monthAgo) buckets["Ultimos 30 dias"].push(item);
+    else buckets["Anteriores"].push(item);
   }
 
-  const order = ["Today", "Yesterday", "This week", "Last 30 days", "Older"];
+  const order = ["Hoje", "Ontem", "Esta semana", "Ultimos 30 dias", "Anteriores"];
   return order
     .filter((label) => buckets[label].length > 0)
     .map((label) => ({ label, items: buckets[label] }));
@@ -277,7 +277,7 @@ function IssueRow({
   projectName: string | null;
 }) {
   const code = `INT-${item.id}`; // Gap #9: sem identifier sequencial real (registrado em LINEAR_PIVOT_GAPS.md)
-  const createdLabel = `Created on ${formatShortDate(item.createdAt)}`;
+  const createdLabel = `Criada em ${formatShortDate(item.createdAt)}`;
 
   const assigneeInitials = item.assignee?.nome
     ? item.assignee.nome
@@ -422,10 +422,10 @@ function SubscribedStub() {
   return (
     <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
-      <h3 className="mt-3 text-sm font-medium">Subscriptions coming soon</h3>
+      <h3 className="mt-3 text-sm font-medium">Inscricoes em breve</h3>
       <p className="mt-1 text-[12px] text-muted-foreground max-w-sm">
-        Você poderá se inscrever em issues para receber notificações sem ser o
-        responsável. Funcionalidade em backlog (gap de schema registrado).
+        Voce podera se inscrever em issues para receber notificacoes sem ser o
+        responsavel. Funcionalidade em backlog (gap de schema registrado).
       </p>
     </div>
   );
@@ -433,15 +433,15 @@ function SubscribedStub() {
 
 function EmptyState({ tab }: { tab: TabKey }) {
   const messages: Record<TabKey, string> = {
-    assigned: "No issues assigned to you yet.",
-    created: "You haven't created any issues yet.",
+    assigned: "Nenhuma issue atribuida a voce ainda.",
+    created: "Voce ainda nao criou nenhuma issue.",
     subscribed: "",
-    activity: "No recent activity.",
+    activity: "Sem atividade recente.",
   };
   return (
     <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
-      <h3 className="mt-3 text-sm font-medium">Nothing here</h3>
+      <h3 className="mt-3 text-sm font-medium">Nada por aqui</h3>
       <p className="mt-1 text-[12px] text-muted-foreground">{messages[tab]}</p>
     </div>
   );

@@ -71,10 +71,14 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
   const { user } = useAuth();
   const { addView } = useLocalViews();
 
-  usePageTitle(type === "issues" ? "New issue view" : "New project view");
+  usePageTitle(
+    type === "issues"
+      ? "Nova visualizacao de issues"
+      : "Nova visualizacao de projetos",
+  );
 
   const [name, setName] = useState(
-    type === "issues" ? "All issues" : "All projects",
+    type === "issues" ? "Todas as issues" : "Todos os projetos",
   );
   const [description, setDescription] = useState("");
   const [scope, setScope] = useState<LocalViewScope>("personal");
@@ -101,7 +105,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
 
   const handleSave = () => {
     if (!name.trim()) {
-      toast.error("Digite um nome para a view");
+      toast.error("Digite um nome para a visualizacao");
       return;
     }
     setSaving(true);
@@ -114,7 +118,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
         ownerName: user?.nome ?? "Usuario",
         filters: {}, // futuro DView.filters
       });
-      toast.success("View criada (local)");
+      toast.success("Visualizacao criada (local)");
       router.push(`/views/${type}`);
     } finally {
       setSaving(false);
@@ -131,19 +135,19 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
               href={`/views/${type}`}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Views
+              Visualizacoes
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
             <span className="font-medium truncate max-w-[280px]">
-              {name || "Untitled"}
+              {name || "Sem titulo"}
             </span>
           </nav>
           <button
             type="button"
             disabled
-            title="Copy link (em breve)"
+            title="Copiar link (em breve)"
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-            aria-label="Copy link"
+            aria-label="Copiar link"
           >
             <Link2 className="h-3.5 w-3.5" />
           </button>
@@ -167,7 +171,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="View name"
+                placeholder="Nome da visualizacao"
                 autoFocus
                 className="row-start-1 col-start-2 h-7 w-full bg-transparent text-[15px] font-medium text-foreground outline-none border-0 placeholder:text-muted-foreground/50"
               />
@@ -175,7 +179,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
               {/* Save controls (rowspan-1, col-3) */}
               <div className="row-start-1 col-start-3 flex items-center gap-2 shrink-0 h-7">
                 <span className="text-[12px] text-muted-foreground">
-                  Save to
+                  Salvar em
                 </span>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -188,7 +192,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                       ) : (
                         <Globe className="h-3 w-3 text-cyan-400" />
                       )}
-                      {scope === "personal" ? "Personal" : "Workspace"}
+                      {scope === "personal" ? "Pessoal" : "Workspace"}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-44 p-1">
@@ -201,7 +205,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                       )}
                     >
                       <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                      Personal
+                      Pessoal
                     </button>
                     <button
                       type="button"
@@ -222,7 +226,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                   onClick={handleCancel}
                   className="rounded-md px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="button"
@@ -235,7 +239,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                       : "bg-foreground text-background hover:opacity-90",
                   )}
                 >
-                  Save
+                  Salvar
                 </button>
               </div>
 
@@ -244,7 +248,7 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description (optional)"
+                placeholder="Descricao (opcional)"
                 className="row-start-2 col-start-2 col-span-2 h-6 w-full bg-transparent text-[12px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50"
               />
             </div>
