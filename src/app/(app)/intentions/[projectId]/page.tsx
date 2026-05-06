@@ -25,6 +25,7 @@ import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions } from "@/lib/hooks/use-intentions";
 import { ProjectInsights } from "@/components/projects/project-insights";
 import { ProjectReports } from "@/components/projects/project-reports";
+import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { cn } from "@/lib/utils";
 import type {
   IntentionDocument,
@@ -59,6 +60,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [favorited, setFavorited] = useState(false);
+  const [newIssueOpen, setNewIssueOpen] = useState(false);
 
   const issuesList = (intentions ?? []) as IntentionDocument[];
 
@@ -102,6 +104,16 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
           </nav>
 
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setNewIssueOpen(true)}
+              className="flex items-center gap-1.5 rounded-md bg-foreground/10 px-2 py-1 text-[12px] font-medium text-foreground hover:bg-foreground/15 transition-colors"
+              aria-label="Nova issue"
+              title="Nova issue neste projeto"
+            >
+              <PenSquare className="h-3.5 w-3.5" />
+              Nova issue
+            </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -178,6 +190,13 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
           </aside>
         </div>
       </div>
+
+      {/* New issue modal — projeto pre-selecionado */}
+      <NewIssueModal
+        open={newIssueOpen}
+        onOpenChange={setNewIssueOpen}
+        defaultProjectId={projectId}
+      />
     </PageTransition>
   );
 }
