@@ -49,7 +49,7 @@ export const navSections: NavSection[] = [
     collapsible: true,
     items: [
       { href: "/projects", label: "Projects", icon: Box },
-      { href: "/views", label: "Views", icon: Layers, stub: true },
+      { href: "/views/issues", label: "Views", icon: Layers },
       { href: "/more", label: "More", icon: MoreHorizontal, stub: true },
     ],
   },

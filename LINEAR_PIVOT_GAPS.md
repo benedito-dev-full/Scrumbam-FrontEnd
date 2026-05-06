@@ -40,6 +40,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/workspace/members` | Em análise — gaps 34–36 abaixo |
 | `/settings/projects/statuses` | Em análise — gap 37 abaixo |
 | `/views/[viewId]` (View detail) | Em análise — gap #2 atualizado |
+| `/views/issues` e `/views/projects` (Views list) | Em análise — gap #2 expandido |
 
 ---
 
@@ -70,6 +71,7 @@ A cada nova tela do Linear que for clonada:
 - **Status:** `pendente`
 - **Decisão:** —
 - **Sub-features observadas em /view/<id>:** icon configuravel, filters estruturados, visibility (Personal/Shared), owner, groupBy, side panel com breakdown por Assignees/Labels/Projects, favoritar (overlap com gap #15).
+- **Sub-features observadas em /views/issues e /views/projects:** views sao tipadas (issue-view OU project-view — filtram um conjunto ou outro); listadas com tabs Issues/Projects; agrupadas por scope: **Personal · Only visible to you** vs **Workspace** (compartilhadas) vs **Team-scoped** (em /team/<id>/views/). Scope = `PERSONAL | WORKSPACE | TEAM` no modelo.
 
 ---
 
