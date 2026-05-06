@@ -160,7 +160,9 @@ export function CommandPalette() {
                     key={`person-${person.id}`}
                     value={`person-${person.id}-${person.name}`}
                     onSelect={() =>
-                      handleSelect(() => router.push("/organization"))
+                      handleSelect(() =>
+                        router.push("/settings/workspace/members"),
+                      )
                     }
                   >
                     <Users className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -205,19 +207,11 @@ export function CommandPalette() {
               </CommandItem>
               <CommandItem
                 onSelect={() =>
-                  handleSelect(() => router.push("/dashboard"))
+                  handleSelect(() => router.push("/intentions/inbox"))
                 }
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Dashboard
-              </CommandItem>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() => router.push("/analytics"))
-                }
-              >
-                <PieChart className="mr-2 h-4 w-4" />
-                Analytics
+                Inbox
               </CommandItem>
             </CommandGroup>
             <CommandSeparator />
@@ -232,11 +226,13 @@ export function CommandPalette() {
               </CommandItem>
               <CommandItem
                 onSelect={() =>
-                  handleSelect(() => router.push("/organization"))
+                  handleSelect(() =>
+                    router.push("/settings/workspace/members"),
+                  )
                 }
               >
                 <Users className="mr-2 h-4 w-4" />
-                Organizacao
+                Members
               </CommandItem>
               <CommandItem
                 onSelect={() =>
