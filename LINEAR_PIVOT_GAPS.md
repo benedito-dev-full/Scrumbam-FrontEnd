@@ -39,6 +39,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/workspace/general` | Em análise — gaps 30–33 abaixo |
 | `/settings/workspace/members` | Em análise — gaps 34–36 abaixo |
 | `/settings/projects/statuses` | Em análise — gap 37 abaixo |
+| `/views/[viewId]` (View detail) | Em análise — gap #2 atualizado |
 
 ---
 
@@ -60,14 +61,15 @@ A cada nova tela do Linear que for clonada:
 
 ### 2. Views salvas
 
-- **Onde apareceu:** Sidebar (`Workspace > Views`, `Your teams > [team] > Views`). Linear permite salvar filtros nomeados como Views.
+- **Onde apareceu:** Sidebar (`Workspace > Views`, `Your teams > [team] > Views`) + tela `/view/<slug>-<id>` (view detail). Linear permite salvar filtros nomeados como Views.
 - **Schema atual:** Não existe modelo de View.
-- **Impacto no frontend:** Item "Views" da sidebar fica stub (link morto ou escondido).
+- **Impacto no frontend:** Item "Views" da sidebar fica stub. Tela detail (`/views/[viewId]`) renderiza Linear-fiel mas sem filtros aplicados — lista todas as issues + breakdowns dinamicos no side panel.
 - **Opções:**
-  - (a) Novo modelo `DView` (campos: nome, escopo workspace/team, filtros Json, idOwner).
-  - (b) Guardar lista de views em `DEntidade.dados` (Json) do usuário — viável só para views pessoais, não compartilhadas.
+  - (a) Novo modelo `DView` com campos: `nome`, `icon`, `color`, `visibility` (PERSONAL/TEAM/WORKSPACE), `idOwner`, `idTeam?`, `filters Json` (status, assignee, project, labels, ...), `groupBy` (status/priority/assignee/...), `sortBy`. Mais completo.
+  - (b) Guardar lista de views em `DEntidade.dados.views` (Json) do usuário — viável só para views pessoais, não compartilhadas.
 - **Status:** `pendente`
 - **Decisão:** —
+- **Sub-features observadas em /view/<id>:** icon configuravel, filters estruturados, visibility (Personal/Shared), owner, groupBy, side panel com breakdown por Assignees/Labels/Projects, favoritar (overlap com gap #15).
 
 ---
 
