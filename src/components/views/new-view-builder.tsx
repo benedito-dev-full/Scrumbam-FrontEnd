@@ -29,7 +29,6 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { useIntentions } from "@/lib/hooks/use-intentions";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useLocalViews, type LocalViewType, type LocalViewScope } from "@/lib/hooks/use-local-views";
-import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -152,7 +151,10 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
 
         {/* Composer card (Linear: tudo num bloco cinza unico) */}
         <div className="px-6 pt-5 pb-4">
-          <div className="rounded-lg bg-card/60 overflow-hidden">
+          <div
+            className="rounded-lg overflow-hidden"
+            style={{ backgroundColor: "oklch(0.215 0 0)" }}
+          >
             {/* Composer block — tudo num unico bg sem dividers internos */}
             <div className="grid grid-cols-[28px_1fr_auto] items-start gap-x-3 gap-y-1 px-4 py-3.5">
               {/* Icon (alinhado com o name) */}
@@ -160,13 +162,14 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                 <Layers className="h-3.5 w-3.5 text-cyan-400" />
               </div>
 
-              {/* Name input */}
-              <Input
+              {/* Name input — raw HTML pra evitar bg-input/30 do shadcn */}
+              <input
+                type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="View name"
                 autoFocus
-                className="row-start-1 col-start-2 h-7 text-[15px] font-medium border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+                className="row-start-1 col-start-2 h-7 w-full bg-transparent text-[15px] font-medium text-foreground outline-none border-0 placeholder:text-muted-foreground/50"
               />
 
               {/* Save controls (rowspan-1, col-3) */}
@@ -236,12 +239,13 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
                 </button>
               </div>
 
-              {/* Description — col 2, abaixo do name, mesmo bg, sem divider */}
-              <Input
+              {/* Description — raw HTML; col 2, abaixo do name, mesmo bg */}
+              <input
+                type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Description (optional)"
-                className="row-start-2 col-start-2 col-span-2 h-6 text-[12px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+                className="row-start-2 col-start-2 col-span-2 h-6 w-full bg-transparent text-[12px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50"
               />
             </div>
 
