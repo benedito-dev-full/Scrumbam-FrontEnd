@@ -30,8 +30,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
@@ -48,10 +46,10 @@ const STATUS_OPTIONS: {
   iconClass: string;
 }[] = [
   { key: "backlog", label: "Backlog", iconClass: "text-amber-500" },
-  { key: "planned", label: "Planned", iconClass: "text-zinc-400" },
-  { key: "inProgress", label: "In Progress", iconClass: "text-amber-400" },
-  { key: "completed", label: "Completed", iconClass: "text-violet-500" },
-  { key: "canceled", label: "Canceled", iconClass: "text-zinc-500" },
+  { key: "planned", label: "Planejado", iconClass: "text-zinc-400" },
+  { key: "inProgress", label: "Em andamento", iconClass: "text-amber-400" },
+  { key: "completed", label: "Concluido", iconClass: "text-violet-500" },
+  { key: "canceled", label: "Cancelado", iconClass: "text-zinc-500" },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -60,11 +58,11 @@ const PRIORITY_OPTIONS: {
   symbol: string;
   bg: string;
 }[] = [
-  { key: "none", label: "No priority", symbol: "—", bg: "bg-muted" },
-  { key: "urgent", label: "Urgent", symbol: "!", bg: "bg-red-500" },
-  { key: "high", label: "High", symbol: "▲", bg: "bg-orange-500" },
-  { key: "medium", label: "Medium", symbol: "=", bg: "bg-amber-500" },
-  { key: "low", label: "Low", symbol: "▽", bg: "bg-zinc-500" },
+  { key: "none", label: "Sem prioridade", symbol: "—", bg: "bg-muted" },
+  { key: "urgent", label: "Urgente", symbol: "!", bg: "bg-red-500" },
+  { key: "high", label: "Alta", symbol: "▲", bg: "bg-orange-500" },
+  { key: "medium", label: "Media", symbol: "=", bg: "bg-amber-500" },
+  { key: "low", label: "Baixa", symbol: "▽", bg: "bg-zinc-500" },
 ];
 
 interface NewProjectModalProps {
@@ -96,12 +94,12 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
-      toast.success("Project created");
+      toast.success("Projeto criado");
       reset();
       onOpenChange(false);
     },
     onError: () => {
-      toast.error("Erro ao criar project");
+      toast.error("Erro ao criar projeto");
     },
   });
 
@@ -145,7 +143,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               {teamLabel}
             </span>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-            <span className="font-medium">New project</span>
+            <span className="font-medium">Novo projeto</span>
           </DialogTitle>
           <button
             type="button"
@@ -163,27 +161,29 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
           <button
             type="button"
             disabled
-            title="Icone do project (em breve)"
+            title="Icone do projeto (em breve)"
             className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card cursor-not-allowed"
           >
             <Box className="h-4 w-4 text-muted-foreground" />
           </button>
 
           {/* Name */}
-          <Input
-            placeholder="Project name"
+          <input
+            type="text"
+            placeholder="Nome do projeto"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
-            className="h-10 text-[18px] font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+            className="h-10 w-full rounded-md bg-muted/40 px-3 text-[18px] font-semibold text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors"
           />
 
           {/* Summary */}
-          <Input
-            placeholder="Add a short summary..."
+          <input
+            type="text"
+            placeholder="Adicione um resumo curto..."
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            className="h-7 text-[13px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+            className="h-9 w-full rounded-md bg-muted/40 px-3 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors"
           />
 
           {/* Properties chips row */}
@@ -265,7 +265,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
                 <Chip
                   active={!!lead}
                   icon={UserIcon}
-                  label={lead ? lead.name.split(" ")[0] : "Lead"}
+                  label={lead ? lead.name.split(" ")[0] : "Responsavel"}
                 />
               </PopoverTrigger>
               <PopoverContent align="start" className="w-56 p-1">
@@ -275,7 +275,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors"
                 >
                   <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  No lead
+                  Sem responsavel
                 </button>
                 {(members ?? []).map((m) => (
                   <button
@@ -304,8 +304,8 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
                   icon={Users}
                   label={
                     selectedMembers.length === 0
-                      ? "Members"
-                      : `${selectedMembers.length} member${selectedMembers.length > 1 ? "s" : ""}`
+                      ? "Membros"
+                      : `${selectedMembers.length} membro${selectedMembers.length > 1 ? "s" : ""}`
                   }
                 />
               </PopoverTrigger>
@@ -344,7 +344,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             {/* Start date */}
             <DateChip
               icon={Calendar}
-              label="Start"
+              label="Inicio"
               value={startDate}
               onChange={setStartDate}
             />
@@ -352,7 +352,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             {/* Target date */}
             <DateChip
               icon={Calendar}
-              label="Target"
+              label="Entrega"
               value={targetDate}
               onChange={setTargetDate}
             />
@@ -360,7 +360,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             {/* Labels (stub) */}
             <Chip
               icon={Tag}
-              label="Labels"
+              label="Etiquetas"
               disabled
               hint="Em breve — gap #14"
             />
@@ -368,25 +368,25 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             {/* Dependencies (stub) */}
             <Chip
               icon={GitMerge}
-              label="Dependencies"
+              label="Dependencias"
               disabled
               hint="Em breve — gap #38"
             />
           </div>
 
           {/* Description */}
-          <Textarea
-            placeholder="Write a description, a project brief, or collect ideas..."
+          <textarea
+            placeholder="Escreva uma descricao, um brief do projeto ou colete ideias..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={6}
-            className="text-[13px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none resize-none placeholder:text-muted-foreground/50"
+            className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none"
           />
 
           {/* Milestones (stub) */}
           <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2.5">
             <span className="text-[13px] text-muted-foreground">
-              Milestones
+              Marcos
             </span>
             <button
               type="button"
@@ -402,7 +402,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
         {/* Footer */}
         <footer className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
           <p className="text-[11px] text-muted-foreground/70">
-            Backend persiste apenas <code>name</code> e <code>summary</code>.
+            Backend persiste apenas <code>nome</code> e <code>resumo</code>.
             Demais campos serao salvos quando o backend ampliar o DTO.
           </p>
           <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               onClick={handleCancel}
               className="text-[12px] h-8"
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               size="sm"
@@ -423,10 +423,10 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               {createMutation.isPending ? (
                 <>
                   <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                  Creating...
+                  Criando...
                 </>
               ) : (
-                "Create project"
+                "Criar projeto"
               )}
             </Button>
           </div>
