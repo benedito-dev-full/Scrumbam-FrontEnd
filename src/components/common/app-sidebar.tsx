@@ -29,6 +29,7 @@ import {
   isNavItemActive,
   type NavItem,
   type NavSection,
+  type PopoverNavItem,
 } from "@/lib/navigation";
 
 export function AppSidebar() {
@@ -247,6 +248,11 @@ function Section({
 }
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+  // Items com popoverItems renderizam dropdown ao inves de link
+  if (item.popoverItems && item.popoverItems.length > 0) {
+    return <PopoverLink item={item} active={active} />;
+  }
+
   return (
     <li>
       <Link
@@ -267,5 +273,68 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
         )}
       </Link>
     </li>
+  );
+}
+
+function PopoverLink({ item, active }: { item: NavItem; active: boolean }) {
+  return (
+    <li>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
+              active
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+            )}
+          >
+            <item.icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="right"
+          align="start"
+          sideOffset={8}
+          className="w-52"
+        >
+          {item.popoverItems!.map((p, idx) => (
+            <PopoverItemRow key={`${p.label}-${idx}`} item={p} />
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
+  );
+}
+
+function PopoverItemRow({ item }: { item: PopoverNavItem }) {
+  const Icon = item.icon;
+
+  const content = (
+    <>
+      <Icon className="mr-2 h-3.5 w-3.5 shrink-0" />
+      <span className="flex-1 truncate">{item.label}</span>
+    </>
+  );
+
+  return (
+    <>
+      {item.separator && <DropdownMenuSeparator />}
+      {item.stub || !item.href ? (
+        <DropdownMenuItem
+          disabled
+          title={item.hint}
+          className="text-[13px] cursor-not-allowed"
+        >
+          {content}
+        </DropdownMenuItem>
+      ) : (
+        <DropdownMenuItem asChild className="text-[13px]">
+          <Link href={item.href}>{content}</Link>
+        </DropdownMenuItem>
+      )}
+    </>
   );
 }

@@ -11,15 +11,33 @@ import {
   Zap,
   Code2,
   Plug,
+  Users,
+  Building2,
+  PenSquare,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+export interface PopoverNavItem {
+  href?: string;
+  label: string;
+  icon: LucideIcon;
+  /** Adiciona separador acima deste item */
+  separator?: boolean;
+  /** Item disabled */
+  stub?: boolean;
+  /** Tooltip do stub */
+  hint?: string;
+}
 
 export interface NavItem {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   badge?: number;
   /** True quando o item depende de feature ainda nao suportada pelo schema */
   stub?: boolean;
+  /** Se presente, item se comporta como popover trigger ao inves de link direto */
+  popoverItems?: PopoverNavItem[];
 }
 
 export interface NavSection {
@@ -28,7 +46,7 @@ export interface NavSection {
   /** Linear "Your teams" tem header com triangulo expansivel */
   collapsible?: boolean;
   /** Linear "Your teams" tem item-pai (team name) com filhos identados */
-  team?: { name: string; icon: React.ComponentType<{ className?: string }>; iconColor?: string };
+  team?: { name: string; icon: LucideIcon; iconColor?: string };
   items: NavItem[];
 }
 
@@ -50,7 +68,32 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/projects", label: "Projects", icon: Box },
       { href: "/views/issues", label: "Views", icon: Layers },
-      { href: "/more", label: "More", icon: MoreHorizontal, stub: true },
+      {
+        href: "/more",
+        label: "More",
+        icon: MoreHorizontal,
+        popoverItems: [
+          {
+            href: "/settings/workspace/members",
+            label: "Members",
+            icon: Users,
+          },
+          {
+            href: "/team/issues",
+            label: "Teams",
+            icon: Building2,
+            stub: true,
+            hint: "Gap #1 — Teams nao existe no schema",
+          },
+          {
+            label: "Customize sidebar",
+            icon: PenSquare,
+            separator: true,
+            stub: true,
+            hint: "Em breve",
+          },
+        ],
+      },
     ],
   },
   {
