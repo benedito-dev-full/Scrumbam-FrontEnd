@@ -69,7 +69,7 @@ export default function ProjectsPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Page header */}
-        <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
+        <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-6">
           <h1 className="text-[13px] font-medium">Projects</h1>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -106,7 +106,7 @@ export default function ProjectsPage() {
         </header>
 
         {/* Tab + filter row */}
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -150,7 +150,7 @@ export default function ProjectsPage() {
         {/* Table */}
         <div className="flex-1 overflow-auto">
           {/* Column headers */}
-          <div className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
+          <div className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border px-6 py-2 text-[11px] font-medium text-muted-foreground">
             <div>Name</div>
             <div>Health</div>
             <div>Priority</div>
@@ -220,7 +220,7 @@ function ProjectRow({
     <button
       type="button"
       onClick={onClick}
-      className="grid w-full grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-4 py-2 text-left text-[13px] hover:bg-accent/40 transition-colors"
+      className="grid w-full grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-6 py-2 text-left text-[13px] hover:bg-accent/40 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
         <Box className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -319,7 +319,7 @@ function SkeletonRows() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-4 py-2 animate-pulse"
+          className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-6 py-2 animate-pulse"
         >
           <div className="h-4 w-32 bg-muted rounded" />
           <div className="h-3 w-20 bg-muted rounded" />
@@ -336,7 +336,7 @@ function SkeletonRows() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
         <Box className="h-5 w-5 text-muted-foreground" />
       </div>

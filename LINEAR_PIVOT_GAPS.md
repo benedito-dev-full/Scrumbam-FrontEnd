@@ -28,6 +28,7 @@ A cada nova tela do Linear que for clonada:
 | Tela do Linear | Estado |
 |---|---|
 | `/projects` (All projects) | Em análise — gaps abaixo |
+| `/my-issues/*` (Assigned, Created, Subscribed, Activity) | Em análise — gaps 8 e 9 abaixo |
 
 ---
 
@@ -120,6 +121,34 @@ A cada nova tela do Linear que for clonada:
 - **Opções:**
   - (a) Rename só na UI: labels viram "Issues", endpoints continuam `/tasks`. Tradução só na camada de apresentação.
   - (b) Rename completo: `DTask` → `DIssue`, endpoints `/tasks` → `/issues`. Migration grande, mexe em todo o backend e em todos os fetchers do frontend.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 8. Sub-tab "Subscribed" em My issues
+
+- **Onde apareceu:** `/my-issues/*` — tabs `Assigned | Created | Subscribed | Activity`. Linear permite que um usuário "se inscreva" numa issue para receber notificações sem ser assignee.
+- **Schema atual:** Sem modelo de subscription/follow para `DTask`.
+- **Impacto no frontend:** A tab "Subscribed" fica disabled/stub (mostra empty state ou desabilitada).
+- **Opções:**
+  - (a) Novo modelo `DTaskSubscriber` (idTask, idUser, chcriacao). Mais limpo, suporta histórico.
+  - (b) Guardar lista de userIds em `DTask.dados.subscribers` (Json). Sem migration, mas fica difícil indexar.
+  - (c) Pular agora — só Assigned/Created/Activity funcionam.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 9. Issue identifier code (`DEV-7` style)
+
+- **Onde apareceu:** `/my-issues/*` mostra código `DEV-7` antes do título da issue. Linear gera código `<TEAM_KEY>-<N>` para cada issue (ex.: `DEV-7`, `DEV-8`...). Aparece em URLs, copiar/colar, busca, etc.
+- **Schema atual:** `DTask.chave` é `BigInt autoincrement` global, sem prefixo de team/project nem contador sequencial por team. Linear depende disso para o identificador legível.
+- **Impacto no frontend:** Sem código curto, mostra `#{chave}` (numérico longo) como fallback, o que destoa visualmente.
+- **Opções:**
+  - (a) Adicionar `DProject.issuePrefix String?` (ex.: "DEV") + `DTask.identifierNumber Int?` (sequencial por project). Migration + lógica no insert para incrementar atomicamente. Mais fiel ao Linear.
+  - (b) Adicionar prefixo no Team (depende do gap #1 Teams) + counter por team.
+  - (c) Manter `#{chave}` como identificador — feio mas funcional.
 - **Status:** `pendente`
 - **Decisão:** —
 
