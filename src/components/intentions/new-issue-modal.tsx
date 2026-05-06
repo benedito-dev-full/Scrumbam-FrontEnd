@@ -29,8 +29,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
@@ -47,10 +45,10 @@ const STATUS_OPTIONS: {
   iconClass: string;
 }[] = [
   { key: "backlog", label: "Backlog", iconClass: "text-amber-500" },
-  { key: "todo", label: "Todo", iconClass: "text-zinc-400" },
-  { key: "inProgress", label: "In Progress", iconClass: "text-amber-400" },
-  { key: "done", label: "Done", iconClass: "text-emerald-500" },
-  { key: "canceled", label: "Canceled", iconClass: "text-zinc-500" },
+  { key: "todo", label: "A fazer", iconClass: "text-zinc-400" },
+  { key: "inProgress", label: "Em andamento", iconClass: "text-amber-400" },
+  { key: "done", label: "Concluida", iconClass: "text-emerald-500" },
+  { key: "canceled", label: "Cancelada", iconClass: "text-zinc-500" },
 ];
 
 type PriorityKey = "none" | "urgent" | "high" | "medium" | "low";
@@ -62,11 +60,11 @@ const PRIORITY_OPTIONS: {
   bg: string;
   id: string;
 }[] = [
-  { key: "none", label: "No priority", symbol: "—", bg: "bg-muted", id: PRIORITY_IDS.MEDIUM },
-  { key: "urgent", label: "Urgent", symbol: "!", bg: "bg-red-500", id: PRIORITY_IDS.URGENT },
-  { key: "high", label: "High", symbol: "▲", bg: "bg-orange-500", id: PRIORITY_IDS.HIGH },
-  { key: "medium", label: "Medium", symbol: "=", bg: "bg-amber-500", id: PRIORITY_IDS.MEDIUM },
-  { key: "low", label: "Low", symbol: "▽", bg: "bg-zinc-500", id: PRIORITY_IDS.LOW },
+  { key: "none", label: "Sem prioridade", symbol: "—", bg: "bg-muted", id: PRIORITY_IDS.MEDIUM },
+  { key: "urgent", label: "Urgente", symbol: "!", bg: "bg-red-500", id: PRIORITY_IDS.URGENT },
+  { key: "high", label: "Alta", symbol: "▲", bg: "bg-orange-500", id: PRIORITY_IDS.HIGH },
+  { key: "medium", label: "Media", symbol: "=", bg: "bg-amber-500", id: PRIORITY_IDS.MEDIUM },
+  { key: "low", label: "Baixa", symbol: "▽", bg: "bg-zinc-500", id: PRIORITY_IDS.LOW },
 ];
 
 interface NewIssueModalProps {
@@ -186,7 +184,7 @@ export function NewIssueModal({
               {teamLabel}
             </span>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-            <span className="font-medium">New issue</span>
+            <span className="font-medium">Nova issue</span>
           </DialogTitle>
           <div className="flex items-center gap-1">
             <button
@@ -212,25 +210,26 @@ export function NewIssueModal({
         {/* Body */}
         <div className="flex-1 overflow-auto px-5 py-4 space-y-3">
           {/* Title */}
-          <Input
-            placeholder="Issue title"
+          <input
+            type="text"
+            placeholder="Titulo da issue"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
-            className="h-9 text-[16px] font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+            className="h-10 w-full rounded-md bg-muted/40 px-3 text-[16px] font-semibold text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors"
           />
 
           {/* Description */}
-          <Textarea
-            placeholder="Add description..."
+          <textarea
+            placeholder="Adicione uma descricao..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="text-[13px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none resize-none placeholder:text-muted-foreground/50 min-h-[80px]"
+            className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none min-h-[80px]"
           />
           {!descriptionOk && (
             <p className="text-[11px] text-destructive">
-              Min {MIN_DESCRIPTION_LENGTH} chars (
+              Minimo {MIN_DESCRIPTION_LENGTH} caracteres (
               {description.trim().length}/{MIN_DESCRIPTION_LENGTH})
             </p>
           )}
@@ -240,7 +239,7 @@ export function NewIssueModal({
             <div className="flex items-center gap-2 pt-2 border-t border-border">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Sparkles className="h-3 w-3" />
-                Quick suggestions
+                Sugestoes rapidas
               </div>
               <button
                 type="button"
@@ -288,7 +287,7 @@ export function NewIssueModal({
                   </button>
                 ))}
                 <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Backend usa workflow V3
+                  Backend usa workflow V3 proprio
                 </p>
               </PopoverContent>
             </Popover>
@@ -333,7 +332,7 @@ export function NewIssueModal({
                 <Chip
                   active={!!assignee}
                   icon={UserIcon}
-                  label={assignee ? assignee.name.split(" ")[0] : "Assignee"}
+                  label={assignee ? assignee.name.split(" ")[0] : "Responsavel"}
                 />
               </PopoverTrigger>
               <PopoverContent align="start" className="w-56 p-1 max-h-64 overflow-auto">
@@ -343,7 +342,7 @@ export function NewIssueModal({
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors"
                 >
                   <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  No assignee
+                  Sem responsavel
                 </button>
                 {(members ?? []).map((m) => (
                   <button
@@ -362,7 +361,7 @@ export function NewIssueModal({
                   </button>
                 ))}
                 <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Nao persiste — DTO incompleto
+                  Nao persiste — DTO do backend incompleto
                 </p>
               </PopoverContent>
             </Popover>
@@ -373,7 +372,7 @@ export function NewIssueModal({
                 <Chip
                   active={!!project}
                   icon={Box}
-                  label={project ? project.nome : "Project"}
+                  label={project ? project.nome : "Projeto"}
                 />
               </PopoverTrigger>
               <PopoverContent align="start" className="w-56 p-1 max-h-64 overflow-auto">
@@ -397,7 +396,7 @@ export function NewIssueModal({
             {/* Labels (stub) */}
             <Chip
               icon={Tag}
-              label="Labels"
+              label="Etiquetas"
               disabled
               hint="Em breve — gap #14"
             />
@@ -426,7 +425,7 @@ export function NewIssueModal({
                 onCheckedChange={setCreateMore}
                 className="scale-75"
               />
-              Create more
+              Criar mais
             </label>
             <Button
               size="sm"
@@ -437,10 +436,10 @@ export function NewIssueModal({
               {createIntention.isPending ? (
                 <>
                   <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                  Creating...
+                  Criando...
                 </>
               ) : (
-                "Create issue"
+                "Criar issue"
               )}
             </Button>
           </div>
