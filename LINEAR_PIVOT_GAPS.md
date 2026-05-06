@@ -35,6 +35,7 @@ A cada nova tela do Linear que for clonada:
 | `/issue/<code>/<slug>` (Issue detail) | Em análise — gaps 17–20 abaixo |
 | `/settings/account/preferences` | Em análise — gaps 21–23 abaixo |
 | `/settings/account/profile` | Em análise — gaps 24–25 abaixo |
+| `/settings/account/notifications` | Em análise — gaps 26–29 abaixo |
 
 ---
 
@@ -376,6 +377,58 @@ A cada nova tela do Linear que for clonada:
   - (c) Pular ate ter mentions / perfis publicos.
 - **Status:** `pendente`
 - **Decisão:** —
+
+---
+
+### 26. Email channel worker (confirmar com backend)
+
+- **Onde apareceu:** `/settings/account/notifications` channel "Email · Enabled for all notifications".
+- **Schema atual:** `DEntidade.email` existe ✅. Falta confirmar se ha worker SMTP/transactional email no backend que escuta `DEvento` e dispara emails.
+- **Impacto no frontend:** Toggle "Email" fica disabled como stub ate confirmacao.
+- **Opções:**
+  - (a) Backend ja tem worker — schema atende totalmente, basta wirar UI.
+  - (b) Backend nao tem — adicionar worker + provider (Resend, SES, Postmark...).
+- **Status:** `pendente — confirmar com backend`
+- **Decisão:** —
+
+---
+
+### 27. Desktop / Mobile push notifications
+
+- **Onde apareceu:** `/settings/account/notifications` channels "Desktop · Disabled" e "Mobile · Enabled for all notifications".
+- **Schema atual:** Sem registro de `pushSubscription` (web push) nem `deviceToken` (mobile) em `DEntidade`. Sem Service Worker no frontend.
+- **Impacto no frontend:** Channels Desktop e Mobile ficam disabled.
+- **Opções:**
+  - (a) **Web push** (Desktop): Service Worker + Notification API + `DEntidade.dados.webPushSubscriptions[]`. Implementável puramente cliente; backend precisa de worker que envia push via VAPID.
+  - (b) **Mobile push**: depende de ter app mobile (gap maior).
+  - (c) Pular — manter so in-app (Inbox) + Email + Telegram.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 28. Slack channel integration
+
+- **Onde apareceu:** `/settings/account/notifications` channel "Slack · Disabled".
+- **Schema atual:** Temos integracao Telegram (`/settings/channels`, `notificationsApi.configure/test`). Slack nao existe.
+- **Impacto no frontend:** Channel Slack fica disabled. Substituido visualmente por Telegram na nossa realidade.
+- **Opções:**
+  - (a) Implementar Slack como segundo channel (OAuth + webhook). Trabalho consideravel.
+  - (b) Manter so Telegram (caso de uso BR-first).
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 29. "Updates from Linear" — mailing list / newsletters
+
+- **Onde apareceu:** `/settings/account/notifications` bloco inteiro "Updates from Linear" — Changelog (Show in sidebar / Newsletter), Marketing and onboarding, Invite accepted, Privacy and legal updates, Data processing agreement.
+- **Schema atual:** Sem modelo de subscription a comunicacoes de produto. Sem time/worker de marketing comms.
+- **Impacto no frontend:** Bloco inteiro fica como stub visual. So o toggle "Show updates in sidebar" pode ser persistido em localStorage (UI puro), mas sem origem de updates.
+- **Opções:**
+  - (a) Implementar feature SaaS de produto-comms (newsletter, in-app announcements). Projeto a parte.
+  - (b) Pular indefinidamente — feature de empresa SaaS madura.
+- **Status:** `descartado-por-default` (reabrir quando produto tiver time de comms)
 
 ---
 

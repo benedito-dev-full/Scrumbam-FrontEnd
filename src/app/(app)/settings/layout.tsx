@@ -46,7 +46,6 @@ const GROUPS: NavGroup[] = [
         href: "/settings/account/notifications",
         label: "Notifications",
         icon: Bell,
-        stub: true,
       },
     ],
   },
