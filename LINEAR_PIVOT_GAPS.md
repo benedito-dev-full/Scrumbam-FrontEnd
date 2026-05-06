@@ -37,6 +37,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/account/profile` | Em análise — gaps 24–25 abaixo |
 | `/settings/account/notifications` | Em análise — gaps 26–29 abaixo |
 | `/settings/workspace/general` | Em análise — gaps 30–33 abaixo |
+| `/settings/workspace/members` | Em análise — gaps 34–36 abaixo |
 
 ---
 
@@ -483,6 +484,47 @@ A cada nova tela do Linear que for clonada:
   - (a) Implementar quando tivermos planos pagos.
   - (b) Pular indefinidamente — feature de produto SaaS madura.
 - **Status:** `descartado-por-default`
+
+---
+
+### 34. Last seen / online presence
+
+- **Onde apareceu:** `/settings/workspace/members` colunas "Last seen" (data/online) e indicador verde "Online".
+- **Schema atual:** Sem `lastSeenAt` em `DUserGroup` / `DEntidade`. Sem mecanismo de presence (websocket/heartbeat).
+- **Impacto no frontend:** Coluna fica "—". Sem dot verde de online.
+- **Opções:**
+  - (a) `DUserGroup.lastLoginAt` (atualizado em cada login/refresh) + heartbeat client-side (SWR window-focus). Simples, sem WS.
+  - (b) Sistema de presence completo via WebSocket (Pusher/Ably/Socket.io). Mais caro.
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 35. Application/bot members
+
+- **Onde apareceu:** `/settings/workspace/members` grupo "Application 1" — Linear distingue humanos de integrações (bots, OAuth apps).
+- **Schema atual:** `DEntidade` nao tem flag para distinguir humano de aplicacao. `DAgent` existe mas e outro modelo.
+- **Impacto no frontend:** Sem grupo "Application" — todos viram "Active".
+- **Opções:**
+  - (a) `DEntidade.isApplication Boolean @default(false)` (migration). Permite filtrar.
+  - (b) Reusar `DEntidade.idClasse` com nova `DClasse -XX APPLICATION_USER`. Polimorfismo Devari.
+  - (c) Pular — nao temos OAuth apps por agora.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 36. Email-based invite flow
+
+- **Onde apareceu:** `/settings/workspace/members` botao "Invite" — Linear envia email com link "Join workspace". Usuario aceita e define propria senha.
+- **Schema atual:** `addUser` (POST /organizations/:id/users) exige `name`, `email`, `password` no proprio request. Admin **cria** a conta com senha definida por ele — nao e invite-flow tradicional.
+- **Impacto no frontend:** Botao "Invite" abre dialog com **name + email + password + role**. Mais "Add member" do que "Invite". Sem aceitacao por email.
+- **Opções:**
+  - (a) Migrar para invite-flow real: tabela `DInvite` (token, expiresAt, idOrg, role) + endpoint `POST /invites` + email. Usuario clica link, define senha, vira member.
+  - (b) Manter admin-creates-with-password (atual).
+- **Status:** `pendente`
+- **Decisão:** —
 
 ---
 
