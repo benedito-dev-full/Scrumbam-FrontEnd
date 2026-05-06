@@ -87,12 +87,12 @@ export default function MyIssuesPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Header */}
-        <header className="flex h-11 shrink-0 items-center px-6 border-b border-border">
+        <header className="flex h-11 shrink-0 items-center px-8 border-b border-border">
           <h1 className="text-[13px] font-medium">My issues</h1>
         </header>
 
         {/* Tabs + filter row */}
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-6">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-8">
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (
               <button
@@ -241,7 +241,7 @@ function DateGroup({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 px-6 py-2 text-[12px] text-muted-foreground hover:bg-accent/30 transition-colors"
+        className="flex w-full items-center gap-2 px-8 py-2 text-[12px] text-muted-foreground hover:bg-accent/30 transition-colors"
       >
         {open ? (
           <ChevronDown className="h-3 w-3" />
@@ -295,7 +295,7 @@ function IssueRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 px-6 py-2 hover:bg-accent/30 transition-colors text-[13px] border-b border-border/40"
+      className="flex items-center gap-2 px-8 py-2 hover:bg-accent/30 transition-colors text-[13px] border-b border-border/40"
     >
       <PriorityIcon priority={item.priority} />
       <span className="text-[12px] text-muted-foreground tabular-nums w-14 shrink-0">
@@ -420,7 +420,7 @@ function formatShortDate(iso: string): string {
 
 function SubscribedStub() {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
       <h3 className="mt-3 text-sm font-medium">Subscriptions coming soon</h3>
       <p className="mt-1 text-[12px] text-muted-foreground max-w-sm">
@@ -439,7 +439,7 @@ function EmptyState({ tab }: { tab: TabKey }) {
     activity: "No recent activity.",
   };
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
       <h3 className="mt-3 text-sm font-medium">Nothing here</h3>
       <p className="mt-1 text-[12px] text-muted-foreground">{messages[tab]}</p>
@@ -450,13 +450,13 @@ function EmptyState({ tab }: { tab: TabKey }) {
 function SkeletonRows() {
   return (
     <div>
-      <div className="px-6 py-2">
+      <div className="px-8 py-2">
         <div className="h-3 w-20 bg-muted rounded animate-pulse" />
       </div>
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="flex items-center gap-2 px-6 py-2 border-b border-border/40 animate-pulse"
+          className="flex items-center gap-2 px-8 py-2 border-b border-border/40 animate-pulse"
         >
           <div className="h-4 w-4 bg-muted rounded" />
           <div className="h-3 w-12 bg-muted rounded" />
