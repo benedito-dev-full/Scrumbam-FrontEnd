@@ -43,6 +43,7 @@ A cada nova tela do Linear que for clonada:
 | `/views/issues` e `/views/projects` (Views list) | Em análise — gap #2 expandido |
 | `/settings/initiatives` (config) | Em análise — gap #3 expandido |
 | `/settings/integrations/claude` (Connect Claude detail) | Implementada — schema atende 100% (MCP) |
+| Modal "New project" (criação de projeto) | Em análise — gap 38 abaixo |
 
 ---
 
@@ -550,6 +551,20 @@ A cada nova tela do Linear que for clonada:
   - (a) **Reusar `DTabela`** com nova `DClasse -461 PROJECT_STATUS` (polimorfismo Devari) + adicionar `DTabela.dados.category` enum dos 5 buckets. Mudar `DProject.status` para `DProject.idStatus BigInt?` FK. Migration moderada.
   - (b) Novo modelo `DProjectStatus` (idCategoria enum, nome, cor, ordem, idOrganizacao). Migration nova.
   - (c) Manter atual — string solta com 3-5 valores fixos. Tela perde funcionalidade Linear.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 38. Project dependencies (relações entre projects)
+
+- **Onde apareceu:** Modal "New project" do Linear tem chip "Dependencies" inline. Linear permite que um project A dependa de project B (bloqueado-por, bloqueia, relaciona-se).
+- **Schema atual:** `DProject` nao tem self-relation nem tabela N:N de dependencias. Sem modelo.
+- **Impacto no frontend:** Chip "Dependencies" fica disabled / stub no modal de criação e detail.
+- **Opções:**
+  - (a) Novo modelo `DProjectLink` (idProjectFrom, idProjectTo, tipo enum: depends-on/blocks/related, chcriacao). Bidirecional. Similar ao gap #17 mas para projects.
+  - (b) Lista em `DProject.dados.dependencies` (Json). Sem migration.
+  - (c) Pular ate ter Roadmap/Initiatives consolidados.
 - **Status:** `pendente`
 - **Decisão:** —
 

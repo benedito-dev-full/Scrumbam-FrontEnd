@@ -13,57 +13,18 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProjects } from "@/lib/hooks/use-projects";
-import { projectsApi } from "@/lib/api/projects";
-import { QUERY_KEYS } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { NewProjectModal } from "@/components/projects/new-project-modal";
 import { cn } from "@/lib/utils";
-
-function useCreateProject() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { nome: string }) => projectsApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
-      queryClient.invalidateQueries({ queryKey: ["project-summaries"] });
-      toast.success("Project criado");
-    },
-  });
-}
 
 export default function ProjectsPage() {
   usePageTitle("Projects");
   const router = useRouter();
   const { data: projects, isLoading } = useProjects();
-  const createProject = useCreateProject();
-  const [newName, setNewName] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    createProject.mutate(
-      { nome: newName.trim() },
-      {
-        onSuccess: () => {
-          setNewName("");
-          setDialogOpen(false);
-        },
-      },
-    );
-  };
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   return (
     <PageTransition className="h-full">
@@ -71,38 +32,18 @@ export default function ProjectsPage() {
         {/* Page header */}
         <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-8">
           <h1 className="text-[13px] font-medium">Projects</h1>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Criar project"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New project</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 pt-2">
-                <Input
-                  placeholder="Project name"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                  autoFocus
-                />
-                <Button
-                  className="w-full"
-                  onClick={handleCreate}
-                  disabled={!newName.trim() || createProject.isPending}
-                >
-                  {createProject.isPending ? "Creating..." : "Create project"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <button
+            type="button"
+            onClick={() => setNewProjectOpen(true)}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Criar project"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <NewProjectModal
+            open={newProjectOpen}
+            onOpenChange={setNewProjectOpen}
+          />
         </header>
 
         {/* Tab + filter row */}
@@ -164,7 +105,7 @@ export default function ProjectsPage() {
           {isLoading ? (
             <SkeletonRows />
           ) : !projects?.length ? (
-            <EmptyState onCreate={() => setDialogOpen(true)} />
+            <EmptyState onCreate={() => setNewProjectOpen(true)} />
           ) : (
             projects.map((p) => (
               <ProjectRow
