@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, Loader2 } from "lucide-react";
+
+import { PageTransition } from "@/components/common/page-transition";
+import { usePageTitle } from "@/lib/hooks/use-page-title";
+import { useCreateIntention } from "@/lib/hooks/use-intentions";
+import { useProjects } from "@/lib/hooks/use-projects";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -14,16 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PageTransition } from "@/components/common/page-transition";
-import { usePageTitle } from "@/lib/hooks/use-page-title";
-import { useCreateIntention } from "@/lib/hooks/use-intentions";
-import { useProjects } from "@/lib/hooks/use-projects";
-import type { IntentionType, IntentionPriority } from "@/types/intention";
 import { TYPE_IDS, PRIORITY_IDS } from "@/types/intention";
+import type { IntentionType, IntentionPriority } from "@/types/intention";
+import { cn } from "@/lib/utils";
 
 /**
- * @deprecated Mantido apenas para compatibilidade com wizard-step-*.tsx
- * que nao foram deletados. Nao usar em codigo novo.
+ * @deprecated Mantido apenas para compatibilidade com wizard-step-*.tsx.
  */
 export interface WizardFormData {
   title: string;
@@ -41,20 +41,20 @@ export interface WizardFormData {
 const TASK_TYPES = [
   { id: TYPE_IDS.FEATURE, label: "Feature" },
   { id: TYPE_IDS.BUG, label: "Bug" },
-  { id: TYPE_IDS.IMPROVEMENT, label: "Melhoria" },
+  { id: TYPE_IDS.IMPROVEMENT, label: "Improvement" },
 ] as const;
 
 const PRIORITIES = [
-  { id: PRIORITY_IDS.URGENT, label: "Urgente" },
-  { id: PRIORITY_IDS.HIGH, label: "Alta" },
-  { id: PRIORITY_IDS.MEDIUM, label: "Media" },
-  { id: PRIORITY_IDS.LOW, label: "Baixa" },
+  { id: PRIORITY_IDS.URGENT, label: "Urgent" },
+  { id: PRIORITY_IDS.HIGH, label: "High" },
+  { id: PRIORITY_IDS.MEDIUM, label: "Medium" },
+  { id: PRIORITY_IDS.LOW, label: "Low" },
 ] as const;
 
 const MIN_DESCRIPTION_LENGTH = 20;
 
 export function IntentionWizard() {
-  usePageTitle("Nova Intencao");
+  usePageTitle("New issue");
   const router = useRouter();
   const createIntention = useCreateIntention();
   const { data: projects, isLoading: isLoadingProjects } = useProjects();
@@ -65,7 +65,6 @@ export function IntentionWizard() {
   const [priorityId, setPriorityId] = useState<string>(PRIORITY_IDS.MEDIUM);
   const [projectId, setProjectId] = useState<string>("");
 
-  // Pre-selecionar o primeiro projeto quando carregar
   useEffect(() => {
     if (projects && projects.length > 0 && !projectId) {
       setProjectId(projects[0].chave);
@@ -83,7 +82,6 @@ export function IntentionWizard() {
 
   const handleCreate = async () => {
     if (!canSubmit) return;
-
     await createIntention.mutate({
       title: title.trim(),
       description: description.trim(),
@@ -91,7 +89,6 @@ export function IntentionWizard() {
       priorityId,
       projectId,
     });
-
     router.push("/intentions");
   };
 
@@ -110,130 +107,176 @@ export function IntentionWizard() {
   const isSaving = createIntention.isPending;
 
   return (
-    <PageTransition className="mx-auto max-w-xl space-y-8">
-      {/* Header */}
-      <div>
-        <button
-          onClick={() => router.push("/intentions")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </button>
-        <h1 className="text-2xl font-bold tracking-tight">Nova Intencao</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Descreva rapidamente o que precisa ser feito.
-        </p>
-      </div>
-
-      {/* Form */}
-      <div className="space-y-5" onKeyDown={handleKeyDown}>
-        {/* Titulo */}
-        <div className="space-y-2">
-          <Label htmlFor="title">
-            Titulo <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="title"
-            placeholder="Ex: Corrigir bug no login"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-          />
-        </div>
-
-        {/* Descricao */}
-        <div className="space-y-2">
-          <Label htmlFor="description">
-            Descricao <span className="text-destructive">*</span>
-          </Label>
-          <Textarea
-            id="description"
-            placeholder="Descreva o problema ou o que precisa ser feito (minimo 20 caracteres)..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-          />
-          {descriptionTooShort && (
-            <p className="text-xs text-destructive">
-              Minimo {MIN_DESCRIPTION_LENGTH} caracteres (
-              {description.trim().length}/{MIN_DESCRIPTION_LENGTH})
-            </p>
-          )}
-        </div>
-
-        {/* Tipo + Prioridade side-by-side */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Tipo */}
-          <div className="space-y-2">
-            <Label>Tipo</Label>
-            <Select value={taskTypeId} onValueChange={setTaskTypeId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                {TASK_TYPES.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Prioridade */}
-          <div className="space-y-2">
-            <Label>Prioridade</Label>
-            <Select value={priorityId} onValueChange={setPriorityId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione a prioridade" />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITIES.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Projeto */}
-        <div className="space-y-2">
-          <Label>
-            Projeto <span className="text-destructive">*</span>
-          </Label>
-          <Select
-            value={projectId}
-            onValueChange={setProjectId}
-            disabled={isLoadingProjects}
+    <PageTransition className="h-full">
+      <div className="flex h-full flex-col">
+        {/* Top breadcrumb */}
+        <header className="flex h-11 shrink-0 items-center px-8 border-b border-border">
+          <button
+            type="button"
+            onClick={() => router.push("/intentions")}
+            className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            <SelectTrigger className="w-full">
-              <SelectValue
-                placeholder={
-                  isLoadingProjects ? "Carregando..." : "Selecione o projeto"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {(projects ?? []).map((p) => (
-                <SelectItem key={p.chave} value={p.chave}>
-                  {p.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Issues
+          </button>
+        </header>
 
-      {/* Submit */}
-      <div className="flex justify-end pt-2">
-        <Button onClick={handleCreate} disabled={!canSubmit || isSaving}>
-          <Plus className="h-4 w-4 mr-1" />
-          {isSaving ? "Criando..." : "Criar Intencao"}
-        </Button>
+        {/* Body */}
+        <div className="flex-1 overflow-auto">
+          <div className="px-8 py-8">
+            <div
+              className="mx-auto max-w-2xl space-y-6"
+              onKeyDown={handleKeyDown}
+            >
+              <div className="space-y-1.5">
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  New issue
+                </h1>
+                <p className="text-[13px] text-muted-foreground">
+                  Describe what needs to happen. Press{" "}
+                  <kbd className="rounded border border-border bg-muted px-1 text-[11px]">
+                    Cmd+Enter
+                  </kbd>{" "}
+                  to submit.
+                </p>
+              </div>
+
+              {/* Title — large input, Linear-style "issue creation" */}
+              <Input
+                placeholder="Issue title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+                className="h-12 text-[18px] font-medium border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-0 shadow-none"
+              />
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <Textarea
+                  placeholder="Add a description..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                  className="text-[14px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none resize-none"
+                />
+                {descriptionTooShort && (
+                  <p className="text-[12px] text-destructive">
+                    Minimum {MIN_DESCRIPTION_LENGTH} characters (
+                    {description.trim().length}/{MIN_DESCRIPTION_LENGTH})
+                  </p>
+                )}
+              </div>
+
+              {/* Inline meta chips (project, type, priority) */}
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
+                <ChipSelect
+                  label="Project"
+                  value={projectId}
+                  onChange={setProjectId}
+                  disabled={isLoadingProjects}
+                  options={(projects ?? []).map((p) => ({
+                    value: p.chave,
+                    label: p.nome,
+                  }))}
+                  required
+                />
+                <ChipSelect
+                  label="Type"
+                  value={taskTypeId}
+                  onChange={setTaskTypeId}
+                  options={TASK_TYPES.map((t) => ({
+                    value: t.id,
+                    label: t.label,
+                  }))}
+                />
+                <ChipSelect
+                  label="Priority"
+                  value={priorityId}
+                  onChange={setPriorityId}
+                  options={PRIORITIES.map((p) => ({
+                    value: p.id,
+                    label: p.label,
+                  }))}
+                />
+              </div>
+
+              {/* Submit footer */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <span className="text-[11px] text-muted-foreground">
+                  Cmd/Ctrl + Enter to submit
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={!canSubmit || isSaving}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-opacity",
+                    canSubmit && !isSaving
+                      ? "bg-foreground text-background hover:opacity-90"
+                      : "bg-muted text-muted-foreground cursor-not-allowed",
+                  )}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create issue"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </PageTransition>
+  );
+}
+
+// ============================================================
+// Linear-style inline chip select
+// ============================================================
+
+interface ChipSelectProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  required?: boolean;
+}
+
+function ChipSelect({
+  label,
+  value,
+  onChange,
+  options,
+  disabled,
+  required,
+}: ChipSelectProps) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label className="text-[12px] text-muted-foreground">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="h-7 min-w-[120px] text-[12px] bg-card border-border">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem
+              key={opt.value}
+              value={opt.value}
+              className="text-[12px]"
+            >
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
