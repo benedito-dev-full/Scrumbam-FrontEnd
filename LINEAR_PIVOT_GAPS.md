@@ -38,6 +38,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/account/notifications` | Em análise — gaps 26–29 abaixo |
 | `/settings/workspace/general` | Em análise — gaps 30–33 abaixo |
 | `/settings/workspace/members` | Em análise — gaps 34–36 abaixo |
+| `/settings/projects/statuses` | Em análise — gap 37 abaixo |
 
 ---
 
@@ -523,6 +524,20 @@ A cada nova tela do Linear que for clonada:
 - **Opções:**
   - (a) Migrar para invite-flow real: tabela `DInvite` (token, expiresAt, idOrg, role) + endpoint `POST /invites` + email. Usuario clica link, define senha, vira member.
   - (b) Manter admin-creates-with-password (atual).
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 37. Project statuses estruturados (categorias + status customizados)
+
+- **Onde apareceu:** `/settings/projects/statuses` — Linear tem 5 categorias fixas (Backlog, Planned, In Progress, Completed, Canceled) e cada uma pode conter multiplos status customizados (ex.: "Discovery" e "Roadmap" dentro de Planned). Cada projeto tem um desses status.
+- **Schema atual:** `DProject.status String? @default("active")` — string solta com 3 valores documentados (active, archived, completed). Sem categorias, sem customizacao.
+- **Impacto no frontend:** Tela atual mostra os 5 buckets read-only com os 3 valores existentes mapeados (active → In Progress, completed → Completed, archived → Canceled). Botoes "+" disabled.
+- **Opções:**
+  - (a) **Reusar `DTabela`** com nova `DClasse -461 PROJECT_STATUS` (polimorfismo Devari) + adicionar `DTabela.dados.category` enum dos 5 buckets. Mudar `DProject.status` para `DProject.idStatus BigInt?` FK. Migration moderada.
+  - (b) Novo modelo `DProjectStatus` (idCategoria enum, nome, cor, ordem, idOrganizacao). Migration nova.
+  - (c) Manter atual — string solta com 3-5 valores fixos. Tela perde funcionalidade Linear.
 - **Status:** `pendente`
 - **Decisão:** —
 

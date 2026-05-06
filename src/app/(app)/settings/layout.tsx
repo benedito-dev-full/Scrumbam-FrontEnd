@@ -71,7 +71,6 @@ const GROUPS: NavGroup[] = [
         href: "/settings/projects/statuses",
         label: "Statuses",
         icon: Hexagon,
-        stub: true,
       },
     ],
   },
