@@ -46,7 +46,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
   const regenMutation = useRegenerateInstallToken();
   const deleteMutation = useDeleteAgent();
 
-  usePageTitle(agent?.nome ?? "Agent");
+  usePageTitle(agent?.nome ?? "Agente");
 
   const [regenerated, setRegenerated] =
     useState<RegenerateInstallTokenResponse | null>(null);
@@ -75,7 +75,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Agents
+              Agentes
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
             <Server className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -168,12 +168,12 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                     <section className="rounded-md border border-border bg-card overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/40">
                         <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Information
+                          Informacoes
                         </h2>
                       </div>
                       <dl className="text-[13px]">
                         <InfoRow
-                          label="Daemon version"
+                          label="Versao do daemon"
                           value={
                             agent.agentVersion ? (
                               <span className="font-mono">
@@ -185,7 +185,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                           }
                         />
                         <InfoRow
-                          label="Tunnel port"
+                          label="Porta do tunel"
                           value={
                             agent.tunnelPort ? (
                               <span className="font-mono">
@@ -197,7 +197,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                           }
                         />
                         <InfoRow
-                          label="Last heartbeat"
+                          label="Ultimo heartbeat"
                           value={
                             agent.lastHeartbeat
                               ? new Date(agent.lastHeartbeat).toLocaleString(
@@ -207,14 +207,14 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                           }
                         />
                         <InfoRow
-                          label="Created"
+                          label="Criado em"
                           value={new Date(agent.createdAt).toLocaleString(
                             "pt-BR",
                           )}
                         />
                         {agent.installedAt && (
                           <InfoRow
-                            label="Installed"
+                            label="Instalado em"
                             value={new Date(agent.installedAt).toLocaleString(
                               "pt-BR",
                             )}
@@ -226,7 +226,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                     {/* Danger zone */}
                     <section className="space-y-2">
                       <h2 className="text-[13px] font-medium text-destructive">
-                        Danger zone
+                        Zona de perigo
                       </h2>
                       <div className="rounded-md border border-destructive/30 bg-card overflow-hidden">
                         <div className="flex items-center justify-between gap-6 px-4 py-3">
@@ -260,7 +260,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
           <aside className="hidden lg:flex w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
             <section className="border-b border-border px-4 py-4">
               <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground mb-3">
-                Properties
+                Propriedades
               </h3>
               <dl className="space-y-2 text-[12px]">
                 <PropRow
@@ -276,7 +276,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                   }
                 />
                 <PropRow
-                  label="Port"
+                  label="Porta"
                   value={
                     <span className="tabular-nums">
                       {agent?.tunnelPort ?? "—"}
@@ -288,7 +288,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
 
             <section className="px-4 py-4">
               <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                How it works
+                Como funciona
               </h3>
               <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
                 Cada agente abre um tunel SSH reverso para o Argus. O backend

@@ -5,11 +5,11 @@ import { SidebarStub } from "@/components/common/sidebar-stub";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 
 export default function MorePage() {
-  usePageTitle("More");
+  usePageTitle("Mais");
   return (
     <SidebarStub
-      title="More"
-      description="Itens adicionais do workspace (Cycles, Roadmap, Triage, Documents, etc.) virao aqui conforme forem implementados."
+      title="Mais"
+      description="Itens adicionais do workspace (Ciclos, Roadmap, Triagem, Documentos, etc.) virao aqui conforme forem implementados."
       icon={MoreHorizontal}
     />
   );

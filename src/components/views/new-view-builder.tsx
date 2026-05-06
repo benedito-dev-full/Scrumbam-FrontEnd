@@ -56,14 +56,14 @@ const STATUS_ORDER: IntentionStatus[] = [
 
 const STATUS_LABEL: Record<IntentionStatus, string> = {
   inbox: "Backlog",
-  ready: "Ready",
-  validating: "Validating",
-  validated: "Validated",
-  executing: "In Progress",
-  done: "Done",
-  failed: "Failed",
-  cancelled: "Canceled",
-  discarded: "Discarded",
+  ready: "Pronta",
+  validating: "Validando",
+  validated: "Validada",
+  executing: "Em andamento",
+  done: "Concluida",
+  failed: "Falhou",
+  cancelled: "Cancelada",
+  discarded: "Descartada",
 };
 
 export function NewViewBuilder({ type }: NewViewBuilderProps) {

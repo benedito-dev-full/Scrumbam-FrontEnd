@@ -20,7 +20,7 @@ export default function ClaudeIntegrationPage() {
             className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            Integrations
+            Integracoes
           </Link>
         </header>
 
@@ -36,7 +36,7 @@ export default function ClaudeIntegrationPage() {
                   Claude
                 </h1>
                 <p className="text-[13px] text-muted-foreground mt-1">
-                  Turn issues into pull requests with Claude Code, Cursor and
+                  Transforme issues em pull requests com Claude Code, Cursor e
                   Claude Desktop via MCP.
                 </p>
               </div>
@@ -47,7 +47,7 @@ export default function ClaudeIntegrationPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="flex flex-wrap gap-x-8 gap-y-3 text-[12px]">
                   <Meta
-                    label="Built by"
+                    label="Feito por"
                     value={
                       <span className="flex items-center gap-1">
                         <Sparkles className="h-3 w-3" />
@@ -69,11 +69,11 @@ export default function ClaudeIntegrationPage() {
                       </a>
                     }
                   />
-                  <Meta label="Protocol" value="MCP (Model Context Protocol)" />
+                  <Meta label="Protocolo" value="MCP (Model Context Protocol)" />
                 </div>
                 <Button asChild size="sm" className="text-[12px] h-8">
                   <Link href="/integrations">
-                    Enable
+                    Ativar
                     <ExternalLink className="ml-1.5 h-3 w-3" />
                   </Link>
                 </Button>
@@ -83,31 +83,32 @@ export default function ClaudeIntegrationPage() {
             {/* Screenshots stub */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <PreviewCard
-                title="Issue properties"
+                title="Propriedades da issue"
                 lines={[
-                  { left: "Status", right: "In Progress" },
-                  { left: "Assignee", right: "Claude" },
-                  { left: "Estimate", right: "2d" },
+                  { left: "Status", right: "Em andamento" },
+                  { left: "Responsavel", right: "Claude" },
+                  { left: "Estimativa", right: "2d" },
                 ]}
               />
               <PreviewCard
-                title="Mention in editor"
-                code="Can you take a stab at this @claude"
+                title="Mencione no editor"
+                code="Da uma olhada nessa @claude"
               />
             </div>
 
             {/* Overview */}
-            <Section title="Overview">
+            <Section title="Visao geral">
               <p>
-                Assign any Scrumban issue to Claude, and a cloud agent will get
-                to work. You can track progress directly in Scrumban, the
-                Claude Code CLI, ou no seu IDE. Once the task is complete,
-                Claude updates the issue automatically with a PR link.
+                Atribua qualquer issue do Scrumban ao Claude e um agente na
+                nuvem vai trabalhar nela. Voce acompanha o progresso direto no
+                Scrumban, no CLI do Claude Code ou no seu IDE. Quando a task
+                fica pronta, o Claude atualiza a issue automaticamente com o
+                link do PR.
               </p>
             </Section>
 
             {/* How it works */}
-            <Section title="How it works">
+            <Section title="Como funciona">
               <p>
                 Quando voce conecta Claude com o Scrumban, voce pode pedir
                 qualquer coisa em linguagem natural:{" "}
@@ -125,8 +126,8 @@ export default function ClaudeIntegrationPage() {
               <p className="mt-3">
                 Conforme o agente trabalha, atualizacoes fluem de volta para o
                 Scrumban — voce pode acompanhar progresso sem sair do seu
-                workflow. Activity e resultados aparecem no Inbox e na timeline
-                de cada issue.
+                workflow. Atividade e resultados aparecem no Inbox e na
+                timeline de cada issue.
               </p>
             </Section>
 

@@ -50,7 +50,7 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
 
   // View name derivada do viewId — gap #2 (sem modelo DView)
   const viewName = useMemo(() => {
-    const slugPart = viewId.split("-")[0] ?? "View";
+    const slugPart = viewId.split("-")[0] ?? "Visualizacao";
     return slugPart.charAt(0).toUpperCase() + slugPart.slice(1);
   }, [viewId]);
 
@@ -121,7 +121,7 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Filter"
+              aria-label="Filtrar"
               title="Gap #2 — filtros estruturados"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -129,14 +129,14 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Display options"
+              aria-label="Opcoes de exibicao"
             >
               <Settings2 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Toggle panel"
+              aria-label="Alternar painel"
             >
               <PanelRight className="h-3.5 w-3.5" />
             </button>
@@ -152,11 +152,11 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
             ) : grouped.length === 0 ? (
               <div className="px-8 py-16 text-center">
                 <p className="text-[13px] text-muted-foreground">
-                  Nenhuma issue corresponde a esta view.
+                  Nenhuma issue corresponde a esta visualizacao.
                 </p>
                 <p className="text-[11px] text-muted-foreground/70 mt-1">
-                  Filtros estruturados pendentes (gap #2) — esta view lista
-                  todas as issues sem aplicar criterios.
+                  Filtros estruturados pendentes (gap #2) — esta visualizacao
+                  lista todas as issues sem aplicar criterios.
                 </p>
               </div>
             ) : (
@@ -185,23 +185,23 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
                   onClick={() => setActiveTab("assignees")}
                   count={assigneeBreakdown.length}
                 >
-                  Assignees
+                  Responsaveis
                 </TabButton>
                 <TabButton
                   active={activeTab === "labels"}
                   onClick={() => setActiveTab("labels")}
                   count={0}
                   stub
-                  title="Gap #14 — Labels"
+                  title="Gap #14 — Etiquetas"
                 >
-                  Labels
+                  Etiquetas
                 </TabButton>
                 <TabButton
                   active={activeTab === "projects"}
                   onClick={() => setActiveTab("projects")}
                   count={projectBreakdown.length}
                 >
-                  Projects
+                  Projetos
                 </TabButton>
               </div>
             </div>
@@ -209,18 +209,18 @@ export default function ViewDetailPage({ params }: ViewPageProps) {
               {activeTab === "assignees" && (
                 <BreakdownList
                   rows={assigneeBreakdown}
-                  emptyLabel="Sem assignees"
+                  emptyLabel="Sem responsaveis"
                 />
               )}
               {activeTab === "labels" && (
                 <p className="px-4 py-6 text-center text-[12px] text-muted-foreground/70">
-                  Sem labels (gap #14).
+                  Sem etiquetas (gap #14).
                 </p>
               )}
               {activeTab === "projects" && (
                 <BreakdownList
                   rows={projectBreakdown}
-                  emptyLabel="Sem projects"
+                  emptyLabel="Sem projetos"
                 />
               )}
             </div>
@@ -249,14 +249,14 @@ const STATUS_ORDER: IntentionStatus[] = [
 
 const STATUS_LABEL: Record<IntentionStatus, string> = {
   inbox: "Backlog",
-  ready: "Ready",
-  validating: "Validating",
-  validated: "Validated",
-  executing: "In Progress",
-  done: "Done",
-  failed: "Failed",
-  cancelled: "Canceled",
-  discarded: "Discarded",
+  ready: "Pronta",
+  validating: "Validando",
+  validated: "Validada",
+  executing: "Em andamento",
+  done: "Concluida",
+  failed: "Falhou",
+  cancelled: "Cancelada",
+  discarded: "Descartada",
 };
 
 function groupByStatus(
@@ -339,7 +339,7 @@ function IssueRow({
         .toUpperCase()
     : null;
 
-  const date = new Date(it.updatedAt).toLocaleDateString("en-US", {
+  const date = new Date(it.updatedAt).toLocaleDateString("pt-BR", {
     month: "short",
     day: "numeric",
   });
@@ -435,17 +435,17 @@ function ViewMetaPanel({
           className="flex items-center gap-2"
           title="Gap #2 — visibility no schema"
         >
-          <dt className="w-16 shrink-0 text-muted-foreground">Visibility</dt>
+          <dt className="w-16 shrink-0 text-muted-foreground">Visibilidade</dt>
           <dd className="flex items-center gap-1">
             <Lock className="h-3 w-3 text-muted-foreground" />
-            Personal
+            Pessoal
           </dd>
         </div>
         <div
           className="flex items-center gap-2"
           title="Gap #2 — owner no schema"
         >
-          <dt className="w-16 shrink-0 text-muted-foreground">Owner</dt>
+          <dt className="w-16 shrink-0 text-muted-foreground">Dono</dt>
           <dd className="flex items-center gap-1.5 truncate">
             <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-medium text-white">
               {ownerInitials}
@@ -553,7 +553,7 @@ function breakdownByAssignee(
   const map = new Map<string, BreakdownRow>();
   items.forEach((it) => {
     const key = it.assignee?.chave ?? "no-assignee";
-    const name = it.assignee?.nome ?? "No assignee";
+    const name = it.assignee?.nome ?? "Sem responsavel";
     const existing = map.get(key);
     if (existing) {
       existing.count += 1;
@@ -584,8 +584,8 @@ function breakdownByProject(
   items.forEach((it) => {
     const key = it.projectSlug ?? "no-project";
     const name = it.projectSlug
-      ? (projectMap.get(it.projectSlug) ?? `Project ${it.projectSlug}`)
-      : "No project";
+      ? (projectMap.get(it.projectSlug) ?? `Projeto ${it.projectSlug}`)
+      : "Sem projeto";
     const existing = map.get(key);
     if (existing) {
       existing.count += 1;

@@ -9,8 +9,8 @@ export default function ConnectCodexPage() {
   return (
     <SidebarStub
       title="Connect Codex"
-      description="Integracao com OpenAI Codex. Usa o mesmo MCP server que Claude (ver Connect Claude). Pagina dedicada ainda nao implementada."
-      gapRef="Pode reusar o /integrations atual via MCP — tela detail pendente"
+      description="Integracao com OpenAI Codex. Usa o mesmo MCP server que o Claude (ver Connect Claude). Pagina dedicada ainda nao implementada."
+      gapRef="Pode reusar o /integrations atual via MCP — tela de detalhe pendente"
       icon={Code2}
     />
   );

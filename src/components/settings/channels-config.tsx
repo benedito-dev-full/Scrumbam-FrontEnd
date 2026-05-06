@@ -121,7 +121,7 @@ const CHANNELS: ChannelDef[] = [
       },
       {
         key: "channelId",
-        label: "Channel",
+        label: "Canal",
         placeholder: "#produto",
         type: "text",
       },

@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
  * Visivel apenas para ADMIN.
  */
 export default function AgentsPage() {
-  usePageTitle("Agents");
+  usePageTitle("Agentes");
   const { data: agents, isLoading } = useAgents();
   const deleteMutation = useDeleteAgent();
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -49,7 +49,7 @@ export default function AgentsPage() {
       <div className="flex h-full flex-col">
         {/* Header */}
         <header className="flex h-11 shrink-0 items-center justify-between px-8 border-b border-border">
-          <h1 className="text-[13px] font-medium">Agents</h1>
+          <h1 className="text-[13px] font-medium">Agentes</h1>
           <AddAgentDialog />
         </header>
 
@@ -65,11 +65,11 @@ export default function AgentsPage() {
         <div className="flex-1 overflow-auto">
           {/* Column headers */}
           <div className="grid grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_140px_28px] items-center gap-3 border-b border-border px-8 py-2 text-[11px] font-medium text-muted-foreground">
-            <div>Name</div>
+            <div>Nome</div>
             <div>Status</div>
             <div>Hostname</div>
-            <div>Port</div>
-            <div>Last heartbeat</div>
+            <div>Porta</div>
+            <div>Ultimo heartbeat</div>
             <div></div>
           </div>
 
@@ -189,7 +189,7 @@ function AgentRow({ agent: a, onDelete }: AgentRowProps) {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="More"
+              aria-label="Mais"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
@@ -220,7 +220,7 @@ function EmptyState() {
         className="h-10 w-10 text-muted-foreground/30"
         strokeWidth={1.25}
       />
-      <h3 className="mt-3 text-sm font-medium">No agents yet</h3>
+      <h3 className="mt-3 text-sm font-medium">Nenhum agente ainda</h3>
       <p className="mt-1 max-w-md text-[12px] text-muted-foreground">
         Adicione um agente remoto para conectar uma VPS ao Scrumban via tunel
         SSH reverso.

@@ -359,15 +359,15 @@ function StatusIcon({ status }: { status: IntentionStatus }) {
     IntentionStatus,
     { Icon: React.ComponentType<{ className?: string }>; color: string; title: string }
   > = {
-    inbox: { Icon: CircleDashed, color: "text-muted-foreground", title: "Inbox" },
-    ready: { Icon: Circle, color: "text-blue-400", title: "Ready" },
-    validating: { Icon: CircleDotDashed, color: "text-amber-400", title: "Validating" },
-    validated: { Icon: Circle, color: "text-emerald-400", title: "Validated" },
-    executing: { Icon: CircleDotDashed, color: "text-amber-400", title: "Executing" },
-    done: { Icon: CheckCircle2, color: "text-emerald-500", title: "Done" },
-    failed: { Icon: XCircle, color: "text-red-500", title: "Failed" },
-    cancelled: { Icon: Ban, color: "text-muted-foreground", title: "Cancelled" },
-    discarded: { Icon: Trash2, color: "text-muted-foreground", title: "Discarded" },
+    inbox: { Icon: CircleDashed, color: "text-muted-foreground", title: "Backlog" },
+    ready: { Icon: Circle, color: "text-blue-400", title: "Pronta" },
+    validating: { Icon: CircleDotDashed, color: "text-amber-400", title: "Validando" },
+    validated: { Icon: Circle, color: "text-emerald-400", title: "Validada" },
+    executing: { Icon: CircleDotDashed, color: "text-amber-400", title: "Em andamento" },
+    done: { Icon: CheckCircle2, color: "text-emerald-500", title: "Concluida" },
+    failed: { Icon: XCircle, color: "text-red-500", title: "Falhou" },
+    cancelled: { Icon: Ban, color: "text-muted-foreground", title: "Cancelada" },
+    discarded: { Icon: Trash2, color: "text-muted-foreground", title: "Descartada" },
   };
   const c = map[status] ?? map.inbox;
   return <c.Icon className={cn("h-3.5 w-3.5 shrink-0", c.color)} />;

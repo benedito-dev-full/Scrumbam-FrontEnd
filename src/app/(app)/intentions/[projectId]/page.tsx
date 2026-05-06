@@ -40,11 +40,11 @@ import type {
 type TabKey = "overview" | "activity" | "issues" | "insights" | "reports";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "activity", label: "Activity" },
+  { key: "overview", label: "Visao geral" },
+  { key: "activity", label: "Atividade" },
   { key: "issues", label: "Issues" },
-  { key: "insights", label: "Insights" },
-  { key: "reports", label: "Reports" },
+  { key: "insights", label: "Metricas" },
+  { key: "reports", label: "Relatorios" },
 ];
 
 interface ProjectPageProps {
@@ -228,7 +228,7 @@ function OverviewTab({
             {isLoading ? "..." : (project?.nome ?? "Project")}
           </h1>
           <p className="text-[13px] text-muted-foreground">
-            {project?.descricao || "Add a short summary..."}
+            {project?.descricao || "Adicione um resumo curto..."}
           </p>
         </div>
 
@@ -277,7 +277,7 @@ function OverviewTab({
           disabled
         >
           <Plus className="h-3 w-3" />
-          Milestone
+          Marco
         </button>
       </div>
     </div>
@@ -287,7 +287,7 @@ function OverviewTab({
 function PropertiesStrip() {
   return (
     <div className="flex flex-wrap items-center gap-2 text-[12px]">
-      <span className="text-muted-foreground mr-1">Properties</span>
+      <span className="text-muted-foreground mr-1">Propriedades</span>
       <ChipButton
         icon={CircleDashed}
         label="Backlog"
@@ -295,27 +295,28 @@ function PropertiesStrip() {
       />
       <ChipButton
         icon={MoreHorizontal}
-        label="No priority"
+        label="Sem prioridade"
         stub
         title="Gap #5"
       />
       <ChipButton
         icon={UserIcon}
-        label="Lead"
+        label="Responsavel"
         stub
-        title="Sem assignee no schema do project"
+        title="Sem responsavel no schema do projeto"
       />
-      <ChipButton icon={Calendar} label="Target date" />
+      <ChipButton icon={Calendar} label="Data alvo" />
       <ChipButton
         icon={Hash}
         label="Devari Tecnologia"
         stub
-        title="Gap #1 (Teams)"
+        title="Gap #1 (Times)"
       />
       <button
         type="button"
         className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         aria-label="Mais propriedades"
+        title="Mais propriedades"
       >
         <MoreHorizontal className="h-3 w-3" />
       </button>
@@ -326,7 +327,7 @@ function PropertiesStrip() {
 function ResourcesRow() {
   return (
     <div className="flex items-center gap-2 text-[12px]">
-      <span className="text-muted-foreground mr-1">Resources</span>
+      <span className="text-muted-foreground mr-1">Recursos</span>
       <button
         type="button"
         disabled
@@ -334,7 +335,7 @@ function ResourcesRow() {
         className="flex items-center gap-1 rounded-md border border-dashed border-muted-foreground/40 px-2 py-1 text-muted-foreground/70 cursor-not-allowed"
       >
         <Plus className="h-3 w-3" />
-        Add document or link...
+        Adicionar documento ou link...
       </button>
     </div>
   );
@@ -352,7 +353,7 @@ function ProjectUpdateCTA() {
       )}
     >
       <PenSquare className="h-4 w-4" />
-      Write first project update
+      Escrever primeira atualizacao do projeto
     </button>
   );
 }
@@ -397,7 +398,7 @@ function ActivityTab() {
     <div className="px-8 py-8">
       <div className="mx-auto max-w-3xl">
         <p className="text-[12px] text-muted-foreground">
-          Activity feed em breve. (Backend tem `DEvento` filtrado por
+          Feed de atividade em breve. (Backend tem `DEvento` filtrado por
           `idProject`; falta hook no frontend.)
         </p>
       </div>
@@ -414,7 +415,7 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
     return (
       <div className="px-8 py-12 text-center">
         <CircleDashed className="mx-auto h-10 w-10 text-muted-foreground/30" />
-        <p className="mt-3 text-[13px] text-muted-foreground">No issues yet</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">Sem issues ainda</p>
       </div>
     );
   }
@@ -423,10 +424,10 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
     <div>
       <div className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border px-8 py-2 text-[11px] font-medium text-muted-foreground">
         <div>Pri</div>
-        <div>Code</div>
+        <div>Codigo</div>
         <div></div>
-        <div>Title</div>
-        <div>Updated</div>
+        <div>Titulo</div>
+        <div>Atualizado</div>
       </div>
       {issues.map((i) => (
         <div
@@ -461,31 +462,31 @@ function PropertiesPanel({
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Properties
+          Propriedades
         </h3>
         <button
           type="button"
           className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          aria-label="Add property"
+          aria-label="Adicionar propriedade"
         >
           <Plus className="h-3 w-3" />
         </button>
       </div>
       <dl className="space-y-2 text-[12px]">
         <PropRow label="Status" value="Backlog" iconColor="text-amber-400" />
-        <PropRow label="Priority" value="No priority" stub title="Gap #5" />
-        <PropRow label="Lead" value="Add lead" stub />
-        <PropRow label="Members" value="Add members" />
-        <PropRow label="Dates" value="Start → Target" />
+        <PropRow label="Prioridade" value="Sem prioridade" stub title="Gap #5" />
+        <PropRow label="Responsavel" value="Adicionar responsavel" stub />
+        <PropRow label="Membros" value="Adicionar membros" />
+        <PropRow label="Datas" value="Inicio → Entrega" />
         <PropRow
-          label="Teams"
+          label="Times"
           value="Devari Tecnologia"
           iconColor="text-emerald-500"
           stub
-          title="Gap #1 (Teams)"
+          title="Gap #1 (Times)"
         />
-        <PropRow label="Slack" value="Slack channel" stub title="Gap #13" />
-        <PropRow label="Labels" value="Add label" stub title="Gap #14" />
+        <PropRow label="Slack" value="Canal Slack" stub title="Gap #13" />
+        <PropRow label="Etiquetas" value="Adicionar etiqueta" stub title="Gap #14" />
       </dl>
       {project?.nome && <span className="sr-only">{project.nome}</span>}
     </section>
@@ -526,7 +527,7 @@ function MilestonesPanel() {
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Milestones
+          Marcos
         </h3>
         <button
           type="button"
@@ -538,8 +539,8 @@ function MilestonesPanel() {
         </button>
       </div>
       <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-        Add milestones to organize work within your project and break it into
-        more granular stages.
+        Adicione marcos para organizar o trabalho do projeto em etapas mais
+        granulares.
       </p>
     </section>
   );
@@ -550,19 +551,19 @@ function ActivityPanel({ projectName }: { projectName?: string }) {
     <section className="px-4 py-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Activity
+          Atividade
         </h3>
         <button
           type="button"
           className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
         >
-          See all
+          Ver tudo
         </button>
       </div>
       <div className="flex items-start gap-2 text-[12px]">
         <Box className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
         <span className="text-muted-foreground">
-          Project {projectName ?? ""} criado
+          Projeto {projectName ?? ""} criado
         </span>
       </div>
     </section>

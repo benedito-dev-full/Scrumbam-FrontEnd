@@ -46,7 +46,7 @@ function getMcpUrl(): string {
 }
 
 export default function IntegrationsPage() {
-  usePageTitle("Integrations");
+  usePageTitle("Integracoes");
 
   const mcpUrl = getMcpUrl();
   const snippet = `claude mcp add scrumban --header "X-MCP-Key: <SUA_MCP_KEY>" ${mcpUrl}`;
@@ -68,7 +68,7 @@ export default function IntegrationsPage() {
       <div className="flex flex-col">
         {/* Page header */}
         <header className="flex h-11 shrink-0 items-center px-6 border-b border-border">
-          <h1 className="text-[13px] font-medium">Integrations</h1>
+          <h1 className="text-[13px] font-medium">Integracoes</h1>
         </header>
 
         <div className="px-6 py-6">

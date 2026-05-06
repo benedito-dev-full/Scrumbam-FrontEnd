@@ -5,12 +5,12 @@ import { SidebarStub } from "@/components/common/sidebar-stub";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 
 export default function TeamIssuesPage() {
-  usePageTitle("Team — Issues");
+  usePageTitle("Time — Issues");
   return (
     <SidebarStub
-      title="Team issues"
-      description="Issues filtradas pelo team selecionado. Depende do conceito de Team no schema (DEntidade nao tem nivel intermediario entre Org e Project)."
-      gapRef="Bloqueado pelo gap #1 (Teams) — ver LINEAR_PIVOT_GAPS.md"
+      title="Issues do time"
+      description="Issues filtradas pelo time selecionado. Depende do conceito de Time no schema (DEntidade nao tem nivel intermediario entre Org e Project)."
+      gapRef="Bloqueado pelo gap #1 (Times) — ver LINEAR_PIVOT_GAPS.md"
       icon={CircleDot}
     />
   );

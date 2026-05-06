@@ -106,7 +106,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
               href={`/intentions/${projectId}`}
               className="text-muted-foreground hover:text-foreground transition-colors truncate"
             >
-              {project?.nome ?? "Project"}
+              {project?.nome ?? "Projeto"}
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
             <span className="text-muted-foreground tabular-nums">{code}</span>
@@ -115,6 +115,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
               type="button"
               className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Mais opcoes"
+              title="Mais opcoes"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
@@ -139,7 +140,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
             <IconButton label="Abrir em nova aba">
               <ArrowRight className="h-3.5 w-3.5" />
             </IconButton>
-            <IconButton label="Mais">
+            <IconButton label="Mais opcoes">
               <ChevronDown className="h-3.5 w-3.5" />
             </IconButton>
           </div>
@@ -169,7 +170,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
                       <DescriptionBody intention={i} />
                     ) : (
                       <p className="text-[13px] text-muted-foreground/70">
-                        Add description...
+                        Adicione uma descricao...
                       </p>
                     )}
 
@@ -207,13 +208,13 @@ function DeletedBanner() {
     <div className="flex items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px]">
       <div className="flex items-center gap-2 text-amber-200 dark:text-amber-300">
         <Trash2 className="h-3.5 w-3.5 shrink-0" />
-        <span>Issue deleted</span>
+        <span>Issue excluida</span>
       </div>
       <div className="flex items-center gap-1">
         <button
           type="button"
           disabled
-          title="Restore (em breve)"
+          title="Restaurar (em breve)"
           className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
         >
           <RotateCcw className="h-3 w-3" />
@@ -221,7 +222,7 @@ function DeletedBanner() {
         <button
           type="button"
           disabled
-          title="Hard delete (em breve)"
+          title="Excluir definitivamente (em breve)"
           className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
         >
           <Trash2 className="h-3 w-3" />
@@ -326,14 +327,14 @@ function ActivitySection({
   return (
     <section className="space-y-3 pt-4 border-t border-border">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-medium">Activity</h2>
+        <h2 className="text-[13px] font-medium">Atividade</h2>
         <button
           type="button"
           disabled
-          title="Subscribers (gap #8)"
+          title="Inscritos (gap #8)"
           className="flex items-center gap-1.5 text-[12px] text-muted-foreground/70 cursor-not-allowed"
         >
-          Unsubscribe
+          Cancelar inscricao
         </button>
       </div>
 
@@ -423,7 +424,7 @@ function CommentForm({ taskId }: { taskId: string }) {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Leave a comment..."
+        placeholder="Deixe um comentario..."
         rows={2}
         className="w-full resize-none bg-transparent text-[13px] focus:outline-none placeholder:text-muted-foreground/60"
         onKeyDown={(e) => {
@@ -449,7 +450,7 @@ function CommentForm({ taskId }: { taskId: string }) {
           )}
         >
           <Send className="h-3 w-3" />
-          {add.isPending ? "Enviando..." : "Comment"}
+          {add.isPending ? "Enviando..." : "Comentar"}
         </button>
       </div>
     </div>
@@ -475,7 +476,7 @@ function PropertiesPanel({
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Properties
+          Propriedades
         </h3>
       </div>
       <dl className="space-y-2 text-[12px]">
@@ -485,37 +486,37 @@ function PropertiesPanel({
           icon={<StatusIcon status={i?.status ?? "inbox"} />}
         />
         <PropRow
-          label="Priority"
-          value={i?.priority ? priorityLabel(i.priority) : "Set priority"}
+          label="Prioridade"
+          value={i?.priority ? priorityLabel(i.priority) : "Definir prioridade"}
           icon={
             <MoreHorizontal className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
           stub={!i?.priority}
         />
         <PropRow
-          label="Assignee"
-          value={i?.assignee?.nome ?? "Assign"}
+          label="Responsavel"
+          value={i?.assignee?.nome ?? "Atribuir"}
           icon={
             <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
           stub={!i?.assignee}
         />
         <PropRow
-          label="Project"
+          label="Projeto"
           value={project?.nome ?? "—"}
           icon={<Box className="h-3 w-3 shrink-0 text-muted-foreground" />}
         />
         <PropRow
-          label="Estimate"
-          value={i?.apetiteDias ? `${i.apetiteDias}d` : "Estimate"}
+          label="Estimativa"
+          value={i?.apetiteDias ? `${i.apetiteDias}d` : "Estimativa"}
           icon={
             <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
           stub={!i?.apetiteDias}
         />
         <PropRow
-          label="Labels"
-          value="Add labels"
+          label="Etiquetas"
+          value="Adicionar etiquetas"
           icon={
             <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
@@ -532,7 +533,7 @@ function SubscribersPanel() {
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Subscribers
+          Inscritos
         </h3>
         <button
           type="button"
@@ -553,7 +554,7 @@ function LinkedIssuesPanel() {
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Linked issues
+          Issues relacionadas
         </h3>
         <button
           type="button"
@@ -565,7 +566,7 @@ function LinkedIssuesPanel() {
         </button>
       </div>
       <p className="text-[11px] text-muted-foreground/70">
-        Blocks, related, duplicate.
+        Bloqueia, relacionada, duplicada.
       </p>
     </section>
   );
@@ -679,24 +680,24 @@ function StatusIcon({ status }: { status: IntentionStatus }) {
 function statusLabel(s: IntentionStatus): string {
   const map: Record<IntentionStatus, string> = {
     inbox: "Backlog",
-    ready: "Ready",
-    validating: "Validating",
-    validated: "Validated",
-    executing: "In Progress",
-    done: "Done",
-    failed: "Failed",
-    cancelled: "Cancelled",
-    discarded: "Discarded",
+    ready: "Pronta",
+    validating: "Validando",
+    validated: "Validada",
+    executing: "Em andamento",
+    done: "Concluida",
+    failed: "Falhou",
+    cancelled: "Cancelada",
+    discarded: "Descartada",
   };
   return map[s] ?? s;
 }
 
 function priorityLabel(p: IntentionPriority): string {
   const map: Record<IntentionPriority, string> = {
-    urgent: "Urgent",
-    high: "High",
-    medium: "Medium",
-    low: "Low",
+    urgent: "Urgente",
+    high: "Alta",
+    medium: "Media",
+    low: "Baixa",
   };
   return map[p] ?? p;
 }
@@ -706,11 +707,11 @@ function formatRelative(iso: string): string {
   const sec = Math.floor(diff / 1000);
   if (sec < 60) return "agora";
   const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return `${min}m atras`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `${hr}h atras`;
   const d = Math.floor(hr / 24);
-  if (d < 7) return `${d}d ago`;
+  if (d < 7) return `${d}d atras`;
   return new Date(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
