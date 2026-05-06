@@ -150,150 +150,160 @@ export function NewViewBuilder({ type }: NewViewBuilderProps) {
           </button>
         </header>
 
-        {/* Composer area (Linear inline) */}
-        <div className="px-8 pt-6 pb-4 border-b border-border space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-1 min-w-0 items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted mt-1">
-                <Layers className="h-4 w-4 text-cyan-400" />
+        {/* Composer card (Linear: tudo num bloco cinza unico) */}
+        <div className="px-6 pt-5 pb-4">
+          <div className="rounded-lg bg-card/60 border border-border/60 overflow-hidden">
+            {/* Linha 1: icon + name + save controls */}
+            <div className="flex items-center gap-3 px-4 pt-3">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
+                <Layers className="h-3.5 w-3.5 text-cyan-400" />
               </div>
-              <div className="flex-1 min-w-0">
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="View name"
-                  autoFocus
-                  className="h-9 text-[20px] font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
-                />
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Description (optional)"
-                  className="h-7 text-[13px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
-                />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="View name"
+                autoFocus
+                className="h-7 flex-1 text-[15px] font-medium border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+              />
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[12px] text-muted-foreground">
+                  Save to
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 rounded-md bg-background/60 px-2 py-1 text-[12px] hover:bg-background transition-colors"
+                    >
+                      {scope === "personal" ? (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      ) : (
+                        <Globe className="h-3 w-3 text-cyan-400" />
+                      )}
+                      {scope === "personal" ? "Personal" : "Workspace"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-44 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setScope("personal")}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                        scope === "personal" && "bg-accent",
+                      )}
+                    >
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                      Personal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScope("workspace")}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                        scope === "workspace" && "bg-accent",
+                      )}
+                    >
+                      <Globe className="h-3.5 w-3.5 text-cyan-400" />
+                      Workspace
+                    </button>
+                  </PopoverContent>
+                </Popover>
+
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rounded-md px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !name.trim()}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors",
+                    saving || !name.trim()
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-foreground text-background hover:opacity-90",
+                  )}
+                >
+                  Save
+                </button>
               </div>
             </div>
 
-            {/* Save controls */}
-            <div className="flex items-center gap-2 pt-1.5 shrink-0">
-              <span className="text-[12px] text-muted-foreground">
-                Save to
-              </span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-[12px] hover:bg-accent/60 transition-colors"
-                  >
-                    {scope === "personal" ? (
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                    ) : (
-                      <Globe className="h-3 w-3 text-cyan-400" />
-                    )}
-                    {scope === "personal" ? "Personal" : "Workspace"}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-44 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setScope("personal")}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      scope === "personal" && "bg-accent",
-                    )}
-                  >
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    Personal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScope("workspace")}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      scope === "workspace" && "bg-accent",
-                    )}
-                  >
-                    <Globe className="h-3.5 w-3.5 text-cyan-400" />
-                    Workspace
-                  </button>
-                </PopoverContent>
-              </Popover>
+            {/* Linha 2: description (alinhada com o input do nome) */}
+            <div className="flex items-center gap-3 px-4 pt-1 pb-3">
+              <div className="w-7 shrink-0" />
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description (optional)"
+                className="h-6 flex-1 text-[12px] border-0 bg-transparent px-0 focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/50"
+              />
+            </div>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                className="text-[12px] h-8"
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={saving || !name.trim()}
-                className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Save
-              </Button>
+            {/* Divider sutil */}
+            <div className="h-px bg-border/60" />
+
+            {/* Linha 3: tabs Issues/Projects + filter icons */}
+            <div className="flex items-center justify-between px-4 py-2">
+              <div className="flex items-center gap-1">
+                <Link
+                  href="/views/issues/new"
+                  className={cn(
+                    "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
+                    type === "issues"
+                      ? "bg-background text-foreground"
+                      : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                  )}
+                >
+                  Issues
+                </Link>
+                <Link
+                  href="/views/projects/new"
+                  className={cn(
+                    "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
+                    type === "projects"
+                      ? "bg-background text-foreground"
+                      : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                  )}
+                >
+                  Projects
+                </Link>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled
+                  title="Filtros estruturados — gap #2"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
+                  aria-label="Filter"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Display options — em breve"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
+                  aria-label="Display"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Gap notice */}
-          <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-200 dark:text-amber-300">
+          {/* Gap notice (fora do card, discreto) */}
+          <div className="mt-3 flex items-start gap-2 px-1 text-[11px] text-amber-200/70">
             <Info className="h-3 w-3 shrink-0 mt-0.5" />
             <p>
               Gap #2 — sem modelo <code>DView</code>. View sera salva em
               localStorage. Filtros estruturados ainda nao aplicados ao preview
               abaixo.
             </p>
-          </div>
-        </div>
-
-        {/* Tabs row (locked to current type) */}
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-8">
-          <div className="flex items-center gap-1">
-            <Link
-              href="/views/issues/new"
-              className={cn(
-                "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
-                type === "issues"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-              )}
-            >
-              Issues
-            </Link>
-            <Link
-              href="/views/projects/new"
-              className={cn(
-                "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
-                type === "projects"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-              )}
-            >
-              Projects
-            </Link>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled
-              title="Filtros estruturados — gap #2"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-              aria-label="Filter"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              disabled
-              title="Display options — em breve"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-              aria-label="Display"
-            >
-              <Settings2 className="h-3.5 w-3.5" />
-            </button>
           </div>
         </div>
 
