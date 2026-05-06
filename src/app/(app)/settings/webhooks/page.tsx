@@ -98,7 +98,7 @@ export default function WebhooksPage() {
 
   if (loading) {
     return (
-      <PageTransition className="space-y-6">
+      <PageTransition className="space-y-6 px-8 py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-48 rounded bg-muted" />
           <div className="h-32 rounded bg-muted" />
@@ -108,7 +108,7 @@ export default function WebhooksPage() {
   }
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-6 px-8 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Webhooks</h1>

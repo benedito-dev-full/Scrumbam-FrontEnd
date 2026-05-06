@@ -119,13 +119,17 @@ export function AppSidebar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled className="text-[13px]">
-              <UserIcon className="mr-2 h-3.5 w-3.5" />
-              Profile
+            <DropdownMenuItem asChild className="text-[13px]">
+              <Link href="/settings/account/profile">
+                <UserIcon className="mr-2 h-3.5 w-3.5" />
+                Profile
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled className="text-[13px]">
-              <Settings className="mr-2 h-3.5 w-3.5" />
-              Settings
+            <DropdownMenuItem asChild className="text-[13px]">
+              <Link href="/settings">
+                <Settings className="mr-2 h-3.5 w-3.5" />
+                Settings
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -190,13 +194,32 @@ export function AppSidebar() {
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-sidebar-border px-3 py-2">
-        <button
-          type="button"
-          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-          aria-label="Ajuda"
-        >
-          <HelpCircle className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            aria-label="Ajuda"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+          <Link
+            href="/settings"
+            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={logout}
+            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"

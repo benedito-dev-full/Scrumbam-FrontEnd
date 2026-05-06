@@ -9,7 +9,7 @@ export default function ChannelsPage() {
   usePageTitle("Canais");
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-6 px-8 py-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Radio className="h-6 w-6 text-green-500" />
