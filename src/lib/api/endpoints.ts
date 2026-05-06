@@ -120,6 +120,9 @@ export const ENDPOINTS = {
   // API Keys (per-project)
   PROJECT_API_KEY: (id: string) => `/projects/${id}/api-key`,
 
+  // MCP Key (per-user, for Claude Code / Cursor / Claude Desktop)
+  MCP_KEY: "/auth/me/mcp-key",
+
   // Search (global unified search)
   SEARCH: "/search",
 
@@ -131,4 +134,10 @@ export const ENDPOINTS = {
   TELEGRAM_PAIRING: "/channels/telegram/pairing",
   TELEGRAM_STATUS: "/channels/telegram/status",
   TELEGRAM_UNLINK: "/channels/telegram/unlink",
+
+  // Automation - Agentes Remotos (Fase 1)
+  AGENTS: "/agents",
+  AGENT: (id: string) => `/agents/${id}`,
+  AGENT_REGENERATE_TOKEN: (id: string) =>
+    `/agents/${id}/regenerate-install-token`,
 } as const;

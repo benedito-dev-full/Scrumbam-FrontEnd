@@ -10,6 +10,7 @@ import {
   Target,
   Zap,
   Code2,
+  Plug,
 } from "lucide-react";
 
 export interface NavItem {
@@ -71,6 +72,13 @@ export const navSections: NavSection[] = [
       { href: "/initiatives", label: "Initiatives", icon: Target, stub: true },
       { href: "/connect/cursor", label: "Connect Cursor", icon: Zap, stub: true },
       { href: "/connect/codex", label: "Connect Codex", icon: Code2, stub: true },
+    ],
+  },
+  {
+    label: "Settings",
+    collapsible: true,
+    items: [
+      { href: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
 ];
