@@ -36,12 +36,14 @@ import {
   shouldShowSidebarItem,
 } from "@/lib/hooks/use-sidebar-customization";
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
+import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [newIssueOpen, setNewIssueOpen] = useState(false);
   const { state: customization } = useSidebarCustomization();
 
   // Filtra item conforme customization (badge=0 por padrao — UI puro)
@@ -151,8 +153,10 @@ export function AppSidebar() {
         </button>
         <button
           type="button"
+          onClick={() => setNewIssueOpen(true)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-          aria-label="Compor"
+          aria-label="Nova issue"
+          title="Nova issue (C)"
         >
           <PenSquare className="h-3.5 w-3.5" />
         </button>
@@ -191,6 +195,9 @@ export function AppSidebar() {
         open={customizeOpen}
         onOpenChange={setCustomizeOpen}
       />
+
+      {/* New issue modal (compose button + atalho C global) */}
+      <NewIssueModal open={newIssueOpen} onOpenChange={setNewIssueOpen} />
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-sidebar-border px-3 py-2">

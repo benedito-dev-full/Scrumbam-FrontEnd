@@ -44,6 +44,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/initiatives` (config) | Em análise — gap #3 expandido |
 | `/settings/integrations/claude` (Connect Claude detail) | Implementada — schema atende 100% (MCP) |
 | Modal "New project" (criação de projeto) | Em análise — gap 38 abaixo |
+| Modal "New issue" (criação de issue) | Em análise — gap 39 abaixo |
 
 ---
 
@@ -565,6 +566,20 @@ A cada nova tela do Linear que for clonada:
   - (a) Novo modelo `DProjectLink` (idProjectFrom, idProjectTo, tipo enum: depends-on/blocks/related, chcriacao). Bidirecional. Similar ao gap #17 mas para projects.
   - (b) Lista em `DProject.dados.dependencies` (Json). Sem migration.
   - (c) Pular ate ter Roadmap/Initiatives consolidados.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 39. Attachments em issues (upload de arquivos)
+
+- **Onde apareceu:** Modal "New issue" do Linear tem icone de clipe para anexar arquivos. Issue detail tambem permite drag-and-drop de imagens/docs.
+- **Schema atual:** `DTask` nao tem campo de attachments. Sem storage configurado (S3, Cloudinary, etc.).
+- **Impacto no frontend:** Icone do clipe disabled / removido do modal e da issue detail.
+- **Opções:**
+  - (a) Novo modelo `DTaskAttachment` (idTask, url, filename, mimeType, sizeBytes, idUploadedBy, chcriacao) + storage backend (S3 ou similar). Trabalho grande.
+  - (b) Lista em `DTask.dados.attachments` (Json) so com URLs externas (sem upload nativo, user cola URL de Drive/Notion/etc.). Sem migration.
+  - (c) Pular ate decisao de produto sobre storage.
 - **Status:** `pendente`
 - **Decisão:** —
 
