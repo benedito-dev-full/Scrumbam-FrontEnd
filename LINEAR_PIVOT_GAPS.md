@@ -33,6 +33,7 @@ A cada nova tela do Linear que for clonada:
 | `/integrations` | Implementada — schema atende 100% |
 | `/project/<id>/overview` (Project detail) | Em análise — gaps 10–16 abaixo |
 | `/issue/<code>/<slug>` (Issue detail) | Em análise — gaps 17–20 abaixo |
+| `/settings/account/preferences` | Em análise — gaps 21–23 abaixo |
 
 ---
 
@@ -304,6 +305,46 @@ A cada nova tela do Linear que for clonada:
 - **Opções:**
   - (a) Mostrar comando `git checkout -b dev-{id}-{slug}` copiável (puramente client-side; sem schema). Implementável agora.
   - (b) Integração real com GitHub API (futuro). Depende de OAuth + tokens.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 21. Preferences sync cross-device
+
+- **Onde apareceu:** `/settings/account/preferences` — toda a tela de prefs (theme, sidebar, automation toggles, etc.). Linear sincroniza isso entre devices/sessions.
+- **Schema atual:** `DEntidade.dados` (Json) ja existe; falta endpoint REST e adapter no frontend.
+- **Impacto no frontend:** Implementacao atual usa **localStorage** apenas — preferencias nao seguem o user em outro device.
+- **Opções:**
+  - (a) Endpoint `GET/PUT /me/preferences` que le/escreve em `DEntidade.dados.preferences` (Json). Sem migration.
+  - (b) Tabela dedicada `DUserPreference` (idUser, key, value). Migration pequena.
+  - (c) Manter local-only.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 22. Desktop application integration
+
+- **Onde apareceu:** `/settings/account/preferences` toggle "Open in desktop app".
+- **Schema atual:** Sem app desktop. Sem protocolo `scrumban://` registrado.
+- **Impacto no frontend:** Toggle fica disabled.
+- **Opções:**
+  - (a) Construir app desktop (Electron/Tauri) e registrar protocolo. Projeto a parte.
+  - (b) Pular indefinidamente — feature de produto, nao prioridade.
+- **Status:** `descartado-por-default` (reabrir se decidirmos ter app desktop)
+
+---
+
+### 23. Git workflow integration (GitHub/GitLab)
+
+- **Onde apareceu:** `/settings/account/preferences` secao "Automations and workflows" — toggles "On git branch copy", "On open in coding tool", "Auto-convert draft PR", e "Git attachment format".
+- **Schema atual:** `DTask.prUrl` existe (atende parcialmente — link de PR manual). Sem OAuth GitHub/GitLab, sem webhooks de branch copy nem de PR draft.
+- **Impacto no frontend:** Toggles ficam disabled. Tela /integrations hoje so tem MCP — git fica para outra fase.
+- **Opções:**
+  - (a) Implementar conector GitHub/GitLab (OAuth + webhook listener). Trabalho consideravel.
+  - (b) Suporte basico via webhook outbound (DWebhook ja existe) — Linear-like nao.
+  - (c) Pular ate decisao de produto.
 - **Status:** `pendente`
 - **Decisão:** —
 
