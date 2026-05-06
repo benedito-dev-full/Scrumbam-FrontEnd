@@ -41,6 +41,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/projects/statuses` | Em análise — gap 37 abaixo |
 | `/views/[viewId]` (View detail) | Em análise — gap #2 atualizado |
 | `/views/issues` e `/views/projects` (Views list) | Em análise — gap #2 expandido |
+| `/settings/initiatives` (config) | Em análise — gap #3 expandido |
 
 ---
 
@@ -77,12 +78,18 @@ A cada nova tela do Linear que for clonada:
 
 ### 3. Initiatives
 
-- **Onde apareceu:** Sidebar (`Try > Initiatives`). Linear usa Initiatives como agrupador acima de Projects (epic-de-projetos / OKR-style).
+- **Onde apareceu:** Sidebar (`Try > Initiatives`) + tela de config `/settings/initiatives` (sob Settings > Features no Linear). Linear usa Initiatives como agrupador acima de Projects (epic-de-projetos / OKR-style).
 - **Schema atual:** Não existe.
-- **Impacto no frontend:** Item "Initiatives" some ou fica stub.
+- **Impacto no frontend:** Item "Initiatives" some ou fica stub. Tela de config (`/settings/initiatives`) renderiza Linear-fiel mas com toggle "Enable Initiatives" e botoes Update schedule / Slack disabled.
+- **Sub-features observadas em /settings/initiatives:**
+  - Feature flag por workspace ("Enable Initiatives" toggle visivel a non-guest members)
+  - Initiative updates (status reports periodicos do owner — overlap com gap #10 Project Updates)
+  - Update schedule (frequencia de updates esperada — sem expectation por default)
+  - Slack notifications (envio de updates para canal Slack — overlap com gap #28)
 - **Opções:**
-  - (a) Criar modelo `DInitiative` (nome, descrição, idOrganizacao, dataInicio/Fim, status, projetos vinculados via tabela N:N).
-  - (b) Pular agora.
+  - (a) Criar modelo `DInitiative` (nome, descricao, idOrganizacao, dataInicio/Fim, status, idOwner, slackChannel?, updateScheduleDays?) + tabela N:N `DInitiativeProject` (idInitiative, idProject, ordem). Reusar conceito de Updates do gap #10.
+  - (b) Reusar `DProject` com flag `isInitiative` + auto-relacao parent-child para projects vinculados. Mais simples mas semanticamente confuso.
+  - (c) Pular agora.
 - **Status:** `pendente`
 - **Decisão:** —
 

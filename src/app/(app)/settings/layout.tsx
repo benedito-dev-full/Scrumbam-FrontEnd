@@ -13,6 +13,7 @@ import {
   Palette,
   Radio,
   Webhook,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,16 @@ const GROUPS: NavGroup[] = [
         href: "/settings/projects/statuses",
         label: "Statuses",
         icon: Hexagon,
+      },
+    ],
+  },
+  {
+    label: "Features",
+    items: [
+      {
+        href: "/settings/initiatives",
+        label: "Initiatives",
+        icon: Target,
       },
     ],
   },
