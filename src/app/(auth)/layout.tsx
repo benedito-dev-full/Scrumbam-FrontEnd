@@ -90,22 +90,22 @@ export default function AuthLayout({
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
           </span>
-          Built for teams that ship
+          Feito para times que entregam
         </span>
         <span className="hidden sm:inline">·</span>
         <span>© Scrumban {new Date().getFullYear()}</span>
         <div className="flex items-center gap-4">
           <Link href="#" className="hover:text-foreground transition-colors">
-            Terms
+            Termos
           </Link>
           <Link href="#" className="hover:text-foreground transition-colors">
-            Privacy
+            Privacidade
           </Link>
           <a
             href="mailto:contato@scrumban.com.br"
             className="hover:text-foreground transition-colors"
           >
-            Contact
+            Contato
           </a>
         </div>
       </footer>

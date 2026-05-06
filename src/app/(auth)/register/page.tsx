@@ -14,7 +14,7 @@ import type { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
-  usePageTitle("Create workspace");
+  usePageTitle("Criar workspace");
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
@@ -95,10 +95,10 @@ export default function RegisterPage() {
       {/* Heading */}
       <div className="space-y-2 text-center">
         <h1 className="text-[28px] font-semibold tracking-tight">
-          Create your workspace
+          Crie seu workspace
         </h1>
         <p className="text-[13px] text-muted-foreground">
-          Set up your team in less than a minute.
+          Configure seu time em menos de um minuto.
         </p>
       </div>
 
@@ -113,18 +113,18 @@ export default function RegisterPage() {
         )}
       >
         <GoogleIcon />
-        Continue with Google
+        Continuar com Google
       </button>
 
-      <Divider label="or" />
+      <Divider label="ou" />
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field id="nomeOrganizacao" label="Workspace name">
+        <Field id="nomeOrganizacao" label="Nome do workspace">
           <Input
             id="nomeOrganizacao"
             type="text"
-            placeholder="Acme Inc."
+            placeholder="Minha Empresa"
             value={nomeOrganizacao}
             onChange={(e) => setNomeOrganizacao(e.target.value)}
             required
@@ -133,11 +133,11 @@ export default function RegisterPage() {
           />
         </Field>
 
-        <Field id="nome" label="Your name">
+        <Field id="nome" label="Seu nome">
           <Input
             id="nome"
             type="text"
-            placeholder="Jane Doe"
+            placeholder="Joao Silva"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             required
@@ -150,7 +150,7 @@ export default function RegisterPage() {
           <Input
             id="email"
             type="email"
-            placeholder="you@company.com"
+            placeholder="voce@empresa.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -159,11 +159,11 @@ export default function RegisterPage() {
           />
         </Field>
 
-        <Field id="password" label="Password">
+        <Field id="password" label="Senha">
           <Input
             id="password"
             type="password"
-            placeholder="At least 8 characters"
+            placeholder="Minimo 8 caracteres"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -173,11 +173,11 @@ export default function RegisterPage() {
           />
         </Field>
 
-        <Field id="confirmPassword" label="Confirm password">
+        <Field id="confirmPassword" label="Confirmar senha">
           <Input
             id="confirmPassword"
             type="password"
-            placeholder="Repeat your password"
+            placeholder="Repita sua senha"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
@@ -200,17 +200,17 @@ export default function RegisterPage() {
             "hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed",
           )}
         >
-          {loading ? "Creating workspace..." : "Create workspace"}
+          {loading ? "Criando workspace..." : "Criar workspace"}
         </button>
       </form>
 
       <p className="text-center text-[13px] text-muted-foreground">
-        Already have an account?{" "}
+        Ja tem uma conta?{" "}
         <Link
           href="/login"
           className="font-medium text-foreground hover:underline underline-offset-4"
         >
-          Sign in
+          Entrar
         </Link>
       </p>
     </div>

@@ -73,7 +73,7 @@ export const navTopItems: NavItem[] = [
   },
   {
     href: "/intentions",
-    label: "My issues",
+    label: "Minhas issues",
     icon: CircleDot,
     customizeKey: "myIssues",
   },
@@ -89,35 +89,35 @@ export const navSections: NavSection[] = [
     items: [
       {
         href: "/projects",
-        label: "Projects",
+        label: "Projetos",
         icon: Box,
         customizeKey: "projects",
       },
       {
         href: "/views/issues",
-        label: "Views",
+        label: "Visualizacoes",
         icon: Layers,
         customizeKey: "views",
       },
       {
         href: "/more",
-        label: "More",
+        label: "Mais",
         icon: MoreHorizontal,
         popoverItems: [
           {
             href: "/settings/workspace/members",
-            label: "Members",
+            label: "Membros",
             icon: Users,
           },
           {
             href: "/team/issues",
-            label: "Teams",
+            label: "Times",
             icon: Building2,
             stub: true,
-            hint: "Gap #1 — Teams nao existe no schema",
+            hint: "Gap #1 — Times nao existem no schema",
           },
           {
-            label: "Customize sidebar",
+            label: "Personalizar sidebar",
             icon: PenSquare,
             separator: true,
             action: "customize-sidebar",
@@ -127,22 +127,22 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Your teams",
+    label: "Seus times",
     collapsible: true,
     team: { name: "Devari Tecnologia", icon: Play, iconColor: "text-emerald-500" },
     items: [
       { href: "/team/issues", label: "Issues", icon: CircleDot, stub: true },
-      { href: "/team/projects", label: "Projects", icon: Box, stub: true },
-      { href: "/team/views", label: "Views", icon: Layers, stub: true },
+      { href: "/team/projects", label: "Projetos", icon: Box, stub: true },
+      { href: "/team/views", label: "Visualizacoes", icon: Layers, stub: true },
     ],
   },
   {
-    label: "Try",
+    label: "Experimente",
     collapsible: true,
     items: [
-      { href: "/import", label: "Import issues", icon: Download, stub: true },
-      { href: "/invite", label: "Invite people", icon: UserPlus, stub: true },
-      { href: "/initiatives", label: "Initiatives", icon: Target, stub: true },
+      { href: "/import", label: "Importar issues", icon: Download, stub: true },
+      { href: "/invite", label: "Convidar pessoas", icon: UserPlus, stub: true },
+      { href: "/initiatives", label: "Iniciativas", icon: Target, stub: true },
       {
         href: "/settings/integrations/claude",
         label: "Connect Claude",
@@ -152,10 +152,10 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Settings",
+    label: "Configuracoes",
     collapsible: true,
     items: [
-      { href: "/integrations", label: "Integrations", icon: Plug },
+      { href: "/integrations", label: "Integracoes", icon: Plug },
     ],
   },
 ];

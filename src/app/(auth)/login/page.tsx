@@ -14,7 +14,7 @@ import type { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-  usePageTitle("Sign in");
+  usePageTitle("Entrar");
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
@@ -86,10 +86,10 @@ export default function LoginPage() {
       {/* Heading */}
       <div className="space-y-2 text-center">
         <h1 className="text-[28px] font-semibold tracking-tight">
-          Sign in to Scrumban
+          Entre no Scrumban
         </h1>
         <p className="text-[13px] text-muted-foreground">
-          Welcome back. Enter your details to continue.
+          Bem-vindo de volta. Preencha seus dados para continuar.
         </p>
       </div>
 
@@ -104,10 +104,10 @@ export default function LoginPage() {
         )}
       >
         <GoogleIcon />
-        Continue with Google
+        Continuar com Google
       </button>
 
-      <Divider label="or" />
+      <Divider label="ou" />
 
       {/* Email + password */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,7 +115,7 @@ export default function LoginPage() {
           <Input
             id="email"
             type="email"
-            placeholder="you@company.com"
+            placeholder="voce@empresa.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -125,12 +125,12 @@ export default function LoginPage() {
           />
         </Field>
 
-        <Field id="password" label="Password" hint={
+        <Field id="password" label="Senha" hint={
           <Link
             href="#"
             className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            Forgot?
+            Esqueceu?
           </Link>
         }>
           <Input
@@ -159,18 +159,18 @@ export default function LoginPage() {
             "hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed",
           )}
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
 
       {/* Footer link */}
       <p className="text-center text-[13px] text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        Nao tem uma conta?{" "}
         <Link
           href="/register"
           className="font-medium text-foreground hover:underline underline-offset-4"
         >
-          Create one
+          Criar agora
         </Link>
       </p>
     </div>

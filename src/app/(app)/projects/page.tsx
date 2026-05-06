@@ -21,7 +21,7 @@ import { NewProjectModal } from "@/components/projects/new-project-modal";
 import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
-  usePageTitle("Projects");
+  usePageTitle("Projetos");
   const router = useRouter();
   const { data: projects, isLoading } = useProjects();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -31,12 +31,12 @@ export default function ProjectsPage() {
       <div className="flex h-full flex-col">
         {/* Page header */}
         <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-8">
-          <h1 className="text-[13px] font-medium">Projects</h1>
+          <h1 className="text-[13px] font-medium">Projetos</h1>
           <button
             type="button"
             onClick={() => setNewProjectOpen(true)}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Criar project"
+            aria-label="Criar projeto"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -53,7 +53,7 @@ export default function ProjectsPage() {
               type="button"
               className="flex items-center gap-1.5 rounded-md bg-accent px-2 py-1 text-[12px] font-medium text-foreground"
             >
-              All projects
+              Todos os projetos
             </button>
             <button
               type="button"
@@ -67,21 +67,21 @@ export default function ProjectsPage() {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Filter"
+              aria-label="Filtros"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Display options"
+              aria-label="Opcoes de exibicao"
             >
               <Settings2 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Toggle panel"
+              aria-label="Alternar painel"
             >
               <PanelRight className="h-3.5 w-3.5" />
             </button>
@@ -92,11 +92,11 @@ export default function ProjectsPage() {
         <div className="flex-1 overflow-auto">
           {/* Column headers */}
           <div className="grid grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border px-8 py-2 text-[11px] font-medium text-muted-foreground">
-            <div>Name</div>
-            <div>Health</div>
-            <div>Priority</div>
-            <div>Lead</div>
-            <div>Target date</div>
+            <div>Nome</div>
+            <div>Saude</div>
+            <div>Prioridade</div>
+            <div>Responsavel</div>
+            <div>Data alvo</div>
             <div className="text-right pr-2">Issues</div>
             <div>Status</div>
           </div>
@@ -171,7 +171,7 @@ function ProjectRow({
       {/* Health (stub) */}
       <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[12px]">
         <CircleDashed className="h-3.5 w-3.5" />
-        <span>No updates</span>
+        <span>Sem atualizacoes</span>
       </div>
 
       {/* Priority (stub) */}
@@ -281,9 +281,9 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
         <Box className="h-5 w-5 text-muted-foreground" />
       </div>
-      <h3 className="mt-4 text-sm font-medium">No projects yet</h3>
+      <h3 className="mt-4 text-sm font-medium">Nenhum projeto ainda</h3>
       <p className="mt-1 text-[12px] text-muted-foreground">
-        Create your first project to get started.
+        Crie seu primeiro projeto para comecar.
       </p>
       <button
         type="button"
@@ -294,7 +294,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         )}
       >
         <Plus className="h-3 w-3" />
-        New project
+        Novo projeto
       </button>
     </div>
   );

@@ -124,13 +124,13 @@ export function AppSidebar() {
             <DropdownMenuItem asChild className="text-[13px]">
               <Link href="/settings/account/profile">
                 <UserIcon className="mr-2 h-3.5 w-3.5" />
-                Profile
+                Perfil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="text-[13px]">
               <Link href="/settings">
                 <Settings className="mr-2 h-3.5 w-3.5" />
-                Settings
+                Configuracoes
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -139,7 +139,7 @@ export function AppSidebar() {
               className="text-[13px] text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 h-3.5 w-3.5" />
-              Log out
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -148,6 +148,7 @@ export function AppSidebar() {
           onClick={openCommandPalette}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
           aria-label="Buscar"
+          title="Buscar (Cmd+K)"
         >
           <Search className="h-3.5 w-3.5" />
         </button>
@@ -212,8 +213,8 @@ export function AppSidebar() {
           <Link
             href="/settings"
             className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-            aria-label="Settings"
-            title="Settings"
+            aria-label="Configuracoes"
+            title="Configuracoes"
           >
             <Settings className="h-4 w-4" />
           </Link>
@@ -221,8 +222,8 @@ export function AppSidebar() {
             type="button"
             onClick={logout}
             className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
-            aria-label="Log out"
-            title="Log out"
+            aria-label="Sair"
+            title="Sair"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -231,7 +232,7 @@ export function AppSidebar() {
           type="button"
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
         >
-          <span className="text-amber-400">↑</span> Free plan
+          <span className="text-amber-400">↑</span> Plano gratuito
         </button>
       </div>
     </aside>
