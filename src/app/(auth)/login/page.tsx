@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { authApi } from "@/lib/api/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrumbanLogo } from "@/components/common/scrumban-logo";
-import type { User } from "@/types/auth";
-import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { AxiosError } from "axios";
 
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { authApi } from "@/lib/api/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { usePageTitle } from "@/lib/hooks/use-page-title";
+import type { User } from "@/types/auth";
+import { cn } from "@/lib/utils";
+
 export default function LoginPage() {
-  usePageTitle("Entrar");
+  usePageTitle("Sign in");
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
@@ -31,31 +31,26 @@ export default function LoginPage() {
       setError("Informe seu email.");
       return;
     }
-
     if (password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
     setLoading(true);
-
     try {
       const data = await authApi.login({ email, password });
 
       if (!data.user.entidadeId) {
-        setError(
-          "Conta com dados incompletos. Contate o administrador.",
-        );
+        setError("Conta com dados incompletos. Contate o administrador.");
         return;
       }
 
-      // Buscar dados completos via /auth/me (inclui onboardingCompleted)
       let onboardingCompleted = false;
       try {
         const me = await authApi.getMe();
         onboardingCompleted = me.onboardingCompleted ?? false;
       } catch {
-        // Se falhar, assume false (wizard aparece — safe default)
+        // se falhar, assume false
       }
 
       const user: User = {
@@ -87,76 +82,163 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Mobile-only logo */}
-      <div className="lg:hidden flex justify-center">
-        <ScrumbanLogo size="lg" />
-      </div>
-
-      <div className="space-y-2 text-center lg:text-left">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Bem-vindo de volta
+    <div className="space-y-7">
+      {/* Heading */}
+      <div className="space-y-2 text-center">
+        <h1 className="text-[28px] font-semibold tracking-tight">
+          Sign in to Scrumban
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Entre na sua conta para continuar
+        <p className="text-[13px] text-muted-foreground">
+          Welcome back. Enter your details to continue.
         </p>
       </div>
 
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-              className="h-10"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Sua senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="h-10"
-            />
-          </div>
+      {/* Google OAuth (stub) */}
+      <button
+        type="button"
+        disabled
+        title="OAuth ainda nao implementado"
+        className={cn(
+          "flex w-full h-10 items-center justify-center gap-2 rounded-md border border-border bg-card text-[13px] font-medium",
+          "text-muted-foreground cursor-not-allowed",
+        )}
+      >
+        <GoogleIcon />
+        Continue with Google
+      </button>
 
-          {error && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+      <Divider label="or" />
 
-          <Button
-            type="submit"
-            className="w-full h-10 font-semibold"
-            disabled={loading}
+      {/* Email + password */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field id="email" label="Email">
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            autoFocus
+            className="h-10 text-[14px]"
+          />
+        </Field>
+
+        <Field id="password" label="Password" hint={
+          <Link
+            href="#"
+            className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            {loading ? "Entrando..." : "Entrar"}
-          </Button>
-        </form>
-      </div>
+            Forgot?
+          </Link>
+        }>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="h-10 text-[14px]"
+          />
+        </Field>
 
-      <p className="text-center text-sm text-muted-foreground">
-        Nao tem uma conta?{" "}
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+            <p className="text-[12px] text-destructive">{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={cn(
+            "w-full h-10 rounded-md bg-foreground text-background text-[13px] font-medium",
+            "hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed",
+          )}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+
+      {/* Footer link */}
+      <p className="text-center text-[13px] text-muted-foreground">
+        Don&apos;t have an account?{" "}
         <Link
           href="/register"
-          className="font-medium text-primary hover:text-primary/80 underline-offset-4 hover:underline transition-colors"
+          className="font-medium text-foreground hover:underline underline-offset-4"
         >
-          Criar conta
+          Create one
         </Link>
       </p>
     </div>
+  );
+}
+
+// ============================================================
+// Sub-components
+// ============================================================
+
+function Field({
+  id,
+  label,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label
+          htmlFor={id}
+          className="text-[12px] font-medium text-foreground/90"
+        >
+          {label}
+        </Label>
+        {hint}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-px flex-1 bg-border" />
+      <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18a11 11 0 0 0 0 9.86l3.66-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
   );
 }
