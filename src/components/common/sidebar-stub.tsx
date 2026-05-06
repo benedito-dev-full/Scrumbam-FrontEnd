@@ -1,13 +1,14 @@
 "use client";
 
 import { Construction } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PageTransition } from "@/components/common/page-transition";
 
 interface SidebarStubProps {
   title: string;
   description: string;
   gapRef?: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: LucideIcon;
 }
 
 /**
