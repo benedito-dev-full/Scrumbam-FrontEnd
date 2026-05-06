@@ -101,7 +101,7 @@ export function AppSidebar() {
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
                 {orgInitials}
               </span>
-              <span className="truncate text-[13px] font-medium">
+              <span className="truncate text-[14px] font-medium">
                 {orgShort}
               </span>
               <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/70" />
@@ -227,7 +227,7 @@ function Section({
         <button
           type="button"
           onClick={onToggle}
-          className="group flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+          className="group flex w-full items-center gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
         >
           {collapsed ? (
             <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
@@ -242,7 +242,7 @@ function Section({
         <ul className="space-y-px">
           {section.team ? (
             <li>
-              <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[13px] font-medium">
+              <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[14px] font-medium">
                 <section.team.icon
                   className={cn(
                     "h-3.5 w-3.5",
@@ -304,16 +304,16 @@ function SidebarLink({
       <Link
         href={item.href}
         className={cn(
-          "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
+          "flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors",
           active
             ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-            : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+            : "text-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
         )}
       >
-        <item.icon className="h-3.5 w-3.5 shrink-0" />
+        <item.icon className="h-4 w-4 shrink-0" />
         <span className="truncate">{item.label}</span>
         {item.badge !== undefined && item.badge > 0 && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
             {item.badge}
           </span>
         )}
@@ -338,13 +338,13 @@ function PopoverLink({
           <button
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors",
               active
                 ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                : "text-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
             )}
           >
-            <item.icon className="h-3.5 w-3.5 shrink-0" />
+            <item.icon className="h-4 w-4 shrink-0" />
             <span className="truncate">{item.label}</span>
           </button>
         </DropdownMenuTrigger>
@@ -352,7 +352,7 @@ function PopoverLink({
           side="right"
           align="start"
           sideOffset={8}
-          className="w-52"
+          className="w-56 border-border shadow-xl"
         >
           {item.popoverItems!.map((p, idx) => (
             <PopoverItemRow
@@ -392,7 +392,7 @@ function PopoverItemRow({
             e.preventDefault();
             onOpenCustomize?.();
           }}
-          className="text-[13px]"
+          className="text-[14px] py-2"
         >
           {content}
         </DropdownMenuItem>
@@ -400,12 +400,12 @@ function PopoverItemRow({
         <DropdownMenuItem
           disabled
           title={item.hint}
-          className="text-[13px] cursor-not-allowed"
+          className="text-[14px] py-2 cursor-not-allowed"
         >
           {content}
         </DropdownMenuItem>
       ) : (
-        <DropdownMenuItem asChild className="text-[13px]">
+        <DropdownMenuItem asChild className="text-[14px] py-2">
           <Link href={item.href}>{content}</Link>
         </DropdownMenuItem>
       )}
