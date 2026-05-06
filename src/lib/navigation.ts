@@ -19,6 +19,8 @@ import type { LucideIcon } from "lucide-react";
 
 export interface PopoverNavItem {
   href?: string;
+  /** Acao client-side disparada no clique (alternativa a href) */
+  action?: "customize-sidebar";
   label: string;
   icon: LucideIcon;
   /** Adiciona separador acima deste item */
@@ -38,6 +40,15 @@ export interface NavItem {
   stub?: boolean;
   /** Se presente, item se comporta como popover trigger ao inves de link direto */
   popoverItems?: PopoverNavItem[];
+  /** Chave usada por useSidebarCustomization para visibility/order */
+  customizeKey?:
+    | "inbox"
+    | "myIssues"
+    | "drafts"
+    | "projects"
+    | "views"
+    | "members"
+    | "teams";
 }
 
 export interface NavSection {
@@ -54,8 +65,18 @@ export interface NavSection {
  * Sidebar items "soltos" no topo (sem secao). Linear: Inbox, My issues.
  */
 export const navTopItems: NavItem[] = [
-  { href: "/intentions/inbox", label: "Inbox", icon: Inbox },
-  { href: "/intentions", label: "My issues", icon: CircleDot },
+  {
+    href: "/intentions/inbox",
+    label: "Inbox",
+    icon: Inbox,
+    customizeKey: "inbox",
+  },
+  {
+    href: "/intentions",
+    label: "My issues",
+    icon: CircleDot,
+    customizeKey: "myIssues",
+  },
 ];
 
 /**
@@ -66,8 +87,18 @@ export const navSections: NavSection[] = [
     label: "Workspace",
     collapsible: true,
     items: [
-      { href: "/projects", label: "Projects", icon: Box },
-      { href: "/views/issues", label: "Views", icon: Layers },
+      {
+        href: "/projects",
+        label: "Projects",
+        icon: Box,
+        customizeKey: "projects",
+      },
+      {
+        href: "/views/issues",
+        label: "Views",
+        icon: Layers,
+        customizeKey: "views",
+      },
       {
         href: "/more",
         label: "More",
@@ -89,8 +120,7 @@ export const navSections: NavSection[] = [
             label: "Customize sidebar",
             icon: PenSquare,
             separator: true,
-            stub: true,
-            hint: "Em breve",
+            action: "customize-sidebar",
           },
         ],
       },

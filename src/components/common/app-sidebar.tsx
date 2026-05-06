@@ -31,11 +31,31 @@ import {
   type NavSection,
   type PopoverNavItem,
 } from "@/lib/navigation";
+import {
+  useSidebarCustomization,
+  shouldShowSidebarItem,
+} from "@/lib/hooks/use-sidebar-customization";
+import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const { state: customization } = useSidebarCustomization();
+
+  // Filtra item conforme customization (badge=0 por padrao — UI puro)
+  const visible = (item: NavItem): boolean => {
+    if (!item.customizeKey) return true;
+    const v = customization.visibility[item.customizeKey];
+    return shouldShowSidebarItem(v, item.badge ?? 0);
+  };
+
+  const filteredTopItems = navTopItems.filter(visible);
+  const filteredSections = navSections.map((s) => ({
+    ...s,
+    items: s.items.filter(visible),
+  }));
 
   const orgInitials = (user?.orgNome || "DT")
     .split(" ")
@@ -137,11 +157,12 @@ export function AppSidebar() {
       {/* Top items (Inbox, My issues) */}
       <nav className="px-2">
         <ul className="space-y-px">
-          {navTopItems.map((item) => (
+          {filteredTopItems.map((item) => (
             <SidebarLink
               key={item.href}
               item={item}
               active={isNavItemActive(pathname, item.href)}
+              onOpenCustomize={() => setCustomizeOpen(true)}
             />
           ))}
         </ul>
@@ -149,16 +170,23 @@ export function AppSidebar() {
 
       {/* Sections */}
       <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
-        {navSections.map((section) => (
+        {filteredSections.map((section) => (
           <Section
             key={section.label}
             section={section}
             pathname={pathname}
             collapsed={!!collapsed[section.label || ""]}
             onToggle={() => toggle(section.label || "")}
+            onOpenCustomize={() => setCustomizeOpen(true)}
           />
         ))}
       </nav>
+
+      {/* Customize sidebar modal */}
+      <CustomizeSidebarModal
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+      />
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-sidebar-border px-3 py-2">
@@ -185,11 +213,13 @@ function Section({
   pathname,
   collapsed,
   onToggle,
+  onOpenCustomize,
 }: {
   section: NavSection;
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
+  onOpenCustomize: () => void;
 }) {
   return (
     <div className="mt-3 first:mt-0">
@@ -228,6 +258,7 @@ function Section({
                     key={item.href}
                     item={item}
                     active={isNavItemActive(pathname, item.href)}
+                    onOpenCustomize={onOpenCustomize}
                   />
                 ))}
               </ul>
@@ -238,6 +269,7 @@ function Section({
                 key={item.href}
                 item={item}
                 active={isNavItemActive(pathname, item.href)}
+                onOpenCustomize={onOpenCustomize}
               />
             ))
           )}
@@ -247,10 +279,24 @@ function Section({
   );
 }
 
-function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+function SidebarLink({
+  item,
+  active,
+  onOpenCustomize,
+}: {
+  item: NavItem;
+  active: boolean;
+  onOpenCustomize?: () => void;
+}) {
   // Items com popoverItems renderizam dropdown ao inves de link
   if (item.popoverItems && item.popoverItems.length > 0) {
-    return <PopoverLink item={item} active={active} />;
+    return (
+      <PopoverLink
+        item={item}
+        active={active}
+        onOpenCustomize={onOpenCustomize}
+      />
+    );
   }
 
   return (
@@ -276,7 +322,15 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function PopoverLink({ item, active }: { item: NavItem; active: boolean }) {
+function PopoverLink({
+  item,
+  active,
+  onOpenCustomize,
+}: {
+  item: NavItem;
+  active: boolean;
+  onOpenCustomize?: () => void;
+}) {
   return (
     <li>
       <DropdownMenu>
@@ -301,7 +355,11 @@ function PopoverLink({ item, active }: { item: NavItem; active: boolean }) {
           className="w-52"
         >
           {item.popoverItems!.map((p, idx) => (
-            <PopoverItemRow key={`${p.label}-${idx}`} item={p} />
+            <PopoverItemRow
+              key={`${p.label}-${idx}`}
+              item={p}
+              onOpenCustomize={onOpenCustomize}
+            />
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -309,7 +367,13 @@ function PopoverLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function PopoverItemRow({ item }: { item: PopoverNavItem }) {
+function PopoverItemRow({
+  item,
+  onOpenCustomize,
+}: {
+  item: PopoverNavItem;
+  onOpenCustomize?: () => void;
+}) {
   const Icon = item.icon;
 
   const content = (
@@ -322,7 +386,17 @@ function PopoverItemRow({ item }: { item: PopoverNavItem }) {
   return (
     <>
       {item.separator && <DropdownMenuSeparator />}
-      {item.stub || !item.href ? (
+      {item.action === "customize-sidebar" ? (
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            onOpenCustomize?.();
+          }}
+          className="text-[13px]"
+        >
+          {content}
+        </DropdownMenuItem>
+      ) : item.stub || !item.href ? (
         <DropdownMenuItem
           disabled
           title={item.hint}
