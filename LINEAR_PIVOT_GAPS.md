@@ -29,6 +29,9 @@ A cada nova tela do Linear que for clonada:
 |---|---|
 | `/projects` (All projects) | Em análise — gaps abaixo |
 | `/my-issues/*` (Assigned, Created, Subscribed, Activity) | Em análise — gaps 8 e 9 abaixo |
+| `/inbox` | Implementada — schema atende 100% |
+| `/integrations` | Implementada — schema atende 100% |
+| `/project/<id>/overview` (Project detail) | Em análise — gaps 10–16 abaixo |
 
 ---
 
@@ -149,6 +152,103 @@ A cada nova tela do Linear que for clonada:
   - (a) Adicionar `DProject.issuePrefix String?` (ex.: "DEV") + `DTask.identifierNumber Int?` (sequencial por project). Migration + lógica no insert para incrementar atomicamente. Mais fiel ao Linear.
   - (b) Adicionar prefixo no Team (depende do gap #1 Teams) + counter por team.
   - (c) Manter `#{chave}` como identificador — feio mas funcional.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 10. Project Updates ("Write first project update")
+
+- **Onde apareceu:** `/project/<id>/overview` — caixa central "Write first project update". Linear permite postar atualizações periódicas (texto + status report) que viram timeline do project.
+- **Schema atual:** Sem modelo de update.
+- **Impacto no frontend:** Caixa "Write project update" fica disabled ou stub.
+- **Opções:**
+  - (a) Novo modelo `DProjectUpdate` (idProject, idAuthor, body Text, healthAtUpdate, chcriacao). Cobre histórico e relatório.
+  - (b) Reusar `DEvento` com `tipo: 'project.update'` e `payload.body` — sem migration, mas mistura updates com eventos automáticos.
+  - (c) Pular agora.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 11. Milestones
+
+- **Onde apareceu:** `/project/<id>/overview` — seção "Milestones" no painel direito + botão "+ Milestone" inline. Linear usa milestones como agrupador de issues dentro de um project (ex.: M1, M2).
+- **Schema atual:** Sem modelo. Existe `DTabela` com `idClasse=-400 Sprint` que é parecido, mas semanticamente diferente (sprint é por tempo; milestone é por entregável).
+- **Impacto no frontend:** Seção fica vazia ou stub.
+- **Opções:**
+  - (a) Novo modelo `DMilestone` (idProject, nome, descricao, dataAlvo, ordem, status). Mais limpo.
+  - (b) Reusar `DTabela` com nova `DClasse -460 MILESTONE`. Polimorfismo do Devari, sem migration.
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 12. Project Resources (documents/links)
+
+- **Onde apareceu:** `/project/<id>/overview` — linha "Resources: + Add document or link...". Linear permite anexar documentos e links externos ao project.
+- **Schema atual:** Sem modelo.
+- **Impacto no frontend:** Botão "+ Add document or link..." fica disabled.
+- **Opções:**
+  - (a) Novo modelo `DProjectResource` (idProject, tipo `link|document`, url, titulo, chcriacao).
+  - (b) Guardar lista em `DProject.dados.resources` (Json). Sem migration.
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 13. Project Slack channel
+
+- **Onde apareceu:** `/project/<id>/overview` painel direito — campo "Slack: + Slack channel". Linear integra com canal Slack do project.
+- **Schema atual:** Sem campo.
+- **Impacto no frontend:** Campo fica disabled.
+- **Opções:**
+  - (a) `DProject.slackChannel String?` (migration simples).
+  - (b) `DProject.dados.slackChannel` (Json, sem migration).
+  - (c) Pular — integração externa, baixa prioridade.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 14. Project Labels
+
+- **Onde apareceu:** `/project/<id>/overview` painel direito — campo "Labels: + Add label". Linear permite labels custom por project (`bug`, `tech-debt`, `prod`, etc.).
+- **Schema atual:** Existe `tagsApi` no frontend (`DTaskTag`?) mas só por task, não por project. Confirmar se backend tem `DProjectLabel`.
+- **Impacto no frontend:** Campo fica disabled.
+- **Opções:**
+  - (a) Novo modelo `DProjectLabel` (idProject, nome, cor).
+  - (b) Reusar mecanismo de tags existente, mas com escopo project.
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 15. Project favoritos (estrela)
+
+- **Onde apareceu:** breadcrumb topo `Projects > JavouApp ☆`. Linear permite favoritar projects para acesso rápido na sidebar (seção "Favorites").
+- **Schema atual:** Sem modelo de favoritos.
+- **Impacto no frontend:** Botão de estrela fica disabled.
+- **Opções:**
+  - (a) Novo modelo `DUserFavorite` (idUser, entityType, entityId).
+  - (b) Lista em `DEntidade.dados.favorites` por user (Json).
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 16. Description rich-text com refs inline
+
+- **Onde apareceu:** `/project/<id>/overview` — campo "Description" embute o card `🟡 DEV-6 Teste` (referência inline a uma issue). Linear usa rich-text editor com mention/embed de issues, projects, milestones.
+- **Schema atual:** `DProject.descricao` é `String?` plano. Sem suporte a refs nem rich-text persistido.
+- **Impacto no frontend:** Description fica como textarea simples.
+- **Opções:**
+  - (a) Mudar `DProject.descricao` para `Text` (já é String, ok) e armazenar markdown/JSON estruturado. Renderizar com biblioteca de markdown + parser de refs (`#DEV-6` → link).
+  - (b) Manter texto plano, sem refs (renderiza como `<pre>`).
 - **Status:** `pendente`
 - **Decisão:** —
 
