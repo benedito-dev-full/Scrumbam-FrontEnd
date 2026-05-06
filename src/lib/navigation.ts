@@ -70,7 +70,11 @@ export const navSections: NavSection[] = [
       { href: "/import", label: "Import issues", icon: Download, stub: true },
       { href: "/invite", label: "Invite people", icon: UserPlus, stub: true },
       { href: "/initiatives", label: "Initiatives", icon: Target, stub: true },
-      { href: "/connect/cursor", label: "Connect Cursor", icon: Zap, stub: true },
+      {
+        href: "/settings/integrations/claude",
+        label: "Connect Claude",
+        icon: Zap,
+      },
       { href: "/connect/codex", label: "Connect Codex", icon: Code2, stub: true },
     ],
   },

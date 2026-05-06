@@ -42,6 +42,7 @@ A cada nova tela do Linear que for clonada:
 | `/views/[viewId]` (View detail) | Em análise — gap #2 atualizado |
 | `/views/issues` e `/views/projects` (Views list) | Em análise — gap #2 expandido |
 | `/settings/initiatives` (config) | Em análise — gap #3 expandido |
+| `/settings/integrations/claude` (Connect Claude detail) | Implementada — schema atende 100% (MCP) |
 
 ---
 
