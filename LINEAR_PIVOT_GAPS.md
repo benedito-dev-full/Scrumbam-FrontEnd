@@ -36,6 +36,7 @@ A cada nova tela do Linear que for clonada:
 | `/settings/account/preferences` | Em análise — gaps 21–23 abaixo |
 | `/settings/account/profile` | Em análise — gaps 24–25 abaixo |
 | `/settings/account/notifications` | Em análise — gaps 26–29 abaixo |
+| `/settings/workspace/general` | Em análise — gaps 30–33 abaixo |
 
 ---
 
@@ -429,6 +430,59 @@ A cada nova tela do Linear que for clonada:
   - (a) Implementar feature SaaS de produto-comms (newsletter, in-app announcements). Projeto a parte.
   - (b) Pular indefinidamente — feature de empresa SaaS madura.
 - **Status:** `descartado-por-default` (reabrir quando produto tiver time de comms)
+
+---
+
+### 30. Workspace logo
+
+- **Onde apareceu:** `/settings/workspace/general` campo "Logo (256x256px)" — Linear permite upload de logo do workspace.
+- **Schema atual:** `DEntidade` (idClasse=-50 = Org) nao tem campo `logoUrl` ou `avatar`.
+- **Impacto no frontend:** Mostra apenas badge com iniciais da org. Sem upload aqui — frontend tem `/settings/branding` (legado) que pode ja cobrir; precisa unificar.
+- **Opções:**
+  - (a) `DEntidade.logoUrl String?` (migration) + storage (S3/Cloudinary).
+  - (b) Reusar `/settings/branding` legacy se ja persiste logo. **Linkar a partir desta tela.**
+  - (c) Manter so iniciais.
+- **Status:** `pendente — verificar se /settings/branding cobre`
+- **Decisão:** —
+
+---
+
+### 31. Workspace URL slug
+
+- **Onde apareceu:** `/settings/workspace/general` campo "URL: linear.app/devari-tecnologia". Slug usado em URLs publicas/compartilhamento.
+- **Schema atual:** `DEntidade` nao tem campo `slug`. Hoje URLs usam `chave` (BigInt).
+- **Impacto no frontend:** Campo fica disabled como stub. URLs de project/issue continuam usando IDs numericos.
+- **Opções:**
+  - (a) `DEntidade.slug String? @unique` (migration). Slug auto-gerado a partir do nome no register, editavel depois.
+  - (b) Pular — URLs com IDs sao funcionais.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 32. Workspace locale (fiscal year + region)
+
+- **Onde apareceu:** `/settings/workspace/general` secao "Time & region" — "First month of the fiscal year" (dropdown) e "Region" (read-only, set-on-create).
+- **Schema atual:** `DEntidade` nao tem campos de locale. Backend usa America/Sao_Paulo fixo (TimezoneService).
+- **Impacto no frontend:** Dropdown de fiscal year e info de region ficam stubs.
+- **Opções:**
+  - (a) `DEntidade.dados.fiscalYearStart` (Json, sem migration) + `dados.region`.
+  - (b) Colunas dedicadas em `DEntidade` (migration).
+  - (c) Pular — fixar em January / Brasil.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 33. Welcome message (Enterprise paywall)
+
+- **Onde apareceu:** `/settings/workspace/general` secao "Welcome message" — Linear marca como "Available on Enterprise".
+- **Schema atual:** Sem campo. Sem feature de planos pagos.
+- **Impacto no frontend:** Linha fica stub permanente com badge "Em breve" / "Plano superior".
+- **Opções:**
+  - (a) Implementar quando tivermos planos pagos.
+  - (b) Pular indefinidamente — feature de produto SaaS madura.
+- **Status:** `descartado-por-default`
 
 ---
 

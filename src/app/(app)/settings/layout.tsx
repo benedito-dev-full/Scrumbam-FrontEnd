@@ -56,7 +56,6 @@ const GROUPS: NavGroup[] = [
         href: "/settings/workspace/general",
         label: "General",
         icon: Building2,
-        stub: true,
       },
       {
         href: "/settings/workspace/members",
