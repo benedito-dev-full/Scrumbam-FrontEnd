@@ -32,6 +32,7 @@ A cada nova tela do Linear que for clonada:
 | `/inbox` | Implementada — schema atende 100% |
 | `/integrations` | Implementada — schema atende 100% |
 | `/project/<id>/overview` (Project detail) | Em análise — gaps 10–16 abaixo |
+| `/issue/<code>/<slug>` (Issue detail) | Em análise — gaps 17–20 abaixo |
 
 ---
 
@@ -249,6 +250,60 @@ A cada nova tela do Linear que for clonada:
 - **Opções:**
   - (a) Mudar `DProject.descricao` para `Text` (já é String, ok) e armazenar markdown/JSON estruturado. Renderizar com biblioteca de markdown + parser de refs (`#DEV-6` → link).
   - (b) Manter texto plano, sem refs (renderiza como `<pre>`).
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 17. Linked issues / relations (blocks, blocked-by, related, duplicate)
+
+- **Onde apareceu:** `/issue/<code>` painel direito (não visível no print de issue deleted, mas é padrão Linear). Linear permite ligar issues como `blocks`, `blocked-by`, `relates-to`, `duplicate-of`.
+- **Schema atual:** Sem modelo de relação entre `DTask`s.
+- **Impacto no frontend:** Seção "Linked issues" fica disabled.
+- **Opções:**
+  - (a) Novo modelo `DTaskLink` (idTaskFrom, idTaskTo, tipo enum: blocks/related/duplicate, chcriacao). Bidirecional.
+  - (b) Lista em `DTask.dados.links` (Json). Sem migration.
+  - (c) Pular.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 18. Reactions (emoji em issues e comments)
+
+- **Onde apareceu:** Issue body e comments do Linear permitem reactions (👍 ❤️ 🎉 ...).
+- **Schema atual:** Sem modelo de reaction.
+- **Impacto no frontend:** Sem UI de reagir.
+- **Opções:**
+  - (a) Novo modelo `DReaction` (idEntityType, idEntityId, idUser, emoji). Genérico.
+  - (b) Lista em `DTask.dados.reactions` e `DComment.dados.reactions`.
+  - (c) Pular — feature de baixa prioridade.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
+### 19. Sub-issues / parent-child de issues
+
+- **Onde apareceu:** Linear permite quebrar uma issue em sub-issues (parent-child). No frontend o tipo `Task` mapeia `idParentTask`, mas o `schema.prisma` que voce me passou nao expoe esse campo em `DTask`.
+- **Schema atual:** A confirmar — pode ja existir e o schema da memoria estar incompleto. Precisa checar com backend.
+- **Impacto no frontend:** Seção "Sub-issues" fica disabled ate confirmação.
+- **Opções:**
+  - (a) Confirmar com backend que `DTask.idParentTask` existe; se sim, schema atende.
+  - (b) Caso nao exista: adicionar coluna self-relation em `DTask`.
+- **Status:** `pendente — confirmar com backend`
+- **Decisão:** —
+
+---
+
+### 20. Git branch integration
+
+- **Onde apareceu:** topo da issue do Linear tem botão de "branch" (cria/copia comando git checkout). Integração com GitHub/GitLab.
+- **Schema atual:** `DTask.prUrl` existe (atende metade — link de PR). Mas Linear tambem cria branch direto a partir da issue (`feat/dev-6-teste`).
+- **Impacto no frontend:** Botão `branch` fica disabled.
+- **Opções:**
+  - (a) Mostrar comando `git checkout -b dev-{id}-{slug}` copiável (puramente client-side; sem schema). Implementável agora.
+  - (b) Integração real com GitHub API (futuro). Depende de OAuth + tokens.
 - **Status:** `pendente`
 - **Decisão:** —
 
