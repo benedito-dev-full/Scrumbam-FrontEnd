@@ -10,9 +10,17 @@ import {
   CircleDashed,
   Calendar,
   User as UserIcon,
+  MoreHorizontal,
+  Cpu,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -112,6 +120,7 @@ export default function ProjectsPage() {
                 key={p.chave}
                 project={p}
                 onClick={() => router.push(`/intentions/${p.chave}`)}
+                onAutomation={() => router.push(`/projects/${p.chave}/automation`)}
               />
             ))
           )}
@@ -124,6 +133,7 @@ export default function ProjectsPage() {
 function ProjectRow({
   project,
   onClick,
+  onAutomation,
 }: {
   project: {
     chave: string;
@@ -133,6 +143,7 @@ function ProjectRow({
     responsavel?: { chave: string; nome: string } | null;
   };
   onClick: () => void;
+  onAutomation: () => void;
 }) {
   // Status como % de progresso: stub 0% ate API expor count(done)/count(total).
   // Gap registrado em LINEAR_PIVOT_GAPS.md.
@@ -158,15 +169,16 @@ function ProjectRow({
     : null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="grid w-full grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px] items-center gap-3 border-b border-border/60 px-8 py-2 text-left text-[13px] hover:bg-accent/40 transition-colors"
-    >
-      <div className="flex items-center gap-2 min-w-0">
+    <div className="group grid w-full grid-cols-[minmax(0,1fr)_140px_100px_60px_120px_70px_90px_32px] items-center gap-3 border-b border-border/60 px-8 py-2 text-[13px] hover:bg-accent/40 transition-colors">
+      {/* Nome — clicável para o board */}
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-2 min-w-0 text-left"
+      >
         <Box className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="truncate">{project.nome}</span>
-      </div>
+      </button>
 
       {/* Health (stub) */}
       <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[12px]">
@@ -195,14 +207,9 @@ function ProjectRow({
         {targetDate ? (
           <span className="text-[12px] text-muted-foreground">{targetDate}</span>
         ) : (
-          <button
-            type="button"
-            onClick={(e) => e.stopPropagation()}
-            className="flex h-5 w-5 items-center justify-center rounded border border-dashed border-muted-foreground/40 text-muted-foreground/40 hover:border-muted-foreground/70 hover:text-muted-foreground/70"
-            aria-label="Definir target date"
-          >
+          <div className="flex h-5 w-5 items-center justify-center rounded border border-dashed border-muted-foreground/40 text-muted-foreground/40">
             <Calendar className="h-3 w-3" />
-          </button>
+          </div>
         )}
       </div>
 
@@ -213,7 +220,32 @@ function ProjectRow({
 
       {/* Status (% progresso) */}
       <ProgressBadge value={progress} />
-    </button>
+
+      {/* Ações — aparece no hover da row */}
+      <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Ações do projeto"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem
+              onClick={(e) => { e.stopPropagation(); onAutomation(); }}
+              className="flex items-center gap-2 text-[13px]"
+            >
+              <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+              Automação
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
 
