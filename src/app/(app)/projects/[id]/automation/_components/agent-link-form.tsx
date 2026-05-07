@@ -229,7 +229,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             </Label>
             <Input
               id="remoteRepoUrl"
-              type="url"
+              type="text"
               value={form.remoteRepoUrl ?? ""}
               onChange={(e) =>
                 setForm((f) => ({ ...f, remoteRepoUrl: e.target.value }))
@@ -237,6 +237,8 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
               placeholder="git@github.com:org/repo.git"
               className="text-[13px] font-mono"
               disabled={linkMutation.isPending}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
         </div>
