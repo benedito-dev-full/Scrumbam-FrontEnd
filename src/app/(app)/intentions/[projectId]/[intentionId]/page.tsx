@@ -2,11 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Box,
@@ -29,9 +25,11 @@ import {
   Send,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
-import { useIntention } from "@/lib/hooks/use-intentions";
+import { useIntention, useDeleteIntention } from "@/lib/hooks/use-intentions";
 import { useProject } from "@/lib/hooks/use-projects";
 import { commentsApi } from "@/lib/api/comments";
 import { cn } from "@/lib/utils";
@@ -82,6 +80,9 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
   const { data: intention, isLoading } = useIntention(intentionId);
   const { data: project } = useProject(projectId);
   const { data: comments } = useIssueComments(intentionId);
+  const router = useRouter();
+  const { remove: removeIntention, isPending: isDeleting } =
+    useDeleteIntention();
 
   const i = intention as
     | (IntentionDocument & {
@@ -94,6 +95,21 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
 
   const code = `INT-${intentionId}`;
   const isDeleted = i?.excluido === true;
+
+  async function handleDelete() {
+    if (isDeleted || isDeleting) return;
+    const confirmed = window.confirm(
+      `Excluir a issue "${i?.title ?? code}"?\n\nIsso e um soft-delete: a issue sai das listagens, mas o historico fica salvo no banco.`,
+    );
+    if (!confirmed) return;
+    try {
+      await removeIntention(intentionId);
+      toast.success("Issue excluida");
+      router.push(`/intentions/${projectId}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir issue");
+    }
+  }
 
   return (
     <PageTransition className="h-full">
@@ -139,6 +155,13 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
             </IconButton>
             <IconButton label="Abrir em nova aba">
               <ArrowRight className="h-3.5 w-3.5" />
+            </IconButton>
+            <IconButton
+              label={isDeleting ? "Excluindo..." : "Excluir issue"}
+              onClick={handleDelete}
+              disabled={isDeleted || isDeleting}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
             </IconButton>
             <IconButton label="Mais opcoes">
               <ChevronDown className="h-3.5 w-3.5" />
@@ -232,11 +255,7 @@ function DeletedBanner() {
   );
 }
 
-function DescriptionBody({
-  intention: i,
-}: {
-  intention: IntentionDocument;
-}) {
+function DescriptionBody({ intention: i }: { intention: IntentionDocument }) {
   return (
     <div className="space-y-3 text-[13px] leading-relaxed">
       {i.problema && <Block label="Problema" body={i.problema} />}
@@ -250,9 +269,7 @@ function DescriptionBody({
       {i.naoObjetivos?.length > 0 && (
         <ListBlock label="Nao objetivos" items={i.naoObjetivos} />
       )}
-      {i.riscos?.length > 0 && (
-        <ListBlock label="Riscos" items={i.riscos} />
-      )}
+      {i.riscos?.length > 0 && <ListBlock label="Riscos" items={i.riscos} />}
     </div>
   );
 }
@@ -320,8 +337,7 @@ function ActivitySection({
       }),
     ),
   ].sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 
   return (
