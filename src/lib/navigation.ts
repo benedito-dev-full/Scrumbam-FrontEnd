@@ -14,6 +14,7 @@ import {
   Users,
   Building2,
   PenSquare,
+  Cpu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -98,6 +99,11 @@ export const navSections: NavSection[] = [
         label: "Visualizacoes",
         icon: Layers,
         customizeKey: "views",
+      },
+      {
+        href: "/agents",
+        label: "Agentes",
+        icon: Cpu,
       },
       {
         href: "/more",
