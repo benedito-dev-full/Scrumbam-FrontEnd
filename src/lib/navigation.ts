@@ -90,7 +90,7 @@ export const navSections: NavSection[] = [
     items: [
       {
         href: "/projects",
-        label: "🚀 Projetos",
+        label: "Projetos",
         icon: Box,
         customizeKey: "projects",
       },
