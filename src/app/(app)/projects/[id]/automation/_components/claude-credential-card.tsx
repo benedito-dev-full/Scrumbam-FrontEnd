@@ -1,69 +1,92 @@
-'use client'
-import { useState } from 'react'
-import { Bot, CheckCircle, AlertTriangle, XCircle, Copy, Check, Loader2, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useClaudeCredentialStatus, useClaudeTokenInstructions } from '@/lib/hooks/use-automation'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import type { ClaudeCredentialStatus } from '@/types/execution'
+"use client";
+import { useState } from "react";
+import {
+  Bot,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Copy,
+  Check,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  useClaudeCredentialStatus,
+  useClaudeTokenInstructions,
+} from "@/lib/hooks/use-automation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import type { ClaudeCredentialStatus } from "@/types/execution";
 
 interface ClaudeCredentialCardProps {
-  projectId: string
+  projectId: string;
 }
 
 export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
-  const [status, setStatus] = useState<ClaudeCredentialStatus | null>(null)
-  const [showInstructions, setShowInstructions] = useState(false)
-  const [snippet, setSnippet] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [status, setStatus] = useState<ClaudeCredentialStatus | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [snippet, setSnippet] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const probeMutation = useClaudeCredentialStatus(projectId)
-  const instructionsMutation = useClaudeTokenInstructions(projectId)
+  const probeMutation = useClaudeCredentialStatus(projectId);
+  const instructionsMutation = useClaudeTokenInstructions(projectId);
 
   async function handleTest() {
-    const result = await probeMutation.mutateAsync()
-    setStatus(result as ClaudeCredentialStatus)
+    const result = await probeMutation.mutateAsync();
+    setStatus(result as ClaudeCredentialStatus);
   }
 
   async function handleShowInstructions() {
-    const result = await instructionsMutation.mutateAsync()
-    const data = result as { instructions: string; snippet: string }
-    setSnippet(data.snippet)
-    setShowInstructions(true)
+    const result = await instructionsMutation.mutateAsync();
+    const data = result as { setupTokenSnippet: string };
+    setSnippet(data.setupTokenSnippet);
+    setShowInstructions(true);
   }
 
   async function handleCopy() {
-    if (!snippet) return
-    await navigator.clipboard.writeText(snippet)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (!snippet) return;
+    await navigator.clipboard.writeText(snippet);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function StatusIndicator() {
     if (!status) {
-      return <span className="text-[12px] text-muted-foreground">Nao testado</span>
+      return (
+        <span className="text-[12px] text-muted-foreground">Nao testado</span>
+      );
     }
     if (status.configured) {
       return (
         <span className="inline-flex items-center gap-1.5 text-[12px] text-green-600">
           <CheckCircle className="h-3.5 w-3.5" />
-          Configurado{status.account && <span className="text-muted-foreground">({status.account})</span>}
+          Configurado
+          {status.account && (
+            <span className="text-muted-foreground">({status.account})</span>
+          )}
         </span>
-      )
+      );
     }
-    if (status.error?.includes('fallback')) {
+    if (status.error?.includes("fallback")) {
       return (
         <span className="inline-flex items-center gap-1.5 text-[12px] text-amber-600">
           <AlertTriangle className="h-3.5 w-3.5" />
           Usando fallback da organizacao
         </span>
-      )
+      );
     }
     return (
       <span className="inline-flex items-center gap-1.5 text-[12px] text-red-600">
         <XCircle className="h-3.5 w-3.5" />
         Sem token configurado
       </span>
-    )
+    );
   }
 
   return (
@@ -84,7 +107,9 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
               onClick={handleShowInstructions}
               disabled={instructionsMutation.isPending}
             >
-              {instructionsMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+              {instructionsMutation.isPending && (
+                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+              )}
               Ver instrucoes SSH
             </Button>
             <Button
@@ -94,10 +119,11 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
               onClick={handleTest}
               disabled={probeMutation.isPending}
             >
-              {probeMutation.isPending
-                ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                : <RefreshCw className="mr-1.5 h-3 w-3" />
-              }
+              {probeMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3 w-3" />
+              )}
               Testar credencial
             </Button>
           </div>
@@ -106,7 +132,9 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
           <dl className="space-y-0 divide-y divide-border/40">
             <div className="grid grid-cols-[140px_1fr] items-center gap-3 py-2">
               <dt className="text-[12px] text-muted-foreground">Status</dt>
-              <dd><StatusIndicator /></dd>
+              <dd>
+                <StatusIndicator />
+              </dd>
             </div>
             {status?.error && !status.configured && (
               <div className="grid grid-cols-[140px_1fr] items-center gap-3 py-2">
@@ -116,8 +144,10 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
             )}
           </dl>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            O token OAuth reside na VPS do projeto. Configure via{' '}
-            <code className="font-mono bg-muted px-1 rounded text-[10px]">claude setup-token</code>{' '}
+            O token OAuth reside na VPS do projeto. Configure via{" "}
+            <code className="font-mono bg-muted px-1 rounded text-[10px]">
+              claude setup-token
+            </code>{" "}
             na VPS antes de disparar execucoes.
           </p>
         </div>
@@ -126,9 +156,12 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-[14px]">Configurar token Claude na VPS</DialogTitle>
+            <DialogTitle className="text-[14px]">
+              Configurar token Claude na VPS
+            </DialogTitle>
             <DialogDescription className="text-[12px]">
-              Execute o comando abaixo via SSH na VPS do projeto para configurar o token OAuth.
+              Execute o comando abaixo via SSH na VPS do projeto para configurar
+              o token OAuth.
             </DialogDescription>
           </DialogHeader>
           {snippet && (
@@ -142,12 +175,16 @@ export function ClaudeCredentialCard({ projectId }: ClaudeCredentialCardProps) {
                 className="absolute top-2 right-2 h-6 w-6 p-0"
                 onClick={handleCopy}
               >
-                {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
               </Button>
             </div>
           )}
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

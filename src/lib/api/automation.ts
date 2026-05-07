@@ -292,10 +292,18 @@ export const automationApi = {
   /** GET /projects/:id/claude-token-instructions — instrucoes SSH para setup do token. */
   getClaudeTokenInstructions: async (
     projectId: string,
-  ): Promise<{ instructions: string; snippet: string }> => {
-    const { data } = await api.get<{ instructions: string; snippet: string }>(
-      `/projects/${projectId}/claude-token-instructions`,
-    );
+  ): Promise<{
+    projectId: string;
+    xdgConfigHome: string;
+    authJsonPath: string;
+    setupTokenSnippet: string;
+  }> => {
+    const { data } = await api.get<{
+      projectId: string;
+      xdgConfigHome: string;
+      authJsonPath: string;
+      setupTokenSnippet: string;
+    }>(`/projects/${projectId}/claude-token-instructions`);
     return data;
   },
 
