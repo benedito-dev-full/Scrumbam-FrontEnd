@@ -21,13 +21,13 @@ const views: Array<{
     key: "intentions",
     label: "Intencoes",
     icon: ScrollText,
-    getHref: (pid) => `/intentions/${pid}`,
+    getHref: (pid) => `/projects/${pid}`,
   },
   {
     key: "hill-chart",
     label: "Hill Chart",
     icon: Mountain,
-    getHref: (pid) => `/intentions/${pid}?view=hill`,
+    getHref: (pid) => `/projects/${pid}?view=hill`,
   },
   {
     key: "timeline",

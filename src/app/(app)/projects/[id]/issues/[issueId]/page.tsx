@@ -42,7 +42,7 @@ import type {
 import type { Comment } from "@/types";
 
 interface IssueDetailPageProps {
-  params: Promise<{ projectId: string; intentionId: string }>;
+  params: Promise<{ id: string; issueId: string }>;
 }
 
 // ============================================================
@@ -76,7 +76,7 @@ function useAddComment(taskId: string) {
 // ============================================================
 
 export default function IssueDetailPage({ params }: IssueDetailPageProps) {
-  const { projectId, intentionId } = use(params);
+  const { id: projectId, issueId: intentionId } = use(params);
   const { data: intention, isLoading } = useIntention(intentionId);
   const { data: project } = useProject(projectId);
   const { data: comments } = useIssueComments(intentionId);
@@ -105,7 +105,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
     try {
       await removeIntention(intentionId);
       toast.success("Issue excluida");
-      router.push(`/intentions/${projectId}`);
+      router.push(`/projects/${projectId}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir issue");
     }
@@ -119,7 +119,7 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
           <nav className="flex items-center gap-1.5 text-[13px] min-w-0">
             <Box className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <Link
-              href={`/intentions/${projectId}`}
+              href={`/projects/${projectId}`}
               className="text-muted-foreground hover:text-foreground transition-colors truncate"
             >
               {project?.nome ?? "Projeto"}

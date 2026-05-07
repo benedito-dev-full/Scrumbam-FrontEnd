@@ -48,11 +48,11 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 interface ProjectPageProps {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export default function ProjectDetailPage({ params }: ProjectPageProps) {
-  const { projectId } = use(params);
+  const { id: projectId } = use(params);
   const { data: project, isLoading } = useProject(projectId);
   const { data: intentions } = useIntentions({ projectSlug: projectId });
 
@@ -255,7 +255,7 @@ function OverviewTab({
               issues.slice(0, 5).map((i) => (
                 <Link
                   key={i.id}
-                  href={`/intentions/${projectId}/${i.id}`}
+                  href={`/projects/${projectId}/issues/${i.id}`}
                   className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] hover:bg-accent/40 transition-colors w-fit"
                 >
                   <StatusIcon status={i.status} />
@@ -415,7 +415,9 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
     return (
       <div className="px-8 py-12 text-center">
         <CircleDashed className="mx-auto h-10 w-10 text-muted-foreground/30" />
-        <p className="mt-3 text-[13px] text-muted-foreground">Sem issues ainda</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">
+          Sem issues ainda
+        </p>
       </div>
     );
   }
@@ -474,7 +476,12 @@ function PropertiesPanel({
       </div>
       <dl className="space-y-2 text-[12px]">
         <PropRow label="Status" value="Backlog" iconColor="text-amber-400" />
-        <PropRow label="Prioridade" value="Sem prioridade" stub title="Gap #5" />
+        <PropRow
+          label="Prioridade"
+          value="Sem prioridade"
+          stub
+          title="Gap #5"
+        />
         <PropRow label="Responsavel" value="Adicionar responsavel" stub />
         <PropRow label="Membros" value="Adicionar membros" />
         <PropRow label="Datas" value="Inicio → Entrega" />
@@ -486,7 +493,12 @@ function PropertiesPanel({
           title="Gap #1 (Times)"
         />
         <PropRow label="Slack" value="Canal Slack" stub title="Gap #13" />
-        <PropRow label="Etiquetas" value="Adicionar etiqueta" stub title="Gap #14" />
+        <PropRow
+          label="Etiquetas"
+          value="Adicionar etiqueta"
+          stub
+          title="Gap #14"
+        />
       </dl>
       {project?.nome && <span className="sr-only">{project.nome}</span>}
     </section>

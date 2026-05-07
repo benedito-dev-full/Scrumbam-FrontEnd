@@ -244,7 +244,9 @@ function EmptyDetail() {
         strokeWidth={1.25}
       />
       <p className="mt-4 text-[13px] text-muted-foreground">Sem notificacoes</p>
-      <p className="mt-1 text-[12px] text-muted-foreground/70">Hora de uma pausa?</p>
+      <p className="mt-1 text-[12px] text-muted-foreground/70">
+        Hora de uma pausa?
+      </p>
     </div>
   );
 }
@@ -257,7 +259,9 @@ function ListEmpty() {
         strokeWidth={1.25}
       />
       <p className="mt-3 text-[13px] text-muted-foreground">Sem notificacoes</p>
-      <p className="mt-1 text-[12px] text-muted-foreground/70">Hora de uma pausa?</p>
+      <p className="mt-1 text-[12px] text-muted-foreground/70">
+        Hora de uma pausa?
+      </p>
     </div>
   );
 }
@@ -315,13 +319,13 @@ function formatFullDate(iso: string): string {
 
 function buildEntityHref(n: InAppNotification): string | null {
   if (n.dados?.projectId && n.dados?.intentionId) {
-    return `/intentions/${n.dados.projectId}/${n.dados.intentionId}`;
+    return `/projects/${n.dados.projectId}/issues/${n.dados.intentionId}`;
   }
   if (n.projectId && n.taskId) {
-    return `/intentions/${n.projectId}/${n.taskId}`;
+    return `/projects/${n.projectId}/issues/${n.taskId}`;
   }
   if (n.projectId) {
-    return `/intentions/${n.projectId}`;
+    return `/projects/${n.projectId}`;
   }
   return null;
 }

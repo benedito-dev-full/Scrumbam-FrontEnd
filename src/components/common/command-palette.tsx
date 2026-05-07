@@ -10,7 +10,6 @@ import {
   BarChart3,
   Settings,
   Loader2,
-  PieChart,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -63,13 +62,10 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  const handleSelect = useCallback(
-    (callback: () => void) => {
-      setOpen(false);
-      callback();
-    },
-    [],
-  );
+  const handleSelect = useCallback((callback: () => void) => {
+    setOpen(false);
+    callback();
+  }, []);
 
   const hasQuery = deferredQuery.length >= 2;
   const hasResults = data && data.counts.total > 0;
@@ -110,14 +106,17 @@ export function CommandPalette() {
                     value={`task-${task.id}-${task.name}`}
                     onSelect={() =>
                       handleSelect(() =>
-                        router.push(`/intentions/${task.project.id}`),
+                        router.push(`/projects/${task.project.id}`),
                       )
                     }
                   >
                     <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-1 items-center gap-2 overflow-hidden">
                       <span className="truncate">{task.name}</span>
-                      <StatusBadge code={task.status.code} name={task.status.name} />
+                      <StatusBadge
+                        code={task.status.code}
+                        name={task.status.name}
+                      />
                     </div>
                     <span className="ml-2 shrink-0 text-xs text-muted-foreground">
                       {task.project.name}
@@ -135,9 +134,7 @@ export function CommandPalette() {
                     key={`project-${project.id}`}
                     value={`project-${project.id}-${project.name}`}
                     onSelect={() =>
-                      handleSelect(() =>
-                        router.push(`/intentions/${project.id}`),
-                      )
+                      handleSelect(() => router.push(`/projects/${project.id}`))
                     }
                   >
                     <FolderOpen className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -169,7 +166,10 @@ export function CommandPalette() {
                     <div className="flex flex-1 items-center gap-2 overflow-hidden">
                       <span className="truncate">{person.name}</span>
                       {person.role && (
-                        <Badge variant="outline" className="text-[10px] capitalize">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] capitalize"
+                        >
                           {person.role.toLowerCase()}
                         </Badge>
                       )}
@@ -217,27 +217,21 @@ export function CommandPalette() {
             <CommandSeparator />
             <CommandGroup heading="Navegacao">
               <CommandItem
-                onSelect={() =>
-                  handleSelect(() => router.push("/projects"))
-                }
+                onSelect={() => handleSelect(() => router.push("/projects"))}
               >
                 <FolderOpen className="mr-2 h-4 w-4" />
                 Projetos
               </CommandItem>
               <CommandItem
                 onSelect={() =>
-                  handleSelect(() =>
-                    router.push("/settings/workspace/members"),
-                  )
+                  handleSelect(() => router.push("/settings/workspace/members"))
                 }
               >
                 <Users className="mr-2 h-4 w-4" />
                 Members
               </CommandItem>
               <CommandItem
-                onSelect={() =>
-                  handleSelect(() => router.push("/settings"))
-                }
+                onSelect={() => handleSelect(() => router.push("/settings"))}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Configuracoes
@@ -255,9 +249,12 @@ function StatusBadge({ code, name }: { code: string; name: string }) {
   const colorMap: Record<string, string> = {
     inbox: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
     ready: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-    executing: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
-    validating: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
-    validated: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300",
+    executing:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+    validating:
+      "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+    validated:
+      "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300",
     done: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
     failed: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
     cancelled: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",

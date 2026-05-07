@@ -119,8 +119,10 @@ export default function ProjectsPage() {
               <ProjectRow
                 key={p.chave}
                 project={p}
-                onClick={() => router.push(`/intentions/${p.chave}`)}
-                onAutomation={() => router.push(`/projects/${p.chave}/automation`)}
+                onClick={() => router.push(`/projects/${p.chave}`)}
+                onAutomation={() =>
+                  router.push(`/projects/${p.chave}/automation`)
+                }
               />
             ))
           )}
@@ -205,7 +207,9 @@ function ProjectRow({
       {/* Target date */}
       <div>
         {targetDate ? (
-          <span className="text-[12px] text-muted-foreground">{targetDate}</span>
+          <span className="text-[12px] text-muted-foreground">
+            {targetDate}
+          </span>
         ) : (
           <div className="flex h-5 w-5 items-center justify-center rounded border border-dashed border-muted-foreground/40 text-muted-foreground/40">
             <Calendar className="h-3 w-3" />
@@ -236,7 +240,10 @@ function ProjectRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem
-              onClick={(e) => { e.stopPropagation(); onAutomation(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAutomation();
+              }}
               className="flex items-center gap-2 text-[13px]"
             >
               <Cpu className="h-3.5 w-3.5 text-muted-foreground" />

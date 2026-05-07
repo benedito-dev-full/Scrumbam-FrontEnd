@@ -115,7 +115,7 @@ export function IntentionListItem({ intention }: Props) {
 
   return (
     <Link
-      href={`/intentions/${intention.projectSlug}/${intention.id}`}
+      href={`/projects/${intention.projectSlug}/issues/${intention.id}`}
       className={cn(
         "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:shadow-sm",
         isExecuting &&

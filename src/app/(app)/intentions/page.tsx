@@ -201,7 +201,13 @@ function groupByDate(
     else buckets["Anteriores"].push(item);
   }
 
-  const order = ["Hoje", "Ontem", "Esta semana", "Ultimos 30 dias", "Anteriores"];
+  const order = [
+    "Hoje",
+    "Ontem",
+    "Esta semana",
+    "Ultimos 30 dias",
+    "Anteriores",
+  ];
   return order
     .filter((label) => buckets[label].length > 0)
     .map((label) => ({ label, items: buckets[label] }));
@@ -252,13 +258,14 @@ function DateGroup({
         <span className="tabular-nums">{count}</span>
       </button>
 
-      {open && items.map((item) => (
-        <IssueRow
-          key={item.id}
-          item={item}
-          projectName={projectMap.get(item.projectSlug || "") || null}
-        />
-      ))}
+      {open &&
+        items.map((item) => (
+          <IssueRow
+            key={item.id}
+            item={item}
+            projectName={projectMap.get(item.projectSlug || "") || null}
+          />
+        ))}
     </div>
   );
 }
@@ -289,7 +296,7 @@ function IssueRow({
     : null;
 
   const href = item.projectSlug
-    ? `/intentions/${item.projectSlug}/${item.id}`
+    ? `/projects/${item.projectSlug}/issues/${item.id}`
     : `/intentions`;
 
   return (
@@ -357,17 +364,41 @@ function PriorityIcon({ priority }: { priority: IntentionPriority }) {
 function StatusIcon({ status }: { status: IntentionStatus }) {
   const map: Record<
     IntentionStatus,
-    { Icon: React.ComponentType<{ className?: string }>; color: string; title: string }
+    {
+      Icon: React.ComponentType<{ className?: string }>;
+      color: string;
+      title: string;
+    }
   > = {
-    inbox: { Icon: CircleDashed, color: "text-muted-foreground", title: "Backlog" },
+    inbox: {
+      Icon: CircleDashed,
+      color: "text-muted-foreground",
+      title: "Backlog",
+    },
     ready: { Icon: Circle, color: "text-blue-400", title: "Pronta" },
-    validating: { Icon: CircleDotDashed, color: "text-amber-400", title: "Validando" },
+    validating: {
+      Icon: CircleDotDashed,
+      color: "text-amber-400",
+      title: "Validando",
+    },
     validated: { Icon: Circle, color: "text-emerald-400", title: "Validada" },
-    executing: { Icon: CircleDotDashed, color: "text-amber-400", title: "Em andamento" },
+    executing: {
+      Icon: CircleDotDashed,
+      color: "text-amber-400",
+      title: "Em andamento",
+    },
     done: { Icon: CheckCircle2, color: "text-emerald-500", title: "Concluida" },
     failed: { Icon: XCircle, color: "text-red-500", title: "Falhou" },
-    cancelled: { Icon: Ban, color: "text-muted-foreground", title: "Cancelada" },
-    discarded: { Icon: Trash2, color: "text-muted-foreground", title: "Descartada" },
+    cancelled: {
+      Icon: Ban,
+      color: "text-muted-foreground",
+      title: "Cancelada",
+    },
+    discarded: {
+      Icon: Trash2,
+      color: "text-muted-foreground",
+      title: "Descartada",
+    },
   };
   const c = map[status] ?? map.inbox;
   return <c.Icon className={cn("h-3.5 w-3.5 shrink-0", c.color)} />;

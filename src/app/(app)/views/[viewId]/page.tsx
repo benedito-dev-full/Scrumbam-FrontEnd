@@ -345,7 +345,7 @@ function IssueRow({
   });
 
   const href = it.projectSlug
-    ? `/intentions/${it.projectSlug}/${it.id}`
+    ? `/projects/${it.projectSlug}/issues/${it.id}`
     : "#";
 
   return (
@@ -489,9 +489,7 @@ function TabButton({
     >
       {children}
       {count > 0 && (
-        <span className="ml-1 tabular-nums text-muted-foreground">
-          {count}
-        </span>
+        <span className="ml-1 tabular-nums text-muted-foreground">{count}</span>
       )}
     </button>
   );
@@ -620,10 +618,7 @@ function StatusIcon({ status }: { status: IntentionStatus }) {
 }
 
 function PriorityIcon({ priority }: { priority: IntentionPriority }) {
-  const config: Record<
-    IntentionPriority,
-    { bg: string; symbol: string }
-  > = {
+  const config: Record<IntentionPriority, { bg: string; symbol: string }> = {
     urgent: { bg: "bg-red-500", symbol: "!" },
     high: { bg: "bg-orange-500", symbol: "▲" },
     medium: { bg: "bg-amber-500", symbol: "=" },

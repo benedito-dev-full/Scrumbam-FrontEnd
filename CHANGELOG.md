@@ -4,6 +4,16 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 
 ## [Unreleased]
 
+### Changed
+- **Frontend Routes Refactor — Separação Semântica de Rotas** (Task 01, 07/05/2026, score 9/10)
+  - Movidos `/intentions/[projectId]` → `/projects/[id]` (overview do projeto)
+  - Movidos `/intentions/[projectId]/[intentionId]` → `/projects/[id]/issues/[issueId]` (detalhe de issue)
+  - Redirects 308 em `next.config.ts` preservam backward compatibility
+  - `/intentions/inbox` e `/intentions/new` mantidas como rotas globais cross-project
+  - 13 arquivos atualizados, 2 pages movidas com `git mv` (history preservado)
+  - Zero refs residuais: validado via grep abrangente
+  - Build: PASS (37 rotas geradas), TypeScript: 0 errors, ESLint: clean
+
 ### Added
 - **Automation Fase 3 Frontend — Claude Code Execution UI** (Etapa 6, 06/05/2026, score 8.0/10)
   - 7 componentes novos (risk-badge, reject-dialog, claude-credential-card, execute-intention-panel, approval-queue-panel, execution-detail-modal, types/execution)

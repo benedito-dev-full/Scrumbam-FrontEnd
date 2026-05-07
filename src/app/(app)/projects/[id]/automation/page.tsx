@@ -60,7 +60,7 @@ export default function AutomationPage({ params }: AutomationPageProps) {
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
             <Link
-              href={`/intentions/${id}`}
+              href={`/projects/${id}`}
               className="text-muted-foreground hover:text-foreground transition-colors truncate"
             >
               {loadingProject ? "..." : (project?.nome ?? id)}

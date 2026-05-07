@@ -18,11 +18,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -60,17 +56,47 @@ const PRIORITY_OPTIONS: {
   bg: string;
   id: string;
 }[] = [
-  { key: "none", label: "Sem prioridade", symbol: "—", bg: "bg-muted", id: PRIORITY_IDS.MEDIUM },
-  { key: "urgent", label: "Urgente", symbol: "!", bg: "bg-red-500", id: PRIORITY_IDS.URGENT },
-  { key: "high", label: "Alta", symbol: "▲", bg: "bg-orange-500", id: PRIORITY_IDS.HIGH },
-  { key: "medium", label: "Media", symbol: "=", bg: "bg-amber-500", id: PRIORITY_IDS.MEDIUM },
-  { key: "low", label: "Baixa", symbol: "▽", bg: "bg-zinc-500", id: PRIORITY_IDS.LOW },
+  {
+    key: "none",
+    label: "Sem prioridade",
+    symbol: "—",
+    bg: "bg-muted",
+    id: PRIORITY_IDS.MEDIUM,
+  },
+  {
+    key: "urgent",
+    label: "Urgente",
+    symbol: "!",
+    bg: "bg-red-500",
+    id: PRIORITY_IDS.URGENT,
+  },
+  {
+    key: "high",
+    label: "Alta",
+    symbol: "▲",
+    bg: "bg-orange-500",
+    id: PRIORITY_IDS.HIGH,
+  },
+  {
+    key: "medium",
+    label: "Media",
+    symbol: "=",
+    bg: "bg-amber-500",
+    id: PRIORITY_IDS.MEDIUM,
+  },
+  {
+    key: "low",
+    label: "Baixa",
+    symbol: "▽",
+    bg: "bg-zinc-500",
+    id: PRIORITY_IDS.LOW,
+  },
 ];
 
 interface NewIssueModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pre-selecionar projeto (vindo de /intentions/[projectId]) */
+  /** Pre-selecionar projeto (vindo de /projects/[id]) */
   defaultProjectId?: string;
 }
 
@@ -335,7 +361,10 @@ export function NewIssueModal({
                   label={assignee ? assignee.name.split(" ")[0] : "Responsavel"}
                 />
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-1 max-h-64 overflow-auto">
+              <PopoverContent
+                align="start"
+                className="w-56 p-1 max-h-64 overflow-auto"
+              >
                 <button
                   type="button"
                   onClick={() => setAssigneeId(null)}
@@ -375,7 +404,10 @@ export function NewIssueModal({
                   label={project ? project.nome : "Projeto"}
                 />
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-1 max-h-64 overflow-auto">
+              <PopoverContent
+                align="start"
+                className="w-56 p-1 max-h-64 overflow-auto"
+              >
                 {(projects ?? []).map((p) => (
                   <button
                     key={p.chave}

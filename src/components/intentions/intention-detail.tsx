@@ -194,7 +194,7 @@ export function IntentionDetail({
       {/* Back + Title Header */}
       <div>
         <Link
-          href={`/intentions/${projectId}`}
+          href={`/projects/${projectId}`}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />

@@ -271,7 +271,7 @@ function InboxItem({
           {/* Title row */}
           <div className="flex items-center gap-2 min-w-0">
             <Link
-              href={`/intentions/${intention.projectSlug}/${intention.id}`}
+              href={`/projects/${intention.projectSlug}/issues/${intention.id}`}
               className="text-sm font-medium truncate hover:underline hover:text-[var(--scrumban-brand)] transition-colors"
             >
               {intention.title}
