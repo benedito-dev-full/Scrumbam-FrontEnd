@@ -5,6 +5,7 @@ import type {
   ProjectDetail,
   CreateProjectDto,
   ProjectSummary,
+  DeleteProjectResponse,
 } from "@/types";
 
 // Maps backend response (id/name) to frontend types (chave/nome)
@@ -57,8 +58,11 @@ export const projectsApi = {
     return mapProject(data);
   },
 
-  remove: async (id: string): Promise<void> => {
-    await api.delete(ENDPOINTS.PROJECT(id));
+  remove: async (id: string): Promise<DeleteProjectResponse> => {
+    const { data } = await api.delete<DeleteProjectResponse>(
+      ENDPOINTS.PROJECT(id),
+    );
+    return data;
   },
 
   getSummaries: async (organizationId?: string): Promise<ProjectSummary[]> => {

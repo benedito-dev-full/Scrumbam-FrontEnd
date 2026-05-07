@@ -4,6 +4,17 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 
 ## [Unreleased]
 
+### Added
+- **Projects Delete Dialog com Confirmação GitHub-style** (Task 01, 07/05/2026, score 9.0/10)
+  - Novo componente `DeleteProjectDialog`: entrada controlada, botao habilita apenas quando texto == project.name
+  - Hook `useDeleteProject`: TanStack Query mutation com invalidacao de queries + toasts contextuais
+  - Item "Excluir projeto" no dropdown da lista `/projects`, visivel apenas para ADMIN
+  - Integração com API: `projectsApi.remove()` agora retorna `DeleteProjectResponse` com counts
+  - Tipo `DeleteProjectResponse` exportado de types/
+  - Toasts: sucesso com counts (`"Projeto X excluido - N intencoes - M membros"`), 409 especifico
+  - Zero breaking changes, dialog Dialog nativa shadcn + Button destructive
+  - Build: PASS (34 rotas compiladas), TypeScript: 0 errors, ESLint: clean
+
 ### Changed
 - **Frontend Routes Refactor — Separação Semântica de Rotas** (Task 01, 07/05/2026, score 9/10)
   - Movidos `/intentions/[projectId]` → `/projects/[id]` (overview do projeto)

@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   MoreHorizontal,
   Cpu,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +20,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -26,6 +28,8 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
+import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
@@ -33,6 +37,12 @@ export default function ProjectsPage() {
   const router = useRouter();
   const { data: projects, isLoading } = useProjects();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<{
+    chave: string;
+    nome: string;
+  } | null>(null);
+  const userRole = useAuthStore((s) => s.user?.role);
+  const isAdmin = userRole?.toUpperCase() === "ADMIN";
 
   return (
     <PageTransition className="h-full">
@@ -123,10 +133,24 @@ export default function ProjectsPage() {
                 onAutomation={() =>
                   router.push(`/projects/${p.chave}/automation`)
                 }
+                onDelete={
+                  isAdmin
+                    ? () => setProjectToDelete({ chave: p.chave, nome: p.nome })
+                    : undefined
+                }
               />
             ))
           )}
         </div>
+
+        {/* Delete confirmation dialog */}
+        {projectToDelete && (
+          <DeleteProjectDialog
+            project={projectToDelete}
+            open={!!projectToDelete}
+            onOpenChange={(o) => !o && setProjectToDelete(null)}
+          />
+        )}
       </div>
     </PageTransition>
   );
@@ -136,6 +160,7 @@ function ProjectRow({
   project,
   onClick,
   onAutomation,
+  onDelete,
 }: {
   project: {
     chave: string;
@@ -146,6 +171,7 @@ function ProjectRow({
   };
   onClick: () => void;
   onAutomation: () => void;
+  onDelete?: () => void;
 }) {
   // Status como % de progresso: stub 0% ate API expor count(done)/count(total).
   // Gap registrado em LINEAR_PIVOT_GAPS.md.
@@ -249,6 +275,21 @@ function ProjectRow({
               <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
               Automação
             </DropdownMenuItem>
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="flex items-center gap-2 text-[13px] text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir projeto
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

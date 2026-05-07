@@ -44,3 +44,17 @@ export interface ProjectSummary {
   lastActivity: ProjectLastActivity | null;
   connectionStatus: "active" | "idle" | "inactive";
 }
+
+export interface DeleteProjectResponse {
+  deleted: boolean;
+  id: string;
+  projectName: string;
+  counts: {
+    tasks: number;
+    members: number;
+    webhooks: number;
+    notifications: number;
+  };
+  agentUnlinked: boolean;
+  message: string;
+}

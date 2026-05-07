@@ -43,6 +43,55 @@ export function useProject(id: string | null) {
   });
 }
 
+/**
+ * Soft delete em cascade de um projeto (ADMIN only).
+ *
+ * Cascade no backend: tasks, members, webhooks, notifications -> excluido=true.
+ * Agente apenas desvinculado (idAgent=null) -- registro DAgent intacto.
+ * Pasta no agente (Argus) NAO eh removida -- limpeza manual pelo operador.
+ *
+ * Bloqueia (409 Conflict) se houver execucao em andamento no projeto.
+ */
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => projectsApi.remove(projectId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.projectSummaries(),
+      });
+      const { tasks, members } = data.counts;
+      const parts = [
+        `Projeto "${data.projectName}" excluido`,
+        tasks > 0 ? `${tasks} ${tasks === 1 ? "intencao" : "intencoes"}` : null,
+        members > 0
+          ? `${members} ${members === 1 ? "membro" : "membros"}`
+          : null,
+      ].filter(Boolean);
+      toast.success(parts.join(" - "));
+    },
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+        message?: string;
+      };
+      if (err.response?.status === 409) {
+        toast.error(
+          err.response.data?.message ||
+            "Projeto possui execucoes em andamento. Aguarde finalizar ou cancele antes de deletar.",
+        );
+      } else if (err.response?.status === 403) {
+        toast.error("Sem permissao para excluir projeto");
+      } else if (err.response?.status === 404) {
+        toast.error("Projeto nao encontrado");
+      } else {
+        toast.error("Falha ao excluir projeto");
+      }
+    },
+  });
+}
+
 // ---- Columns ----
 
 export function useColumns(projectId: string | null) {

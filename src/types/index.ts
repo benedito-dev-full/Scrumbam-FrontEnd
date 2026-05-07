@@ -15,6 +15,7 @@ export type {
   CreateProjectDto,
   ProjectLastActivity,
   ProjectSummary,
+  DeleteProjectResponse,
 } from "./project";
 export type {
   Task,
