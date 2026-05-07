@@ -96,7 +96,7 @@ export const navSections: NavSection[] = [
       },
       {
         href: "/views/issues",
-        label: "Visualizacoes",
+        label: "Views",
         icon: Layers,
         customizeKey: "views",
       },
@@ -139,7 +139,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/team/issues", label: "Issues", icon: CircleDot, stub: true },
       { href: "/team/projects", label: "Projetos", icon: Box, stub: true },
-      { href: "/team/views", label: "Visualizacoes", icon: Layers, stub: true },
+      { href: "/team/views", label: "Views", icon: Layers, stub: true },
     ],
   },
   {
