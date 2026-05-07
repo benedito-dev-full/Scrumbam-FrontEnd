@@ -48,28 +48,27 @@ export default function AgentsPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Header */}
-        <header className="flex h-11 shrink-0 items-center justify-between px-8 border-b border-border">
+        <header className="flex h-12 shrink-0 items-center justify-between px-8 border-b border-border">
           <h1 className="text-[13px] font-medium">Agentes</h1>
           <AddAgentDialog />
         </header>
 
         {/* Sub-header com info */}
-        <div className="flex h-10 shrink-0 items-center px-8 border-b border-border">
+        <div className="flex h-11 shrink-0 items-center px-8 border-b border-border">
           <p className="text-[12px] text-muted-foreground">
-            Daemons remotos conectados via tunel SSH reverso. Heartbeat a cada
-            30s; offline apos 90s sem ping.
+            Daemons remotos conectados via túnel SSH reverso. Heartbeat a cada 30s — offline após 90s sem ping.
           </p>
         </div>
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
           {/* Column headers */}
-          <div className="grid grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_140px_28px] items-center gap-3 border-b border-border px-8 py-2 text-[11px] font-medium text-muted-foreground">
+          <div className="grid grid-cols-[minmax(0,1fr)_150px_minmax(0,1fr)_90px_160px_32px] items-center gap-4 border-b border-border px-8 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <div>Nome</div>
             <div>Status</div>
             <div>Hostname</div>
             <div>Porta</div>
-            <div>Ultimo heartbeat</div>
+            <div>Último heartbeat</div>
             <div></div>
           </div>
 
@@ -162,24 +161,26 @@ function AgentRow({ agent: a, onDelete }: AgentRowProps) {
   return (
     <Link
       href={`/agents/${a.id}`}
-      className="grid grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_140px_28px] items-center gap-3 border-b border-border/40 px-8 py-2 text-[13px] hover:bg-accent/30 transition-colors"
+      className="grid grid-cols-[minmax(0,1fr)_150px_minmax(0,1fr)_90px_160px_32px] items-center gap-4 border-b border-border/40 px-8 py-3 text-[13px] hover:bg-accent/30 transition-colors"
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <Server className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <div className="flex items-center gap-2.5 min-w-0">
+        <Server className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="truncate font-medium">{a.nome}</span>
       </div>
 
-      <AgentStatusBadge status={a.status} />
+      <div>
+        <AgentStatusBadge status={a.status} />
+      </div>
 
-      <span className="truncate text-[12px] text-muted-foreground font-mono">
+      <span className="truncate text-[13px] text-muted-foreground font-mono">
         {a.hostname ?? "—"}
       </span>
 
-      <span className="text-[12px] text-muted-foreground tabular-nums">
+      <span className="text-[13px] text-muted-foreground tabular-nums">
         {a.tunnelPort ?? "—"}
       </span>
 
-      <span className="text-[12px] text-muted-foreground">
+      <span className="text-[13px] text-muted-foreground">
         {a.lastHeartbeat ? formatRelative(a.lastHeartbeat) : "—"}
       </span>
 
@@ -188,15 +189,15 @@ function AgentRow({ agent: a, onDelete }: AgentRowProps) {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               aria-label="Mais"
             >
-              <MoreHorizontal className="h-3.5 w-3.5" />
+              <MoreHorizontal className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem
-              className="text-[12px] text-destructive focus:text-destructive"
+              className="text-[13px] text-destructive focus:text-destructive"
               onClick={onDelete}
             >
               <Trash2 className="mr-2 h-3.5 w-3.5" />
@@ -235,7 +236,7 @@ function SkeletonRows() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="grid grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_140px_28px] items-center gap-3 border-b border-border/40 px-8 py-2 animate-pulse"
+          className="grid grid-cols-[minmax(0,1fr)_150px_minmax(0,1fr)_90px_160px_32px] items-center gap-4 border-b border-border/40 px-8 py-3 animate-pulse"
         >
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 bg-muted rounded" />
