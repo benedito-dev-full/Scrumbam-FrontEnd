@@ -1,86 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import { History, ChevronLeft, ChevronRight } from "lucide-react";
+import { History, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RiskBadge } from "./risk-badge";
+import { ExecutionDetailModal } from "./execution-detail-modal";
 import { useExecutionHistory } from "@/lib/hooks/use-automation";
-import type { Execution, ExecutionStatus } from "@/lib/api/automation";
+import { EXECUTION_STATUS_CONFIG } from "@/lib/constants";
+import type { Execution, ExecutionStatus, RiskLevel } from "@/types/execution";
+import type { ListExecutionsQuery } from "@/lib/api/automation";
 
 interface ExecutionHistoryProps {
   projectId: string;
 }
 
-const STATUS_VARIANT: Record<
-  ExecutionStatus,
-  { label: string; className: string }
-> = {
-  queued: {
-    label: "Em fila",
-    className: "bg-blue-500/10 text-blue-600 border-blue-500/30",
-  },
-  running: {
-    label: "Rodando",
-    className: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-  },
-  awaiting_approval: {
-    label: "Aguard. aprovacao",
-    className: "bg-purple-500/10 text-purple-600 border-purple-500/30",
-  },
-  success: {
-    label: "Sucesso",
-    className: "bg-green-500/10 text-green-600 border-green-500/30",
-  },
-  failed: {
-    label: "Falhou",
-    className: "bg-red-500/10 text-red-600 border-red-500/30",
-  },
-  cancelled: {
-    label: "Cancelado",
-    className: "bg-muted text-muted-foreground border-border",
-  },
-  rolled_back: {
-    label: "Rollback",
-    className: "bg-orange-500/10 text-orange-600 border-orange-500/30",
-  },
-  timeout: {
-    label: "Timeout",
-    className: "bg-red-500/10 text-red-700 border-red-500/30",
-  },
-};
-
 const PAGE_SIZE = 20;
 
 /**
- * Lista de DExecution do projeto, com cursor pagination.
+ * Lista de DExecution do projeto — Fase 3.
  *
- * Cada linha mostra:
- * - intent (nome curto: "git-creds-generate", "git-config-apply", etc.)
- * - status (badge colorido)
- * - startedAt
- * - duration (ms -> humanizado)
- * - riskLevel (apenas se setado em Fase 3)
- *
- * Empty state amigavel para projetos sem historico.
+ * Colunas: ID | Intencao | Risco | Status | PR | Iniciado | Duracao | Acoes
+ * Clicar na row abre ExecutionDetailModal com detalhe completo.
+ * Cursor pagination preservado da Fase 2.
  */
 export function ExecutionHistory({ projectId }: ExecutionHistoryProps) {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [cursorStack, setCursorStack] = useState<(string | undefined)[]>([]);
+  const [selectedExecId, setSelectedExecId] = useState<string | null>(null);
 
   const { data, isLoading } = useExecutionHistory(projectId, {
     cursor,
     limit: PAGE_SIZE,
   });
 
-  const items = data?.items ?? [];
-  const hasMore = data?.hasMore ?? false;
+  // Compatibilidade: itens podem vir em formatos distintos entre Fase 2 e 3
+  const rawData = data as unknown as {
+    items?: Execution[];
+    data?: { items?: Execution[] };
+    nextCursor?: string | null;
+    hasMore?: boolean;
+  };
+  const items: Execution[] = rawData?.data?.items ?? rawData?.items ?? [];
+  const hasMore = rawData?.hasMore ?? !!rawData?.nextCursor;
+  const nextCursor = rawData?.nextCursor;
   const canGoBack = cursorStack.length > 0;
 
   const goNext = () => {
-    if (data?.nextCursor) {
+    if (nextCursor) {
       setCursorStack((s) => [...s, cursor]);
-      setCursor(data.nextCursor);
+      setCursor(nextCursor ?? undefined);
     }
   };
 
@@ -92,106 +62,168 @@ export function ExecutionHistory({ projectId }: ExecutionHistoryProps) {
   };
 
   return (
-    <section className="rounded-md border border-border bg-card overflow-hidden">
-      <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border bg-card/40">
-        <div className="flex items-center gap-2 min-w-0">
-          <History className="h-3.5 w-3.5 text-muted-foreground" />
-          <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-            Historico de execucoes
-          </h2>
-        </div>
-        <div className="text-[11px] text-muted-foreground">
-          {items.length > 0 && `${items.length} registros nesta pagina`}
-        </div>
-      </header>
-
-      {isLoading ? (
-        <SkeletonRows />
-      ) : !items.length ? (
-        <EmptyState />
-      ) : (
-        <>
-          {/* Header (desktop) */}
-          <div className="hidden sm:grid grid-cols-[80px_minmax(0,1fr)_120px_140px_90px] items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
-            <div>ID</div>
-            <div>Intent</div>
-            <div>Status</div>
-            <div>Iniciado</div>
-            <div>Duracao</div>
+    <>
+      <section className="rounded-md border border-border bg-card overflow-hidden">
+        <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border bg-card/40">
+          <div className="flex items-center gap-2 min-w-0">
+            <History className="h-3.5 w-3.5 text-muted-foreground" />
+            <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
+              Historico de execucoes
+            </h2>
           </div>
-
-          {items.map((exec) => (
-            <ExecutionRow key={exec.id} execution={exec} />
-          ))}
-
-          {/* Pagination */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-card/40">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={goBack}
-              disabled={!canGoBack}
-              className="text-[12px] h-7"
-            >
-              <ChevronLeft className="mr-1 h-3 w-3" />
-              Anterior
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={goNext}
-              disabled={!hasMore}
-              className="text-[12px] h-7"
-            >
-              Proxima
-              <ChevronRight className="ml-1 h-3 w-3" />
-            </Button>
+          <div className="text-[11px] text-muted-foreground">
+            {items.length > 0 && `${items.length} registros nesta pagina`}
           </div>
-        </>
-      )}
-    </section>
+        </header>
+
+        {isLoading ? (
+          <SkeletonRows />
+        ) : !items.length ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Header (desktop) */}
+            <div className="hidden md:grid grid-cols-[60px_minmax(0,1fr)_90px_120px_50px_130px_80px_60px] items-center gap-2 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              <div>ID</div>
+              <div>Intencao</div>
+              <div>Risco</div>
+              <div>Status</div>
+              <div>PR</div>
+              <div>Iniciado</div>
+              <div>Duracao</div>
+              <div></div>
+            </div>
+
+            {items.map((exec) => (
+              <ExecutionRow
+                key={exec.id}
+                execution={exec}
+                onClick={() => setSelectedExecId(exec.id)}
+              />
+            ))}
+
+            {/* Paginacao */}
+            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-card/40">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goBack}
+                disabled={!canGoBack}
+                className="text-[12px] h-7"
+              >
+                <ChevronLeft className="mr-1 h-3 w-3" />
+                Anterior
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goNext}
+                disabled={!hasMore}
+                className="text-[12px] h-7"
+              >
+                Proxima
+                <ChevronRight className="ml-1 h-3 w-3" />
+              </Button>
+            </div>
+          </>
+        )}
+      </section>
+
+      <ExecutionDetailModal
+        executionId={selectedExecId}
+        projectId={projectId}
+        open={!!selectedExecId}
+        onOpenChange={(o) => { if (!o) setSelectedExecId(null) }}
+      />
+    </>
   );
 }
 
-function ExecutionRow({ execution }: { execution: Execution }) {
-  const status = STATUS_VARIANT[execution.status] ?? {
+function ExecutionRow({
+  execution,
+  onClick,
+}: {
+  execution: Execution;
+  onClick: () => void;
+}) {
+  const statusConfig = EXECUTION_STATUS_CONFIG[execution.status as ExecutionStatus] ?? {
     label: execution.status,
     className: "bg-muted text-muted-foreground border-border",
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[80px_minmax(0,1fr)_120px_140px_90px] items-center gap-2 sm:gap-3 border-b border-border/40 px-4 py-2 text-[13px] last:border-b-0">
-      <div className="text-[12px] text-muted-foreground font-mono tabular-nums">
-        #{execution.id}
+    <div
+      className="grid grid-cols-1 md:grid-cols-[60px_minmax(0,1fr)_90px_120px_50px_130px_80px_60px] items-center gap-2 border-b border-border/40 px-4 py-2.5 text-[13px] last:border-b-0 hover:bg-accent/40 transition-colors cursor-pointer"
+      onClick={onClick}
+    >
+      {/* ID */}
+      <div className="text-[11px] text-muted-foreground font-mono tabular-nums">
+        #{execution.id.slice(-6)}
       </div>
 
+      {/* Intencao */}
       <div className="min-w-0">
         <p className="truncate font-medium text-[13px]">
-          {execution.intent ?? <span className="italic">Sem intent</span>}
+          {execution.intent || <span className="italic text-muted-foreground">Sem descricao</span>}
         </p>
-        {execution.exitCode !== null && execution.exitCode !== 0 && (
-          <p className="text-[11px] text-destructive">
-            exit code: {execution.exitCode}
-          </p>
+      </div>
+
+      {/* Risco */}
+      <div>
+        {execution.riskLevel ? (
+          <RiskBadge level={execution.riskLevel as RiskLevel} size="sm" />
+        ) : (
+          <span className="text-[11px] text-muted-foreground">—</span>
         )}
       </div>
 
+      {/* Status */}
       <div>
-        <Badge variant="outline" className={status.className}>
-          {status.label}
+        <Badge variant="outline" className={statusConfig.className}>
+          {statusConfig.label}
         </Badge>
       </div>
 
-      <div className="text-[12px] text-muted-foreground">
-        {execution.startedAt ? formatRelative(execution.startedAt) : "—"}
+      {/* PR */}
+      <div>
+        {execution.pullRequestUrl ? (
+          <a
+            href={execution.pullRequestUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-blue-600 hover:text-blue-700"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">—</span>
+        )}
       </div>
 
+      {/* Iniciado */}
+      <div className="text-[12px] text-muted-foreground">
+        {execution.createdAt ? formatRelative(execution.createdAt) : "—"}
+      </div>
+
+      {/* Duracao */}
       <div className="text-[12px] text-muted-foreground tabular-nums">
-        {execution.durationMs != null
-          ? formatDuration(execution.durationMs)
-          : "—"}
+        {execution.durationMs != null ? formatDuration(execution.durationMs) : "—"}
+      </div>
+
+      {/* Acao rapida */}
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 text-[11px] text-muted-foreground px-2"
+          onClick={(e) => { e.stopPropagation(); onClick() }}
+        >
+          Ver
+        </Button>
       </div>
     </div>
   );
@@ -203,13 +235,16 @@ function SkeletonRows() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="grid grid-cols-[80px_minmax(0,1fr)_120px_140px_90px] gap-3 border-b border-border/40 px-4 py-2 animate-pulse"
+          className="grid grid-cols-[60px_minmax(0,1fr)_90px_120px_50px_130px_80px_60px] gap-2 border-b border-border/40 px-4 py-2.5 animate-pulse"
         >
-          <div className="h-4 w-12 bg-muted rounded" />
+          <div className="h-4 w-10 bg-muted rounded" />
           <div className="h-4 w-3/4 bg-muted rounded" />
+          <div className="h-4 w-14 bg-muted rounded" />
           <div className="h-4 w-20 bg-muted rounded" />
+          <div className="h-4 w-6 bg-muted rounded" />
           <div className="h-4 w-24 bg-muted rounded" />
-          <div className="h-4 w-16 bg-muted rounded" />
+          <div className="h-4 w-12 bg-muted rounded" />
+          <div className="h-4 w-8 bg-muted rounded" />
         </div>
       ))}
     </div>
@@ -225,8 +260,8 @@ function EmptyState() {
       />
       <h3 className="mt-2 text-[13px] font-medium">Sem execucoes ainda</h3>
       <p className="mt-1 max-w-md text-[11px] text-muted-foreground">
-        Quando comandos forem disparados (ex: gerar deploy key, aplicar config),
-        aparecerao aqui.
+        Quando execucoes forem disparadas, aparecerao aqui com detalhe de risco,
+        status, PR e output do Claude Code.
       </p>
     </div>
   );

@@ -12,6 +12,9 @@ import { AgentLinkForm } from "./_components/agent-link-form";
 import { AgentStatusCard } from "./_components/agent-status-card";
 import { GitCredentialsPanel } from "./_components/git-credentials-panel";
 import { ExecutionHistory } from "./_components/execution-history";
+import { ClaudeCredentialCard } from "./_components/claude-credential-card";
+import { ApprovalQueuePanel } from "./_components/approval-queue-panel";
+import { ExecuteIntentionPanel } from "./_components/execute-intention-panel";
 
 interface AutomationPageProps {
   params: Promise<{ id: string }>;
@@ -97,16 +100,25 @@ export default function AutomationPage({ params }: AutomationPageProps) {
                 )}
               </div>
 
-              {/* Status do agente */}
+              {/* 1. Status do agente */}
               <AgentStatusCard projectId={id} />
 
-              {/* Vinculo */}
+              {/* 2. Credencial Claude (Fase 3) */}
+              <ClaudeCredentialCard projectId={id} />
+
+              {/* 3. Vinculo agente<->projeto */}
               <AgentLinkForm projectId={id} />
 
-              {/* Git Credentials */}
+              {/* 4. Git Credentials */}
               <GitCredentialsPanel projectId={id} />
 
-              {/* Historico */}
+              {/* 5. Aprovacoes pendentes — so renderiza se houver (Fase 3) */}
+              <ApprovalQueuePanel projectId={id} />
+
+              {/* 6. Disparar execucao (Fase 3) */}
+              <ExecuteIntentionPanel projectId={id} />
+
+              {/* 7. Historico de execucoes */}
               <ExecutionHistory projectId={id} />
             </div>
           </div>

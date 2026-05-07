@@ -250,3 +250,138 @@ export function useExecutionHistory(
     placeholderData: keepPreviousData,
   });
 }
+
+// =====================================================================
+// Execucoes Fase 3
+// =====================================================================
+
+/** GET execucoes filtrando por status. Polling a cada 15s quando status=awaiting_approval. */
+export function useExecutionsByStatus(projectId: string, status?: string) {
+  return useQuery({
+    queryKey: ["executions", projectId, status],
+    queryFn: () =>
+      automationApi.listExecutions(projectId, { status: status as ListExecutionsQuery["status"], limit: 20 }),
+    refetchInterval: status === "awaiting_approval" ? 15_000 : false,
+    enabled: !!projectId,
+  });
+}
+
+/** GET detalhe de uma execucao. */
+export function useExecution(executionId: string | null) {
+  return useQuery({
+    queryKey: ["execution", executionId],
+    queryFn: () => automationApi.getExecution(executionId!),
+    enabled: !!executionId,
+  });
+}
+
+/** POST dispara execucao. Invalida cache de execucoes do projeto. */
+export function useDispatchExecution(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (intentionId: string) =>
+      automationApi.dispatchExecution(projectId, { intentionId }),
+    onSuccess: () => {
+      toast.success("Execucao iniciada");
+      queryClient.invalidateQueries({ queryKey: ["executions", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: automationKeys.executions(projectId, undefined),
+      });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao iniciar execucao";
+      toast.error(msg);
+    },
+  });
+}
+
+/** POST aprova execucao awaiting_approval. */
+export function useApproveExecution(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (executionId: string) =>
+      automationApi.approveExecution(executionId),
+    onSuccess: () => {
+      toast.success("Execucao aprovada");
+      queryClient.invalidateQueries({ queryKey: ["executions", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: automationKeys.executions(projectId, undefined),
+      });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao aprovar execucao";
+      toast.error(msg);
+    },
+  });
+}
+
+/** POST rejeita execucao awaiting_approval. */
+export function useRejectExecution(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      executionId,
+      reason,
+    }: {
+      executionId: string;
+      reason: string;
+    }) => automationApi.rejectExecution(executionId, { reason }),
+    onSuccess: () => {
+      toast.success("Execucao rejeitada");
+      queryClient.invalidateQueries({ queryKey: ["executions", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: automationKeys.executions(projectId, undefined),
+      });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao rejeitar execucao";
+      toast.error(msg);
+    },
+  });
+}
+
+/** POST rollback de execucao. */
+export function useRollbackExecution(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (executionId: string) =>
+      automationApi.rollbackExecution(executionId),
+    onSuccess: () => {
+      toast.success("Rollback iniciado");
+      queryClient.invalidateQueries({ queryKey: ["executions", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: automationKeys.executions(projectId, undefined),
+      });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao iniciar rollback";
+      toast.error(msg);
+    },
+  });
+}
+
+/**
+ * Probe credencial Claude na VPS — on-demand, nao cachear.
+ * Use como mutation (dispara ao clicar, nao no mount).
+ */
+export function useClaudeCredentialStatus(projectId: string) {
+  return useMutation({
+    mutationFn: () => automationApi.getClaudeCredentialStatus(projectId),
+  });
+}
+
+/** Instrucoes SSH para configurar token Claude na VPS. */
+export function useClaudeTokenInstructions(projectId: string) {
+  return useMutation({
+    mutationFn: () => automationApi.getClaudeTokenInstructions(projectId),
+  });
+}
+

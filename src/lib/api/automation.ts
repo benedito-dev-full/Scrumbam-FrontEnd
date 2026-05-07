@@ -1,5 +1,10 @@
 import api from "./client";
 import { ENDPOINTS } from "./endpoints";
+import type {
+  Execution as ExecutionV3,
+  ClaudeCredentialStatus,
+  ExecutionListResponse as ExecutionListResponseV3,
+} from "@/types/execution";
 
 // =====================================================================
 // Automation Fase 2 — Vinculo Projeto<->Agente + Git Credentials
@@ -106,7 +111,7 @@ export interface Execution {
   startedAt: string | null;
   finishedAt: string | null;
   durationMs: number | null;
-  riskLevel: "low" | "medium" | "high" | null;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | null;
   exitCode: number | null;
   logs: string | null;
   createdAt: string;
@@ -228,6 +233,82 @@ export const automationApi = {
       ENDPOINTS.PROJECT_EXECUTIONS(projectId),
       { params: query },
     );
+    return data;
+  },
+
+  // ----- Execucoes Fase 3 -----
+
+  /** GET /executions/:id — detalhe completo de uma execucao. */
+  getExecution: async (executionId: string): Promise<ExecutionV3> => {
+    const { data } = await api.get<ExecutionV3>(`/executions/${executionId}`);
+    return data;
+  },
+
+  /** POST /projects/:id/execute — dispara execucao. ADMIN only. */
+  dispatchExecution: async (
+    projectId: string,
+    body: { intentionId: string },
+  ): Promise<{ executionId: string }> => {
+    const { data } = await api.post<{ executionId: string }>(
+      `/projects/${projectId}/execute`,
+      body,
+    );
+    return data;
+  },
+
+  /** POST /executions/:id/approve — aprova execucao awaiting_approval. ADMIN only. */
+  approveExecution: async (executionId: string): Promise<void> => {
+    await api.post(`/executions/${executionId}/approve`);
+  },
+
+  /** POST /executions/:id/reject — rejeita execucao. ADMIN only. */
+  rejectExecution: async (
+    executionId: string,
+    body: { reason: string },
+  ): Promise<void> => {
+    await api.post(`/executions/${executionId}/reject`, body);
+  },
+
+  /** POST /executions/:id/rollback — rollback manual de execucao. ADMIN only. */
+  rollbackExecution: async (executionId: string): Promise<void> => {
+    await api.post(`/executions/${executionId}/rollback`);
+  },
+
+  /**
+   * GET /projects/:id/claude-credential-status
+   *
+   * Proba credencial Claude na VPS (on-demand, sem cache).
+   * Use como mutation, nao query.
+   */
+  getClaudeCredentialStatus: async (
+    projectId: string,
+  ): Promise<ClaudeCredentialStatus> => {
+    const { data } = await api.get<ClaudeCredentialStatus>(
+      `/projects/${projectId}/claude-credential-status`,
+    );
+    return data;
+  },
+
+  /** GET /projects/:id/claude-token-instructions — instrucoes SSH para setup do token. */
+  getClaudeTokenInstructions: async (
+    projectId: string,
+  ): Promise<{ instructions: string; snippet: string }> => {
+    const { data } = await api.get<{ instructions: string; snippet: string }>(
+      `/projects/${projectId}/claude-token-instructions`,
+    );
+    return data;
+  },
+
+  /** GET /executions?projectId=&status=&cursor=&limit= — historico global da org. */
+  listExecutionsGlobal: async (params?: {
+    projectId?: string;
+    status?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<ExecutionListResponseV3> => {
+    const { data } = await api.get<ExecutionListResponseV3>(`/executions`, {
+      params,
+    });
     return data;
   },
 };
