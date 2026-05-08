@@ -1,6 +1,15 @@
 "use client";
 
-import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
+import Link from "next/link";
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Loader2,
+  UserPlus,
+  UserMinus,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -30,6 +39,44 @@ function formatTimeAgo(dateStr: string): string {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
+/**
+ * Retorna metadados visuais para uma notificacao com base no `type`.
+ *
+ * Tipos suportados:
+ * - team.member.added        — usuario adicionado a um time
+ * - team.member.removed      — usuario removido de um time
+ * - team.member.role_changed — cargo do usuario alterado
+ * - status_changed (default) — sem icone customizado, sem link
+ *
+ * Quando `href` e null o item nao vira link (renderiza como div).
+ */
+function getNotificationMeta(notification: InAppNotification): {
+  icon: React.ReactNode | null;
+  href: string | null;
+} {
+  switch (notification.type) {
+    case "team.member.added":
+      return {
+        icon: <UserPlus className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />,
+        href: "/team/issues",
+      };
+    case "team.member.removed":
+      return {
+        icon: <UserMinus className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />,
+        href: null,
+      };
+    case "team.member.role_changed":
+      return {
+        icon: (
+          <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+        ),
+        href: "/team/issues",
+      };
+    default:
+      return { icon: null, href: null };
+  }
+}
+
 function NotificationItem({
   notification,
   onMarkRead,
@@ -37,12 +84,11 @@ function NotificationItem({
   notification: InAppNotification;
   onMarkRead: (id: string) => void;
 }) {
-  return (
-    <div
-      className={`flex items-start gap-3 px-3 py-2.5 border-b border-border last:border-b-0 transition-colors ${
-        notification.isRead ? "opacity-60" : "bg-accent/30 hover:bg-accent/50"
-      }`}
-    >
+  const { icon, href } = getNotificationMeta(notification);
+
+  const content = (
+    <>
+      {icon}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium leading-tight truncate">
           {notification.title}
@@ -60,6 +106,7 @@ function NotificationItem({
           size="sm"
           className="h-6 w-6 p-0 shrink-0"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onMarkRead(notification.id);
           }}
@@ -68,8 +115,22 @@ function NotificationItem({
           <Check className="h-3.5 w-3.5" />
         </Button>
       )}
-    </div>
+    </>
   );
+
+  const baseClasses = `flex items-start gap-3 px-3 py-2.5 border-b border-border last:border-b-0 transition-colors ${
+    notification.isRead ? "opacity-60" : "bg-accent/30 hover:bg-accent/50"
+  }`;
+
+  if (href) {
+    return (
+      <Link href={href} className={baseClasses}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={baseClasses}>{content}</div>;
 }
 
 export function NotificationBell() {
