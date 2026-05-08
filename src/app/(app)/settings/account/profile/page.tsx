@@ -7,10 +7,7 @@ import { toast } from "sonner";
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
-import {
-  useUpdateMe,
-  useRemoveOrgMember,
-} from "@/lib/hooks/use-organization";
+import { useUpdateMe, useRemoveOrgMember } from "@/lib/hooks/use-organization";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +36,21 @@ export default function ProfilePage() {
   const [emailEditing, setEmailEditing] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
 
+  // Password change form state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const passwordsMatch =
+    confirmPassword.length === 0 || newPassword === confirmPassword;
+  const newPasswordValid = newPassword.length >= 8;
+  const passwordFormValid =
+    currentPassword.length > 0 &&
+    newPasswordValid &&
+    confirmPassword.length > 0 &&
+    passwordsMatch;
+
   useEffect(() => {
     if (user) {
       setFullName(user.nome);
@@ -46,8 +58,10 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const nameDirty = fullName.trim() !== (user?.nome ?? "") && fullName.trim().length > 0;
-  const emailDirty = email.trim() !== (user?.email ?? "") && email.trim().length > 0;
+  const nameDirty =
+    fullName.trim() !== (user?.nome ?? "") && fullName.trim().length > 0;
+  const emailDirty =
+    email.trim() !== (user?.email ?? "") && email.trim().length > 0;
 
   const initials = (user?.nome || "U")
     .split(" ")
@@ -76,6 +90,37 @@ export default function ProfilePage() {
         onSuccess: () => {
           if (user) setUser({ ...user, email: email.trim() });
           setEmailEditing(false);
+        },
+      },
+    );
+  };
+
+  const handleChangePassword = () => {
+    if (!passwordFormValid || isChangingPassword) return;
+    setIsChangingPassword(true);
+    updateMe.mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          toast.success("Senha alterada com sucesso");
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        },
+        onError: (error: unknown) => {
+          // useUpdateMe ja exibe toast em 401 ("Senha atual incorreta") e em
+          // outros casos genericos. Para erros 4xx/5xx fora desses, mostramos
+          // a mensagem do servidor explicitamente.
+          const err = error as {
+            response?: { status?: number; data?: { message?: string } };
+          };
+          const status = err.response?.status;
+          if (status && status !== 401 && status !== 409) {
+            toast.error(err.response?.data?.message ?? "Erro ao alterar senha");
+          }
+        },
+        onSettled: () => {
+          setIsChangingPassword(false);
         },
       },
     );
@@ -212,6 +257,100 @@ export default function ProfilePage() {
 
           {/* Canais conectados — vinculo Telegram (@Scrumban_Capture_Bot) */}
           <TelegramLinkSection />
+
+          {/* Alterar senha */}
+          <section className="space-y-3">
+            <h2 className="text-base font-medium">Alterar senha</h2>
+            <div className="rounded-md border border-border bg-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-border space-y-1.5">
+                <label
+                  htmlFor="current-password"
+                  className="text-[13px] font-medium block"
+                >
+                  Senha atual
+                </label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="h-8 text-[13px] w-64"
+                />
+              </div>
+
+              <div className="px-4 py-3 border-b border-border space-y-1.5">
+                <label
+                  htmlFor="new-password"
+                  className="text-[13px] font-medium block"
+                >
+                  Nova senha
+                </label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-8 text-[13px] w-64"
+                />
+                <p
+                  className={cn(
+                    "text-[12px]",
+                    newPassword.length > 0 && !newPasswordValid
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Mínimo 8 caracteres
+                </p>
+              </div>
+
+              <div className="px-4 py-3 border-b border-border space-y-1.5">
+                <label
+                  htmlFor="confirm-password"
+                  className="text-[13px] font-medium block"
+                >
+                  Confirmar nova senha
+                </label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-8 text-[13px] w-64"
+                />
+                {!passwordsMatch && (
+                  <p className="text-[12px] text-destructive">
+                    As senhas nao coincidem
+                  </p>
+                )}
+              </div>
+
+              <div className="px-4 py-3 flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={handleChangePassword}
+                  disabled={
+                    !passwordFormValid ||
+                    isChangingPassword ||
+                    updateMe.isPending
+                  }
+                  className="text-[12px] h-8"
+                >
+                  {isChangingPassword || updateMe.isPending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                      Alterando...
+                    </>
+                  ) : (
+                    "Alterar senha"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </section>
 
           {/* Workspace access */}
           <section className="space-y-3">
