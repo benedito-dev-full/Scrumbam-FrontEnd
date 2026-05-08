@@ -15,6 +15,13 @@ import {
   Cpu,
   Clock,
   Plus,
+  Sparkles,
+  Bug,
+  TrendingUp,
+  Eye,
+  Code,
+  HelpCircle,
+  CheckCheck,
 } from "lucide-react";
 
 import {
@@ -41,6 +48,7 @@ import type {
   IntentionDocument,
   IntentionPriority,
   IntentionStatus,
+  IntentionType,
 } from "@/types/intention";
 
 // ============================================================
@@ -335,13 +343,50 @@ const PRIORITY_DOT: Record<IntentionPriority, string> = {
 };
 
 const PRIORITY_LABEL: Record<IntentionPriority, string> = {
-  urgent: "urgent",
-  high: "high",
-  medium: "medium",
-  low: "low",
+  urgent: "Urgente",
+  high: "Alta",
+  medium: "Media",
+  low: "Baixa",
 };
 
-const MAX_CARDS_PER_COLUMN = 5;
+const TYPE_CONFIG: Record<
+  IntentionType,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    className: string;
+  }
+> = {
+  feature: { label: "Feature", icon: Sparkles, className: "text-blue-500" },
+  bug: { label: "Bug", icon: Bug, className: "text-red-500" },
+  improvement: {
+    label: "Melhoria",
+    icon: TrendingUp,
+    className: "text-violet-500",
+  },
+  review: { label: "Review", icon: Eye, className: "text-amber-500" },
+  refactor: { label: "Refactor", icon: Code, className: "text-cyan-500" },
+  code: { label: "Codigo", icon: Code, className: "text-slate-500" },
+  analysis: {
+    label: "Analise",
+    icon: HelpCircle,
+    className: "text-orange-500",
+  },
+  documentation: {
+    label: "Docs",
+    icon: HelpCircle,
+    className: "text-teal-500",
+  },
+  test: { label: "Teste", icon: CheckCheck, className: "text-emerald-500" },
+};
+
+const MAX_CARDS_PER_COLUMN = 4;
+
+function shortId(id: string): string {
+  // UUID-like: pega so o primeiro segmento; numerico: usa todo
+  if (/^\d+$/.test(id)) return id;
+  return id.split("-")[0]?.slice(0, 6) ?? id.slice(0, 6);
+}
 
 function KanbanCard({
   task,
@@ -361,6 +406,10 @@ function KanbanCard({
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
 
+  const typeConfig = TYPE_CONFIG[task.type];
+  const TypeIcon = typeConfig?.icon;
+  const description = task.problema?.trim();
+
   return (
     <div
       ref={setNodeRef}
@@ -368,7 +417,7 @@ function KanbanCard({
       {...listeners}
       {...attributes}
       className={cn(
-        "flex items-start justify-between gap-2 rounded-md bg-background/60 border border-border/60 px-3 py-2 transition-all select-none",
+        "rounded-lg bg-background/80 border border-border/60 transition-all select-none",
         isDragging
           ? "opacity-40"
           : "hover:bg-background hover:border-border hover:shadow-sm cursor-grab active:cursor-grabbing",
@@ -377,18 +426,57 @@ function KanbanCard({
       <Link
         href={`/projects/${projectId}/issues/${task.id}`}
         onClick={(e) => e.stopPropagation()}
-        className="flex-1 min-w-0"
+        className="flex flex-col gap-1.5 p-3"
       >
-        <p className="text-[15px] leading-snug line-clamp-2">
+        {/* Top: id + type */}
+        <div className="flex items-center justify-between gap-2 text-[10px]">
+          <span className="font-mono text-muted-foreground/80 tabular-nums truncate">
+            INT-{shortId(task.id)}
+          </span>
+          {typeConfig && TypeIcon && (
+            <span
+              className={cn(
+                "flex items-center gap-1 font-semibold shrink-0",
+                typeConfig.className,
+              )}
+              title={typeConfig.label}
+            >
+              <TypeIcon className="h-3 w-3" />
+              {typeConfig.label}
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <p className="text-[13px] font-medium leading-snug line-clamp-2 text-foreground">
           {task.title}
         </p>
+
+        {/* Description (problema) */}
+        {description && (
+          <p className="text-[11px] leading-snug line-clamp-2 text-muted-foreground">
+            {description}
+          </p>
+        )}
+
+        {/* Footer: priority + updated time */}
+        <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+          {task.priority && (
+            <span className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  PRIORITY_DOT[task.priority],
+                )}
+              />
+              {PRIORITY_LABEL[task.priority]}
+            </span>
+          )}
+          <span className="tabular-nums">
+            {formatRelative(task.updatedAt)}
+          </span>
+        </div>
       </Link>
-      {task.priority && (
-        <span
-          className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5", PRIORITY_DOT[task.priority])}
-          title={PRIORITY_LABEL[task.priority]}
-        />
-      )}
     </div>
   );
 }
@@ -545,13 +633,44 @@ function KanbanBoard({
 
       <DragOverlay>
         {activeTask && (
-          <div className="flex items-start justify-between gap-2 rounded-md bg-card border border-primary/40 shadow-lg px-3 py-2 w-[200px] rotate-2 opacity-95">
-            <p className="text-[15px] leading-snug line-clamp-2 flex-1">
-              {activeTask.title}
-            </p>
-            {activeTask.priority && (
-              <span className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5", PRIORITY_DOT[activeTask.priority])} />
-            )}
+          <div className="rounded-lg bg-card border border-primary/40 shadow-lg w-[220px] rotate-2 opacity-95">
+            <div className="flex flex-col gap-1.5 p-3">
+              <div className="flex items-center justify-between gap-2 text-[10px]">
+                <span className="font-mono text-muted-foreground/80 tabular-nums truncate">
+                  INT-{shortId(activeTask.id)}
+                </span>
+                {(() => {
+                  const c = TYPE_CONFIG[activeTask.type];
+                  if (!c) return null;
+                  const Icon = c.icon;
+                  return (
+                    <span
+                      className={cn(
+                        "flex items-center gap-1 font-semibold shrink-0",
+                        c.className,
+                      )}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {c.label}
+                    </span>
+                  );
+                })()}
+              </div>
+              <p className="text-[13px] font-medium leading-snug line-clamp-2">
+                {activeTask.title}
+              </p>
+              {activeTask.priority && (
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      PRIORITY_DOT[activeTask.priority],
+                    )}
+                  />
+                  {PRIORITY_LABEL[activeTask.priority]}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </DragOverlay>
