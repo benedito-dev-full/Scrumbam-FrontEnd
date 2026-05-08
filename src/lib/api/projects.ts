@@ -4,6 +4,7 @@ import type {
   Project,
   ProjectDetail,
   CreateProjectDto,
+  UpdateProjectDto,
   ProjectSummary,
   DeleteProjectResponse,
 } from "@/types";
@@ -19,6 +20,7 @@ function mapProject(raw: any): Project {
     dataFim: raw.endDate || raw.dataFim || null,
     criadoEm: raw.createdAt || raw.criadoEm,
     taskCount: raw.taskCount ?? 0,
+    teamId: raw.teamId ?? null,
     responsavel: raw.owner
       ? {
           chave: raw.owner.id || raw.owner.chave,
@@ -63,6 +65,26 @@ export const projectsApi = {
       memberIds:
         dto.memberIds && dto.memberIds.length > 0 ? dto.memberIds : undefined,
     });
+    return mapProject(data);
+  },
+
+  /**
+   * Atualiza projeto via PATCH /projects/:id (apenas ADMIN no backend).
+   *
+   * Apenas campos enviados sao alterados. Para desvincular o time, envie
+   * `idTeam: null` explicitamente (axios envia null no body, vs undefined que omite).
+   *
+   * Mapeia campos PT-BR (frontend) -> EN (backend):
+   *   nome -> name, descricao -> description, idTeam -> idTeam, startDate -> startDate
+   */
+  update: async (id: string, dto: UpdateProjectDto): Promise<Project> => {
+    // Construir payload apenas com chaves definidas (preserva semantica null vs undefined)
+    const payload: Record<string, unknown> = {};
+    if (dto.nome !== undefined) payload.name = dto.nome;
+    if (dto.descricao !== undefined) payload.description = dto.descricao;
+    if (dto.idTeam !== undefined) payload.idTeam = dto.idTeam; // null permitido
+    if (dto.startDate !== undefined) payload.startDate = dto.startDate;
+    const { data } = await api.patch(ENDPOINTS.PROJECT(id), payload);
     return mapProject(data);
   },
 

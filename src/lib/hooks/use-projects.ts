@@ -102,6 +102,56 @@ export function useDeleteProject() {
   });
 }
 
+/**
+ * Edita projeto via PATCH /projects/:id (apenas ADMIN no backend).
+ *
+ * Apenas campos enviados no DTO sao atualizados. Para desvincular o time,
+ * envie `idTeam: null` explicitamente. Invalida queries de projects, project(id)
+ * e summaries para refletir mudancas em todas as paginas.
+ */
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      dto,
+    }: {
+      id: string;
+      dto: import("@/types").UpdateProjectDto;
+    }) => projectsApi.update(id, dto),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.project(data.chave),
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.projectSummaries(),
+      });
+      toast.success(`Projeto "${data.nome}" atualizado`);
+    },
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      const status = err.response?.status;
+      if (status === 400) {
+        toast.error(
+          err.response?.data?.message ||
+            "Time selecionado nao pertence a esta organizacao",
+        );
+      } else if (status === 403) {
+        toast.error("Sem permissao para editar projeto");
+      } else if (status === 404) {
+        toast.error("Projeto nao encontrado");
+      } else {
+        toast.error(
+          err.response?.data?.message || "Falha ao atualizar projeto",
+        );
+      }
+    },
+  });
+}
+
 // ---- Columns ----
 
 export function useColumns(projectId: string | null) {

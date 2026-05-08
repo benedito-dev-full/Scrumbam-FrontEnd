@@ -13,6 +13,7 @@ export type {
   ProjectDetail,
   ProjectResponsavel,
   CreateProjectDto,
+  UpdateProjectDto,
   ProjectLastActivity,
   ProjectSummary,
   DeleteProjectResponse,

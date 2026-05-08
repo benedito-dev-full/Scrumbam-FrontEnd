@@ -4,6 +4,7 @@ import {
   Plus,
   MoreHorizontal,
   Cpu,
+  Pencil,
   Trash2,
   CheckSquare,
   Calendar,
@@ -23,9 +24,11 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
+import { EditProjectModal } from "@/components/projects/edit-project-modal";
 import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
+import type { Project } from "@/types";
 
 // Paleta de cores para ícone do projeto (baseada na inicial)
 const PROJECT_COLORS = [
@@ -66,8 +69,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   },
   archived: {
     label: "Arquivado",
-    className:
-      "bg-muted text-muted-foreground",
+    className: "bg-muted text-muted-foreground",
   },
   completed: {
     label: "Concluído",
@@ -86,6 +88,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const { data: projects, isLoading } = useProjects();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<{
     chave: string;
     nome: string;
@@ -143,6 +146,7 @@ export default function ProjectsPage() {
                   onAutomation={() =>
                     router.push(`/projects/${p.chave}/automation`)
                   }
+                  onEdit={isAdmin ? () => setEditTarget(p) : undefined}
                   onDelete={
                     isAdmin
                       ? () =>
@@ -154,6 +158,15 @@ export default function ProjectsPage() {
             </div>
           )}
         </div>
+
+        {/* Edit modal (ADMIN only) */}
+        {editTarget && (
+          <EditProjectModal
+            project={editTarget}
+            open={!!editTarget}
+            onOpenChange={(o) => !o && setEditTarget(null)}
+          />
+        )}
 
         {/* Delete confirmation dialog */}
         {projectToDelete && (
@@ -172,6 +185,7 @@ function ProjectCard({
   project,
   onClick,
   onAutomation,
+  onEdit,
   onDelete,
 }: {
   project: {
@@ -185,6 +199,7 @@ function ProjectCard({
   };
   onClick: () => void;
   onAutomation: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }) {
   const color = getProjectColor(project.nome);
@@ -258,6 +273,18 @@ function ProjectCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
+              {onEdit && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  className="flex items-center gap-2 text-[13px]"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  Editar projeto
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
@@ -399,7 +426,8 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       </div>
       <h3 className="mt-4 text-sm font-medium">Nenhum projeto ainda</h3>
       <p className="mt-1 text-[12px] text-muted-foreground max-w-xs">
-        Crie seu primeiro projeto para começar a organizar as intenções da sua equipe.
+        Crie seu primeiro projeto para começar a organizar as intenções da sua
+        equipe.
       </p>
       <button
         type="button"
