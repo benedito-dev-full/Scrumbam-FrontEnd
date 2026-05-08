@@ -68,7 +68,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
               <MobileLink
                 key={item.href}
                 item={item}
-                active={isNavItemActive(pathname, item.href)}
+                active={isNavItemActive(pathname, item.href, item.exact)}
                 onClose={close}
               />
             ))}
@@ -99,7 +99,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
                       <MobileLink
                         key={item.href}
                         item={item}
-                        active={isNavItemActive(pathname, item.href)}
+                        active={isNavItemActive(pathname, item.href, item.exact)}
                         onClose={close}
                       />
                     ))}
@@ -111,7 +111,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
                     <MobileLink
                       key={item.href}
                       item={item}
-                      active={isNavItemActive(pathname, item.href)}
+                      active={isNavItemActive(pathname, item.href, item.exact)}
                       onClose={close}
                     />
                   ))}

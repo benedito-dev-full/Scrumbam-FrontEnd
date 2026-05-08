@@ -48,7 +48,7 @@ export default function AgentsPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Header */}
-        <header className="flex h-12 shrink-0 items-center justify-between px-8 border-b border-border">
+        <header className="flex h-14 shrink-0 items-center justify-between px-8 pt-2 border-b border-border">
           <h1 className="text-[13px] font-medium">Agentes</h1>
           <AddAgentDialog />
         </header>

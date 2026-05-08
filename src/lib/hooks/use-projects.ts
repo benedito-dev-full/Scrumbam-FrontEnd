@@ -26,6 +26,16 @@ export function useProjects() {
   });
 }
 
+/** Lista projetos vinculados a um time. */
+export function useTeamProjects(teamId: string | null | undefined) {
+  const orgId = useAuthStore((s) => s.user?.orgId);
+  return useQuery({
+    queryKey: [...QUERY_KEYS.projects, "team", teamId ?? ""],
+    queryFn: () => projectsApi.list(orgId || undefined, teamId!),
+    enabled: !!orgId && !!teamId,
+  });
+}
+
 export function useProjectSummaries(organizationId?: string) {
   return useQuery({
     queryKey: QUERY_KEYS.projectSummaries(organizationId),

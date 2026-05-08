@@ -28,7 +28,8 @@ const STATUS_COLOR_CLASS: Record<AgentStatus, string> = {
   pending_install: "bg-amber-500/10 text-amber-700 border-amber-500/30",
   never_connected: "bg-blue-500/10 text-blue-700 border-blue-500/30",
   online: "bg-green-500/10 text-green-700 border-green-500/30",
-  offline: "bg-red-500/10 text-red-700 border-red-500/30",
+  offline:
+    "bg-red-500/10 text-red-700 border-red-500/30 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50",
 };
 
 /**

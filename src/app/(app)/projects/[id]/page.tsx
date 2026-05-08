@@ -129,7 +129,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Top breadcrumb bar */}
-        <header className="flex h-11 shrink-0 items-center justify-between px-8 border-b border-border">
+        <header className="flex h-11 shrink-0 items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-border">
           <nav className="flex items-center gap-1.5 text-[13px] min-w-0">
             <Link
               href="/projects"
@@ -201,7 +201,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         </header>
 
         {/* Tabs row */}
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-8">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (
               <button
@@ -246,7 +246,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
           </div>
 
           {/* Right side panel (Properties) */}
-          <aside className="hidden lg:flex w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
+          <aside className="hidden xl:flex w-[240px] 2xl:w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
             <PropertiesPanel project={project} />
             <ActivityPanel projectName={project?.nome} />
           </aside>
@@ -413,7 +413,7 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex-1 min-w-[200px] rounded-2xl border overflow-hidden transition-colors",
+        "flex-1 min-w-[170px] lg:min-w-[185px] 2xl:min-w-[200px] rounded-2xl border overflow-hidden transition-colors",
         config.headerBg,
         isOver ? "border-primary/50 ring-2 ring-primary/20" : "border-border",
       )}
@@ -527,7 +527,7 @@ function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex items-start gap-5 overflow-x-auto pb-4">
+      <div className="flex items-start gap-3 lg:gap-4 2xl:gap-5 overflow-x-auto pb-4">
         {KANBAN_COLUMNS.map((col) => (
           <KanbanColumn
             key={col.status}
@@ -584,8 +584,8 @@ function OverviewTab({
   const doneCount = issues.filter((i) => i.status === "done").length;
 
   return (
-    <div className="px-10 py-10">
-      <div className="space-y-8">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 2xl:px-10">
+      <div className="space-y-6 lg:space-y-8">
         {/* Project header */}
         <div className="space-y-3">
           <ProjectIcon nome={project?.nome} size="lg" />
@@ -694,7 +694,7 @@ function PropertiesStrip({
 
 function ActivityTab() {
   return (
-    <div className="px-8 py-16 flex flex-col items-center justify-center text-center">
+    <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
       <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
       <p className="text-[13px] font-medium text-muted-foreground">
         Nenhuma atividade ainda
@@ -713,7 +713,7 @@ function ActivityTab() {
 function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
   if (issues.length === 0) {
     return (
-      <div className="px-8 py-12 text-center">
+      <div className="px-4 py-10 sm:px-6 lg:px-8 lg:py-12 text-center">
         <CircleDashed className="mx-auto h-10 w-10 text-muted-foreground/30" />
         <p className="mt-3 text-[13px] text-muted-foreground">
           Sem issues ainda
@@ -724,7 +724,7 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
 
   return (
     <div>
-      <div className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border px-8 py-2 text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border px-4 sm:px-6 lg:px-8 py-2 text-[11px] font-medium text-muted-foreground">
         <div>Pri</div>
         <div>Codigo</div>
         <div></div>
@@ -734,7 +734,7 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
       {issues.map((i) => (
         <div
           key={i.id}
-          className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border/40 px-8 py-2 text-[13px] hover:bg-accent/30 transition-colors"
+          className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border/40 px-4 sm:px-6 lg:px-8 py-2 text-[13px] hover:bg-accent/30 transition-colors"
         >
           <PriorityIcon priority={i.priority} />
           <span className="text-[12px] text-muted-foreground tabular-nums">

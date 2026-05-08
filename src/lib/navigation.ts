@@ -4,7 +4,6 @@ import {
   Box,
   Layers,
   MoreHorizontal,
-  Play,
   Download,
   UserPlus,
   Target,
@@ -41,6 +40,8 @@ export interface NavItem {
   stub?: boolean;
   /** Se presente, item se comporta como popover trigger ao inves de link direto */
   popoverItems?: PopoverNavItem[];
+  /** Se true, item so fica ativo no path exato (nao casa subrotas) */
+  exact?: boolean;
   /** Chave usada por useSidebarCustomization para visibility/order */
   customizeKey?:
     | "inbox"
@@ -77,6 +78,7 @@ export const navTopItems: NavItem[] = [
     label: "Minhas issues",
     icon: CircleDot,
     customizeKey: "myIssues",
+    exact: true,
   },
 ];
 
@@ -119,8 +121,6 @@ export const navSections: NavSection[] = [
             href: "/team/issues",
             label: "Times",
             icon: Building2,
-            stub: true,
-            hint: "Gap #1 — Times nao existem no schema",
           },
           {
             label: "Personalizar sidebar",
@@ -132,45 +132,53 @@ export const navSections: NavSection[] = [
       },
     ],
   },
-  {
-    label: "Seus times",
-    collapsible: true,
-    team: { name: "Devari Tecnologia", icon: Play, iconColor: "text-emerald-500" },
-    items: [
-      { href: "/team/issues", label: "Issues", icon: CircleDot, stub: true },
-      { href: "/team/projects", label: "Projetos", icon: Box, stub: true },
-      { href: "/team/views", label: "Views", icon: Layers, stub: true },
-    ],
-  },
+  // Secao "Seus times" e renderizada dinamicamente pelo
+  // <TeamSelectorSidebar /> dentro de app-sidebar.tsx — nao definida aqui
+  // porque depende de dados do backend (/api/v1/teams/mine).
   {
     label: "Experimente",
     collapsible: true,
     items: [
       { href: "/import", label: "Importar issues", icon: Download, stub: true },
-      { href: "/invite", label: "Convidar pessoas", icon: UserPlus, stub: true },
+      {
+        href: "/invite",
+        label: "Convidar pessoas",
+        icon: UserPlus,
+        stub: true,
+      },
       { href: "/initiatives", label: "Iniciativas", icon: Target, stub: true },
       {
         href: "/settings/integrations/claude",
         label: "Connect Claude",
         icon: Zap,
       },
-      { href: "/connect/codex", label: "Connect Codex", icon: Code2, stub: true },
+      {
+        href: "/connect/codex",
+        label: "Connect Codex",
+        icon: Code2,
+        stub: true,
+      },
     ],
   },
   {
     label: "Configuracoes",
     collapsible: true,
-    items: [
-      { href: "/integrations", label: "Integracoes", icon: Plug },
-    ],
+    items: [{ href: "/integrations", label: "Integracoes", icon: Plug }],
   },
 ];
 
 /**
- * Active matcher. Linear ativa o item exato do path; subrotas tambem ativam o pai.
+ * Active matcher. Linear ativa o item exato do path; subrotas tambem ativam o pai,
+ * exceto quando item.exact = true (ex.: "Minhas issues" em /intentions nao deve
+ * acender quando estamos em /intentions/inbox, que e um item separado).
  */
-export function isNavItemActive(pathname: string, href: string): boolean {
+export function isNavItemActive(
+  pathname: string,
+  href: string,
+  exact = false,
+): boolean {
   if (pathname === href) return true;
+  if (exact) return false;
   if (href === "/") return false;
   return pathname.startsWith(href + "/");
 }
