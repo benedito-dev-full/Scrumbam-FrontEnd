@@ -147,19 +147,50 @@ export default function MyIssuesPage() {
           ) : !filtered.length ? (
             <EmptyState tab={activeTab} />
           ) : (
-            grouped.map((group) => (
-              <DateGroup
-                key={group.label}
-                label={group.label}
-                count={group.items.length}
-                items={group.items}
-                projectMap={projectMap}
-              />
-            ))
+            <>
+              <ColumnHeader />
+              {grouped.map((group) => (
+                <DateGroup
+                  key={group.label}
+                  label={group.label}
+                  count={group.items.length}
+                  items={group.items}
+                  projectMap={projectMap}
+                />
+              ))}
+            </>
           )}
         </div>
       </div>
     </PageTransition>
+  );
+}
+
+// ============================================================
+// Column header (sticky) — alinhado com IssueRow via larguras fixas
+// ============================================================
+
+function ColumnHeader() {
+  return (
+    <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-8 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {/* Pri (16px, mesmo da PriorityIcon) */}
+      <span className="w-4 shrink-0 text-center" title="Prioridade">
+        Pri
+      </span>
+      {/* Codigo (w-14, mesmo da row) */}
+      <span className="w-14 shrink-0">Codigo</span>
+      {/* Status icon column (~14px, decorativa — sem label) */}
+      <span className="w-3.5 shrink-0" />
+      {/* Titulo (flex-1) */}
+      <span className="flex-1">Titulo</span>
+      {/* Right group — mesmas larguras do IssueRow */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="w-24">Tipo</span>
+        <span className="w-32">Projeto</span>
+        <span className="w-5 text-center">Resp</span>
+        <span className="w-28">Criada em</span>
+      </div>
+    </div>
   );
 }
 
@@ -312,19 +343,25 @@ function IssueRow({
       <span className="flex-1 truncate">{item.title}</span>
 
       <div className="flex items-center gap-2 shrink-0">
-        <TypeBadge type={item.type} />
-        {projectName && <ProjectBadge name={projectName} />}
-        {assigneeInitials ? (
-          <div
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white"
-            title={item.assignee?.nome}
-          >
-            {assigneeInitials}
-          </div>
-        ) : (
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-muted-foreground/40" />
-        )}
-        <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+        <div className="w-24 flex justify-start">
+          <TypeBadge type={item.type} />
+        </div>
+        <div className="w-32 flex justify-start">
+          {projectName && <ProjectBadge name={projectName} />}
+        </div>
+        <div className="w-5 flex justify-center">
+          {assigneeInitials ? (
+            <div
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white"
+              title={item.assignee?.nome}
+            >
+              {assigneeInitials}
+            </div>
+          ) : (
+            <div className="h-5 w-5 rounded-full border border-dashed border-muted-foreground/40" />
+          )}
+        </div>
+        <span className="w-28 text-[12px] text-muted-foreground whitespace-nowrap">
           {createdLabel}
         </span>
       </div>
