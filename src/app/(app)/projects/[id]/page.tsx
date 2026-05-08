@@ -22,6 +22,7 @@ import {
   Code,
   HelpCircle,
   CheckCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import {
@@ -42,6 +43,7 @@ import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { ProjectInsights } from "@/components/projects/project-insights";
 import { ProjectReports } from "@/components/projects/project-reports";
+import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { cn } from "@/lib/utils";
 import type {
@@ -130,6 +132,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [favorited, setFavorited] = useState(false);
   const [newIssueOpen, setNewIssueOpen] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
 
   const issuesList = (intentions ?? []) as IntentionDocument[];
 
@@ -196,6 +199,15 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
               aria-label="Notificacoes do projeto"
             >
               <Bell className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPropertiesOpen(true)}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Propriedades do projeto"
+              title="Propriedades"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
             <Link
               href={`/projects/${projectId}/automation`}
@@ -268,6 +280,13 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         open={newIssueOpen}
         onOpenChange={setNewIssueOpen}
         defaultProjectId={projectId}
+      />
+
+      {/* Properties panel (Sheet right) — edicao inline (ADMIN-only) */}
+      <ProjectPropertiesPanel
+        open={propertiesOpen}
+        onOpenChange={setPropertiesOpen}
+        project={project}
       />
     </PageTransition>
   );
@@ -472,9 +491,7 @@ function KanbanCard({
               {PRIORITY_LABEL[task.priority]}
             </span>
           )}
-          <span className="tabular-nums">
-            {formatRelative(task.updatedAt)}
-          </span>
+          <span className="tabular-nums">{formatRelative(task.updatedAt)}</span>
         </div>
       </Link>
     </div>
@@ -510,7 +527,12 @@ function KanbanColumn({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <span className={cn("text-[11px] font-bold tracking-widest uppercase", config.headerText)}>
+        <span
+          className={cn(
+            "text-[11px] font-bold tracking-widest uppercase",
+            config.headerText,
+          )}
+        >
           {config.label}
         </span>
         <span
@@ -589,7 +611,7 @@ function KanbanBoard({
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   const byStatus = (status: KanbanStatus) =>
@@ -728,19 +750,29 @@ function OverviewTab({
           <div className="flex items-center gap-6 rounded-lg border border-border bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-muted-foreground">Total</span>
-              <span className="text-[15px] font-semibold tabular-nums">{totalIssues}</span>
+              <span className="text-[15px] font-semibold tabular-nums">
+                {totalIssues}
+              </span>
             </div>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-              <span className="text-[11px] text-muted-foreground">Em execução</span>
-              <span className="text-[15px] font-semibold tabular-nums">{executingCount}</span>
+              <span className="text-[11px] text-muted-foreground">
+                Em execução
+              </span>
+              <span className="text-[15px] font-semibold tabular-nums">
+                {executingCount}
+              </span>
             </div>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-[11px] text-muted-foreground">Concluídas</span>
-              <span className="text-[15px] font-semibold tabular-nums">{doneCount}</span>
+              <span className="text-[11px] text-muted-foreground">
+                Concluídas
+              </span>
+              <span className="text-[15px] font-semibold tabular-nums">
+                {doneCount}
+              </span>
             </div>
           </div>
         )}
