@@ -28,6 +28,10 @@ export interface ProjectDetail {
 export interface CreateProjectDto {
   nome: string;
   descricao?: string;
+  /** ID do time (DEntidade idClasse=-460) ao qual o projeto sera vinculado. */
+  idTeam?: string;
+  /** IDs (DEntidade.chave) dos membros iniciais. Caller sempre vira MANAGER. */
+  memberIds?: string[];
 }
 
 export interface ProjectLastActivity {

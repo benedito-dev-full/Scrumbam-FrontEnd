@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import {
-  X,
-  Loader2,
-  ChevronRight,
-  Play,
-} from "lucide-react";
+import { X, Loader2, ChevronRight, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useMyTeams } from "@/lib/hooks/use-teams";
+import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { projectsApi } from "@/lib/api/projects";
 import { QUERY_KEYS } from "@/lib/constants";
 
@@ -25,13 +25,13 @@ interface NewProjectModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const NO_TEAM_VALUE = "__none__";
+
 /**
  * Modal de criacao de projeto.
  *
- * O backend (POST /projects) so persiste `name` + `description`. Por isso
- * o modal expoe apenas esses dois campos — qualquer outro chip (status,
- * prioridade, datas, membros) seria stub e induz o usuario ao erro de
- * achar que valores foram salvos.
+ * Campos: nome, descricao, time (opcional), membros iniciais (opcional).
+ * Caller sempre vira MANAGER do projeto. Membros selecionados entram como MEMBER.
  */
 export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const { user } = useAuth();
@@ -39,12 +39,29 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const { data: teams } = useMyTeams();
+  const { data: orgMembers } = useOrgMembers(user?.orgId);
+
+  // Caller nao deve aparecer na lista de "convidar membros"
+  const callerEntidadeId = user?.entidadeId ?? "";
+  const invitableMembers =
+    orgMembers?.filter((m) => m.id !== callerEntidadeId) ?? [];
 
   const createMutation = useMutation({
     mutationFn: () =>
       projectsApi.create({
         nome: name.trim(),
         descricao: description.trim() || undefined,
+        idTeam: selectedTeamId || undefined,
+        memberIds:
+          selectedMemberIds.size > 0
+            ? Array.from(selectedMemberIds)
+            : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
@@ -60,6 +77,8 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const reset = () => {
     setName("");
     setDescription("");
+    setSelectedTeamId("");
+    setSelectedMemberIds(new Set());
   };
 
   const handleCancel = () => {
@@ -77,6 +96,15 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       e.preventDefault();
       createMutation.mutate();
     }
+  };
+
+  const toggleMember = (id: string) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const workspaceLabel = user?.orgNome || "Workspace";
@@ -128,6 +156,78 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             rows={6}
             className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none"
           />
+
+          {/* Time (opcional) */}
+          <div className="space-y-1">
+            <label className="text-[12px] font-medium text-muted-foreground">
+              Time
+            </label>
+            <Select
+              value={selectedTeamId || NO_TEAM_VALUE}
+              onValueChange={(v) =>
+                setSelectedTeamId(v === NO_TEAM_VALUE ? "" : v)
+              }
+            >
+              <SelectTrigger className="h-9 text-[13px] bg-muted/40 border-0 focus:bg-muted/60">
+                <SelectValue placeholder="Sem time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_TEAM_VALUE}>Sem time</SelectItem>
+                {teams?.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Membros (opcional) */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] font-medium text-muted-foreground">
+                Convidar membros
+              </label>
+              {selectedMemberIds.size > 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  {selectedMemberIds.size} selecionado
+                  {selectedMemberIds.size > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            {invitableMembers.length === 0 ? (
+              <div className="rounded-md bg-muted/40 px-3 py-2 text-[12px] text-muted-foreground">
+                Nenhum outro membro na organizacao.
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/40 max-h-48 overflow-y-auto divide-y divide-border/40">
+                {invitableMembers.map((m) => {
+                  const checked = selectedMemberIds.has(m.id);
+                  return (
+                    <label
+                      key={m.id}
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/60 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] text-foreground truncate">
+                          {m.name}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {m.email}
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleMember(m.id)}
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-600 cursor-pointer"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

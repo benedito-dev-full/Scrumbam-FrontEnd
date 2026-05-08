@@ -59,6 +59,9 @@ export const projectsApi = {
       name: dto.nome,
       description: dto.descricao || undefined,
       organizationId: orgId,
+      idTeam: dto.idTeam || undefined,
+      memberIds:
+        dto.memberIds && dto.memberIds.length > 0 ? dto.memberIds : undefined,
     });
     return mapProject(data);
   },
