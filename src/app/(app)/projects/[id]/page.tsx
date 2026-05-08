@@ -337,20 +337,16 @@ function KanbanCard({
   return (
     <Link
       href={`/projects/${projectId}/issues/${task.id}`}
-      className="block rounded-md border border-border bg-card px-3 py-2.5 space-y-1.5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer"
+      className="flex items-start justify-between gap-2 rounded-md bg-background/60 border border-border/60 px-3 py-2 hover:bg-background hover:border-border hover:shadow-sm transition-all"
     >
-      <p className="text-[13px] font-medium leading-snug line-clamp-2">
+      <p className="text-[12px] leading-snug line-clamp-2 flex-1">
         {task.title}
       </p>
       {task.priority && (
-        <div className="flex items-center gap-1.5">
-          <span
-            className={cn("h-2 w-2 rounded-full shrink-0", PRIORITY_DOT[task.priority])}
-          />
-          <span className="text-[11px] text-muted-foreground">
-            {PRIORITY_LABEL[task.priority]}
-          </span>
-        </div>
+        <span
+          className={cn("h-2 w-2 rounded-full shrink-0 mt-1", PRIORITY_DOT[task.priority])}
+          title={PRIORITY_LABEL[task.priority]}
+        />
       )}
     </Link>
   );
@@ -371,20 +367,20 @@ function KanbanColumn({
   const overflow = tasks.length - MAX_CARDS_PER_COLUMN;
 
   return (
-    <div className="min-w-[200px] flex-1 max-w-[260px] flex flex-col gap-2">
-      {/* Header */}
-      <div
-        className={cn(
-          "flex items-center justify-between rounded-lg px-3 py-2",
-          config.headerBg,
-        )}
-      >
-        <span className={cn("text-[11px] font-semibold tracking-wide", config.headerText)}>
+    <div
+      className={cn(
+        "flex-1 min-w-[160px] rounded-xl border border-border overflow-hidden",
+        config.headerBg,
+      )}
+    >
+      {/* Header do card-categoria */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <span className={cn("text-[11px] font-bold tracking-widest uppercase", config.headerText)}>
           {config.label}
         </span>
         <span
           className={cn(
-            "min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums",
+            "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
             config.badgeBg,
             config.badgeText,
           )}
@@ -393,11 +389,11 @@ function KanbanColumn({
         </span>
       </div>
 
-      {/* Cards */}
-      <div className="flex flex-col gap-2">
+      {/* Subcards — crescem com o conteúdo */}
+      <div className="flex flex-col gap-1.5 px-2 pb-2.5">
         {visible.length === 0 ? (
-          <p className="text-[11px] text-muted-foreground/50 text-center py-4">
-            Nenhuma task
+          <p className="text-[11px] text-muted-foreground/40 text-center py-3">
+            —
           </p>
         ) : (
           visible.map((task) => (
@@ -409,7 +405,10 @@ function KanbanColumn({
           <button
             type="button"
             onClick={onShowMore}
-            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center py-1"
+            className={cn(
+              "text-[11px] font-medium transition-colors text-center py-1 rounded-md hover:bg-background/40",
+              config.headerText,
+            )}
           >
             + {overflow} mais
           </button>
@@ -432,7 +431,7 @@ function KanbanBoard({
     issues.filter((i) => i.status === status);
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div className="flex items-start gap-3 overflow-x-auto pb-2">
       {KANBAN_COLUMNS.map((col) => (
         <KanbanColumn
           key={col.status}
