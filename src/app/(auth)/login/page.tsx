@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import type { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   usePageTitle("Entrar");
@@ -20,6 +21,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -117,16 +119,27 @@ export default function LoginPage() {
             Esqueceu?
           </Link>
         }>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            className="h-10 text-[14px]"
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="h-10 text-[14px] pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </Field>
 
         {error && (
