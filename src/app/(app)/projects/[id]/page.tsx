@@ -16,10 +16,22 @@ import {
   Clock,
 } from "lucide-react";
 
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProject } from "@/lib/hooks/use-projects";
-import { useIntentions } from "@/lib/hooks/use-intentions";
+import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { ProjectInsights } from "@/components/projects/project-insights";
 import { ProjectReports } from "@/components/projects/project-reports";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
@@ -330,25 +342,50 @@ const MAX_CARDS_PER_COLUMN = 5;
 function KanbanCard({
   task,
   projectId,
+  isDragging = false,
 }: {
   task: IntentionDocument;
   projectId: string;
+  isDragging?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: task.id,
+    data: { task },
+  });
+
+  const style = transform
+    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
+    : undefined;
+
   return (
-    <Link
-      href={`/projects/${projectId}/issues/${task.id}`}
-      className="flex items-start justify-between gap-2 rounded-md bg-background/60 border border-border/60 px-3 py-2 hover:bg-background hover:border-border hover:shadow-sm transition-all"
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "flex items-start justify-between gap-2 rounded-md bg-background/60 border border-border/60 px-3 py-2 transition-all select-none",
+        isDragging
+          ? "opacity-40"
+          : "hover:bg-background hover:border-border hover:shadow-sm cursor-grab active:cursor-grabbing",
+      )}
     >
-      <p className="text-[12px] leading-snug line-clamp-2 flex-1">
-        {task.title}
-      </p>
+      <Link
+        href={`/projects/${projectId}/issues/${task.id}`}
+        onClick={(e) => e.stopPropagation()}
+        className="flex-1 min-w-0"
+      >
+        <p className="text-[15px] leading-snug line-clamp-2">
+          {task.title}
+        </p>
+      </Link>
       {task.priority && (
         <span
-          className={cn("h-2 w-2 rounded-full shrink-0 mt-1", PRIORITY_DOT[task.priority])}
+          className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5", PRIORITY_DOT[task.priority])}
           title={PRIORITY_LABEL[task.priority]}
         />
       )}
-    </Link>
+    </div>
   );
 }
 
@@ -357,20 +394,24 @@ function KanbanColumn({
   tasks,
   projectId,
   onShowMore,
+  activeId,
 }: {
   config: KanbanColumnConfig;
   tasks: IntentionDocument[];
   projectId: string;
   onShowMore: () => void;
+  activeId: string | null;
 }) {
+  const { setNodeRef, isOver } = useDroppable({ id: config.status });
   const visible = tasks.slice(0, MAX_CARDS_PER_COLUMN);
   const overflow = tasks.length - MAX_CARDS_PER_COLUMN;
 
   return (
     <div
       className={cn(
-        "flex-1 min-w-[160px] rounded-xl border border-border overflow-hidden",
+        "flex-1 min-w-[160px] rounded-xl border overflow-hidden transition-colors",
         config.headerBg,
+        isOver ? "border-primary/50 ring-2 ring-primary/20" : "border-border",
       )}
     >
       {/* Header do card-categoria */}
@@ -390,14 +431,19 @@ function KanbanColumn({
       </div>
 
       {/* Subcards — crescem com o conteúdo */}
-      <div className="flex flex-col gap-1.5 px-2 pb-2.5">
+      <div ref={setNodeRef} className="flex flex-col gap-1.5 px-2 pb-2.5 min-h-[40px]">
         {visible.length === 0 ? (
           <p className="text-[11px] text-muted-foreground/40 text-center py-3">
             —
           </p>
         ) : (
           visible.map((task) => (
-            <KanbanCard key={task.id} task={task} projectId={projectId} />
+            <KanbanCard
+              key={task.id}
+              task={task}
+              projectId={projectId}
+              isDragging={activeId === task.id}
+            />
           ))
         )}
 
@@ -427,21 +473,64 @@ function KanbanBoard({
   projectId: string;
   onShowIssues: () => void;
 }) {
+  const { move } = useMoveStatus();
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   const byStatus = (status: KanbanStatus) =>
     issues.filter((i) => i.status === status);
 
+  const activeTask = activeId ? issues.find((i) => i.id === activeId) : null;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+    const newStatus = over.id as IntentionStatus;
+    const task = issues.find((i) => i.id === String(active.id));
+    if (!task || task.status === newStatus) return;
+    move(String(active.id), newStatus);
+  };
+
   return (
-    <div className="flex items-start gap-3 overflow-x-auto pb-2">
-      {KANBAN_COLUMNS.map((col) => (
-        <KanbanColumn
-          key={col.status}
-          config={col}
-          tasks={byStatus(col.status)}
-          projectId={projectId}
-          onShowMore={onShowIssues}
-        />
-      ))}
-    </div>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex items-start gap-3 overflow-x-auto pb-2">
+        {KANBAN_COLUMNS.map((col) => (
+          <KanbanColumn
+            key={col.status}
+            config={col}
+            tasks={byStatus(col.status)}
+            projectId={projectId}
+            onShowMore={onShowIssues}
+            activeId={activeId}
+          />
+        ))}
+      </div>
+
+      <DragOverlay>
+        {activeTask && (
+          <div className="flex items-start justify-between gap-2 rounded-md bg-card border border-primary/40 shadow-lg px-3 py-2 w-[200px] rotate-2 opacity-95">
+            <p className="text-[15px] leading-snug line-clamp-2 flex-1">
+              {activeTask.title}
+            </p>
+            {activeTask.priority && (
+              <span className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5", PRIORITY_DOT[activeTask.priority])} />
+            )}
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }
 
