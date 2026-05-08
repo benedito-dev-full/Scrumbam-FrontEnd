@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Globe,
   MessageSquare,
   Mail,
   Hash,
   Code2,
+  Send,
   Eye,
   EyeOff,
   Copy,
@@ -39,6 +41,8 @@ interface ChannelDef {
   fields: ChannelFieldDef[];
   classeId: string;
   isDefault?: boolean;
+  /** Mensagem exibida quando isDefault=true e fields=[] */
+  defaultMessage?: React.ReactNode;
 }
 
 const CHANNELS: ChannelDef[] = [
@@ -52,6 +56,8 @@ const CHANNELS: ChannelDef[] = [
     fields: [],
     classeId: "-451",
     isDefault: true,
+    defaultMessage:
+      "Canal web ativo por padrao. Intencoes criadas pelo formulario do Scrumban usam este canal automaticamente.",
   },
   {
     id: "whatsapp",
@@ -157,6 +163,30 @@ const CHANNELS: ChannelDef[] = [
       },
     ],
     classeId: "-455",
+  },
+  {
+    id: "telegram",
+    name: "Telegram",
+    icon: Send,
+    iconColor: "text-sky-500",
+    description:
+      "Capture issues conversando com @Scrumban_Capture_Bot no Telegram. Bot hospedado pelo Scrumban — nao requer configuracao da org.",
+    fields: [],
+    classeId: "-456",
+    isDefault: true,
+    defaultMessage: (
+      <>
+        Bot disponivel para todos os usuarios da org. Cada pessoa precisa
+        vincular sua conta individualmente em{" "}
+        <Link
+          href="/settings/account/profile"
+          className="font-medium text-sky-500 underline-offset-2 hover:underline"
+        >
+          Perfil &gt; Canais conectados
+        </Link>
+        .
+      </>
+    ),
   },
 ];
 
@@ -326,15 +356,17 @@ function ChannelCard({
         </CardContent>
       )}
 
-      {isEnabled && channel.fields.length === 0 && channel.isDefault && (
-        <CardContent className="border-t pt-4">
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-            Canal web ativo por padrao. Intencoes criadas pelo formulario do
-            Scrumban usam este canal automaticamente.
-          </p>
-        </CardContent>
-      )}
+      {isEnabled &&
+        channel.fields.length === 0 &&
+        channel.isDefault &&
+        channel.defaultMessage && (
+          <CardContent className="border-t pt-4">
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500 mt-0.5" />
+              <span>{channel.defaultMessage}</span>
+            </p>
+          </CardContent>
+        )}
     </Card>
   );
 }

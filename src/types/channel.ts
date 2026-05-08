@@ -5,7 +5,13 @@
 // Core Types
 // ============================================================
 
-export type ChannelId = "web" | "whatsapp" | "email" | "slack" | "api";
+export type ChannelId =
+  | "web"
+  | "whatsapp"
+  | "email"
+  | "slack"
+  | "api"
+  | "telegram";
 
 export type ChannelStatus = "active" | "inactive";
 

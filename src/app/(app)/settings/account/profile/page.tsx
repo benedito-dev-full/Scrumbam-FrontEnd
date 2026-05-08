@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { TelegramLinkSection } from "@/components/profile/telegram-link-section";
 
 export default function ProfilePage() {
   usePageTitle("Perfil");
@@ -208,6 +209,9 @@ export default function ProfilePage() {
               />
             </Row>
           </div>
+
+          {/* Canais conectados — vinculo Telegram (@Scrumban_Capture_Bot) */}
+          <TelegramLinkSection />
 
           {/* Workspace access */}
           <section className="space-y-3">

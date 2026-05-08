@@ -17,6 +17,8 @@ function getDefaultConfig(): ChannelConfigMap {
     email: { enabled: false, fields: {} },
     slack: { enabled: false, fields: {} },
     api: { enabled: false, fields: {} },
+    telegram: { enabled: true, fields: {} }, // sempre ativo no nivel da org;
+    // o vinculo individual e feito por usuario em Perfil > Canais conectados
   };
 }
 
@@ -25,10 +27,13 @@ function loadConfig(): ChannelConfigMap {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return getDefaultConfig();
-    const parsed = JSON.parse(stored) as ChannelConfigMap;
-    // Ensure WEB is always enabled (guard against tampered localStorage)
-    parsed.web = { ...parsed.web, enabled: true };
-    return parsed;
+    const parsed = JSON.parse(stored) as Partial<ChannelConfigMap>;
+    // Merge com defaults para entradas novas (ex.: telegram adicionado depois)
+    const merged = { ...getDefaultConfig(), ...parsed } as ChannelConfigMap;
+    // Garante que canais default estejam sempre ativos
+    merged.web = { ...merged.web, enabled: true };
+    merged.telegram = { ...merged.telegram, enabled: true };
+    return merged;
   } catch {
     return getDefaultConfig();
   }
@@ -52,8 +57,8 @@ export function useChannelConfig() {
   }, [config]);
 
   const toggleChannel = useCallback((id: ChannelId) => {
-    // WEB cannot be toggled off
-    if (id === "web") return;
+    // Canais "default" (web, telegram) nao podem ser desligados aqui
+    if (id === "web" || id === "telegram") return;
     setConfig((prev) => ({
       ...prev,
       [id]: { ...prev[id], enabled: !prev[id].enabled },
@@ -76,7 +81,7 @@ export function useChannelConfig() {
   const resetChannel = useCallback((id: ChannelId) => {
     setConfig((prev) => ({
       ...prev,
-      [id]: { enabled: id === "web", fields: {} },
+      [id]: { enabled: id === "web" || id === "telegram", fields: {} },
     }));
   }, []);
 
