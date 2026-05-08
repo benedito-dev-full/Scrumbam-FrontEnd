@@ -218,6 +218,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 project={project}
                 isLoading={isLoading}
                 issues={issuesList}
+                onSwitchToIssues={() => setActiveTab("issues")}
               />
             )}
             {activeTab === "activity" && <ActivityTab />}
@@ -252,11 +253,205 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
 // Overview tab
 // ============================================================
 
+// ============================================================
+// Kanban Column config
+// ============================================================
+
+type KanbanStatus = "inbox" | "ready" | "executing" | "done" | "failed";
+
+interface KanbanColumnConfig {
+  status: KanbanStatus;
+  label: string;
+  headerBg: string;
+  headerText: string;
+  badgeBg: string;
+  badgeText: string;
+}
+
+const KANBAN_COLUMNS: KanbanColumnConfig[] = [
+  {
+    status: "inbox",
+    label: "INBOX",
+    headerBg: "bg-zinc-100 dark:bg-zinc-800/60",
+    headerText: "text-zinc-600 dark:text-zinc-300",
+    badgeBg: "bg-zinc-200 dark:bg-zinc-700",
+    badgeText: "text-zinc-700 dark:text-zinc-200",
+  },
+  {
+    status: "ready",
+    label: "READY",
+    headerBg: "bg-blue-50 dark:bg-blue-950/40",
+    headerText: "text-blue-700 dark:text-blue-300",
+    badgeBg: "bg-blue-100 dark:bg-blue-900/60",
+    badgeText: "text-blue-700 dark:text-blue-200",
+  },
+  {
+    status: "executing",
+    label: "EXECUTANDO",
+    headerBg: "bg-amber-50 dark:bg-amber-950/40",
+    headerText: "text-amber-700 dark:text-amber-300",
+    badgeBg: "bg-amber-100 dark:bg-amber-900/60",
+    badgeText: "text-amber-700 dark:text-amber-200",
+  },
+  {
+    status: "done",
+    label: "CONCLUÍDO",
+    headerBg: "bg-emerald-50 dark:bg-emerald-950/40",
+    headerText: "text-emerald-700 dark:text-emerald-300",
+    badgeBg: "bg-emerald-100 dark:bg-emerald-900/60",
+    badgeText: "text-emerald-700 dark:text-emerald-200",
+  },
+  {
+    status: "failed",
+    label: "FALHOU",
+    headerBg: "bg-rose-50 dark:bg-rose-950/40",
+    headerText: "text-rose-700 dark:text-rose-300",
+    badgeBg: "bg-rose-100 dark:bg-rose-900/60",
+    badgeText: "text-rose-700 dark:text-rose-200",
+  },
+];
+
+const PRIORITY_DOT: Record<IntentionPriority, string> = {
+  urgent: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-amber-500",
+  low: "bg-zinc-400",
+};
+
+const PRIORITY_LABEL: Record<IntentionPriority, string> = {
+  urgent: "urgent",
+  high: "high",
+  medium: "medium",
+  low: "low",
+};
+
+const MAX_CARDS_PER_COLUMN = 5;
+
+function KanbanCard({
+  task,
+  projectId,
+}: {
+  task: IntentionDocument;
+  projectId: string;
+}) {
+  return (
+    <Link
+      href={`/projects/${projectId}/issues/${task.id}`}
+      className="block rounded-md border border-border bg-card px-3 py-2.5 space-y-1.5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer"
+    >
+      <p className="text-[13px] font-medium leading-snug line-clamp-2">
+        {task.title}
+      </p>
+      {task.priority && (
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cn("h-2 w-2 rounded-full shrink-0", PRIORITY_DOT[task.priority])}
+          />
+          <span className="text-[11px] text-muted-foreground">
+            {PRIORITY_LABEL[task.priority]}
+          </span>
+        </div>
+      )}
+    </Link>
+  );
+}
+
+function KanbanColumn({
+  config,
+  tasks,
+  projectId,
+  onShowMore,
+}: {
+  config: KanbanColumnConfig;
+  tasks: IntentionDocument[];
+  projectId: string;
+  onShowMore: () => void;
+}) {
+  const visible = tasks.slice(0, MAX_CARDS_PER_COLUMN);
+  const overflow = tasks.length - MAX_CARDS_PER_COLUMN;
+
+  return (
+    <div className="min-w-[200px] flex-1 max-w-[260px] flex flex-col gap-2">
+      {/* Header */}
+      <div
+        className={cn(
+          "flex items-center justify-between rounded-lg px-3 py-2",
+          config.headerBg,
+        )}
+      >
+        <span className={cn("text-[11px] font-semibold tracking-wide", config.headerText)}>
+          {config.label}
+        </span>
+        <span
+          className={cn(
+            "min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold tabular-nums",
+            config.badgeBg,
+            config.badgeText,
+          )}
+        >
+          {tasks.length}
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div className="flex flex-col gap-2">
+        {visible.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground/50 text-center py-4">
+            Nenhuma task
+          </p>
+        ) : (
+          visible.map((task) => (
+            <KanbanCard key={task.id} task={task} projectId={projectId} />
+          ))
+        )}
+
+        {overflow > 0 && (
+          <button
+            type="button"
+            onClick={onShowMore}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center py-1"
+          >
+            + {overflow} mais
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function KanbanBoard({
+  issues,
+  projectId,
+  onShowIssues,
+}: {
+  issues: IntentionDocument[];
+  projectId: string;
+  onShowIssues: () => void;
+}) {
+  const byStatus = (status: KanbanStatus) =>
+    issues.filter((i) => i.status === status);
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-4">
+      {KANBAN_COLUMNS.map((col) => (
+        <KanbanColumn
+          key={col.status}
+          config={col}
+          tasks={byStatus(col.status)}
+          projectId={projectId}
+          onShowMore={onShowIssues}
+        />
+      ))}
+    </div>
+  );
+}
+
 function OverviewTab({
   projectId,
   project,
   isLoading,
   issues,
+  onSwitchToIssues,
 }: {
   projectId: string;
   project:
@@ -269,10 +464,15 @@ function OverviewTab({
     | undefined;
   isLoading: boolean;
   issues: IntentionDocument[];
+  onSwitchToIssues: () => void;
 }) {
+  const totalIssues = issues.length;
+  const executingCount = issues.filter((i) => i.status === "executing").length;
+  const doneCount = issues.filter((i) => i.status === "done").length;
+
   return (
     <div className="px-8 py-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         {/* Project header */}
         <div className="space-y-3">
           <ProjectIcon nome={project?.nome} size="lg" />
@@ -289,29 +489,39 @@ function OverviewTab({
         {/* Inline properties strip — apenas dados reais */}
         <PropertiesStrip project={project} />
 
-        {/* Intenções vinculadas */}
-        {issues.length > 0 && (
-          <section className="space-y-2">
-            <h2 className="text-[13px] font-medium text-muted-foreground">
-              Intenções recentes
-            </h2>
-            <div className="space-y-2">
-              {issues.slice(0, 5).map((i) => (
-                <Link
-                  key={i.id}
-                  href={`/projects/${projectId}/issues/${i.id}`}
-                  className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] hover:bg-accent/40 transition-colors w-fit"
-                >
-                  <StatusIcon status={i.status} />
-                  <span className="text-muted-foreground tabular-nums">
-                    INT-{i.id}
-                  </span>
-                  <span className="truncate">{i.title}</span>
-                </Link>
-              ))}
+        {/* Métricas rápidas */}
+        {totalIssues > 0 && (
+          <div className="flex items-center gap-6 rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">Total</span>
+              <span className="text-[15px] font-semibold tabular-nums">{totalIssues}</span>
             </div>
-          </section>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+              <span className="text-[11px] text-muted-foreground">Em execução</span>
+              <span className="text-[15px] font-semibold tabular-nums">{executingCount}</span>
+            </div>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-[11px] text-muted-foreground">Concluídas</span>
+              <span className="text-[15px] font-semibold tabular-nums">{doneCount}</span>
+            </div>
+          </div>
         )}
+
+        {/* Kanban */}
+        <section className="space-y-3">
+          <h2 className="text-[13px] font-medium text-muted-foreground">
+            Visão do fluxo
+          </h2>
+          <KanbanBoard
+            issues={issues}
+            projectId={projectId}
+            onShowIssues={onSwitchToIssues}
+          />
+        </section>
       </div>
     </div>
   );
