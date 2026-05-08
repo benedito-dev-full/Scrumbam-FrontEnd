@@ -183,11 +183,13 @@ function ColumnHeader() {
       <span className="w-3.5 shrink-0" />
       {/* Titulo (flex-1) */}
       <span className="flex-1">Titulo</span>
-      {/* Right group — mesmas larguras do IssueRow */}
+      {/* Right group — mesmas larguras do IssueRow.
+          A coluna do avatar (w-5) nao recebe label porque "Resp" transborda
+          os 20px e cola no "Criada em". Tooltip no avatar ja explica. */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="w-24">Tipo</span>
         <span className="w-32">Projeto</span>
-        <span className="w-5 text-center">Resp</span>
+        <span className="w-5 shrink-0" />
         <span className="w-28">Criada em</span>
       </div>
     </div>
