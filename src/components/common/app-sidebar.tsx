@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useCallback } from "react";
+import { Fragment, useState, useCallback } from "react";
 import {
   Search,
   PenSquare,
@@ -181,18 +181,20 @@ export function AppSidebar() {
       {/* Sections */}
       <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
         {filteredSections.map((section) => (
-          <Section
-            key={section.label}
-            section={section}
-            pathname={pathname}
-            collapsed={!!collapsed[section.label || ""]}
-            onToggle={() => toggle(section.label || "")}
-            onOpenCustomize={() => setCustomizeOpen(true)}
-          />
+          <Fragment key={section.label}>
+            <Section
+              section={section}
+              pathname={pathname}
+              collapsed={!!collapsed[section.label || ""]}
+              onToggle={() => toggle(section.label || "")}
+              onOpenCustomize={() => setCustomizeOpen(true)}
+            />
+            {/* "Seus times" entra logo apos "Workspace" (depois do "Mais") —
+                renderizada separadamente porque depende do backend
+                (/api/v1/teams/mine), nao do array estatico navSections. */}
+            {section.label === "Workspace" && <TeamSelectorSidebar />}
+          </Fragment>
         ))}
-
-        {/* Secao "Seus times" — dinamica, vem do backend */}
-        <TeamSelectorSidebar />
       </nav>
 
       {/* Customize sidebar modal */}
