@@ -224,7 +224,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         {/* Content + side panel */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Main content */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 min-w-0 overflow-auto">
             {activeTab === "overview" && (
               <OverviewTab
                 projectId={projectId}
@@ -245,8 +245,10 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
           </div>
 
-          {/* Right side panel (Properties) */}
-          <aside className="hidden xl:flex w-[240px] 2xl:w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
+          {/* Right side panel (Properties) — so em monitor grande (2xl+).
+              Em telas menores, PropertiesStrip inline cobre os dados essenciais
+              e o kanban (5 colunas) fica com a largura total disponivel. */}
+          <aside className="hidden 2xl:flex w-[260px] shrink-0 flex-col border-l border-border overflow-auto">
             <PropertiesPanel project={project} />
             <ActivityPanel projectName={project?.nome} />
           </aside>
@@ -413,7 +415,7 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex-1 min-w-[170px] lg:min-w-[185px] 2xl:min-w-[200px] rounded-2xl border overflow-hidden transition-colors",
+        "flex-1 min-w-0 basis-0 rounded-2xl border overflow-hidden transition-colors",
         config.headerBg,
         isOver ? "border-primary/50 ring-2 ring-primary/20" : "border-border",
       )}
