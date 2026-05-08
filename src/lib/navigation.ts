@@ -2,7 +2,6 @@ import {
   Inbox,
   CircleDot,
   Box,
-  Layers,
   MoreHorizontal,
   Download,
   UserPlus,
@@ -47,7 +46,6 @@ export interface NavItem {
     | "myIssues"
     | "drafts"
     | "projects"
-    | "views"
     | "members"
     | "teams";
 }
@@ -94,12 +92,6 @@ export const navSections: NavSection[] = [
         label: "Projetos",
         icon: Box,
         customizeKey: "projects",
-      },
-      {
-        href: "/views/issues",
-        label: "Views",
-        icon: Layers,
-        customizeKey: "views",
       },
       {
         href: "/agents",

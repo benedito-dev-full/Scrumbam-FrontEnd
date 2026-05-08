@@ -5,7 +5,6 @@ import {
   CircleDot,
   FileText,
   Box,
-  Layers,
   Users,
   Building2,
   GripVertical,
@@ -60,7 +59,6 @@ const PERSONAL_ITEMS: SidebarItemConfig[] = [
 
 const WORKSPACE_ITEMS: SidebarItemConfig[] = [
   { key: "projects", label: "Projetos", icon: Box },
-  { key: "views", label: "Views", icon: Layers },
   { key: "members", label: "Membros", icon: Users },
   {
     key: "teams",

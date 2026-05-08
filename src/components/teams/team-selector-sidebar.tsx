@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Box,
   CircleDot,
-  Layers,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -44,7 +43,6 @@ type SubItem = {
 const subItems: SubItem[] = [
   { href: "/team/issues", label: "Issues", icon: CircleDot },
   { href: "/team/projects", label: "Projetos", icon: Box },
-  { href: "/team/views", label: "Views", icon: Layers, comingSoon: true },
 ];
 
 /**

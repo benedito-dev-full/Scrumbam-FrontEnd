@@ -18,7 +18,6 @@ export type SidebarItemKey =
   | "myIssues"
   | "drafts"
   | "projects"
-  | "views"
   | "members"
   | "teams";
 
@@ -36,7 +35,6 @@ const DEFAULTS: SidebarCustomization = {
     myIssues: "always",
     drafts: "showWhenBadged",
     projects: "always",
-    views: "always",
     members: "hide",
     teams: "hide",
   },
