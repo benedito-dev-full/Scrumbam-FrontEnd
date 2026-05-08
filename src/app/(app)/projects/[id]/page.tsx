@@ -14,6 +14,7 @@ import {
   PenSquare,
   Cpu,
   Clock,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -231,6 +232,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 isLoading={isLoading}
                 issues={issuesList}
                 onSwitchToIssues={() => setActiveTab("issues")}
+                onNewTask={() => setNewIssueOpen(true)}
               />
             )}
             {activeTab === "activity" && <ActivityTab />}
@@ -395,12 +397,14 @@ function KanbanColumn({
   projectId,
   onShowMore,
   activeId,
+  onNewTask,
 }: {
   config: KanbanColumnConfig;
   tasks: IntentionDocument[];
   projectId: string;
   onShowMore: () => void;
   activeId: string | null;
+  onNewTask: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: config.status });
   const visible = tasks.slice(0, MAX_CARDS_PER_COLUMN);
@@ -409,19 +413,19 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex-1 min-w-[160px] rounded-xl border overflow-hidden transition-colors",
+        "flex-1 min-w-[200px] rounded-2xl border overflow-hidden transition-colors",
         config.headerBg,
         isOver ? "border-primary/50 ring-2 ring-primary/20" : "border-border",
       )}
     >
-      {/* Header do card-categoria */}
-      <div className="flex items-center justify-between px-3 py-2.5">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3">
         <span className={cn("text-[11px] font-bold tracking-widest uppercase", config.headerText)}>
           {config.label}
         </span>
         <span
           className={cn(
-            "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+            "rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums",
             config.badgeBg,
             config.badgeText,
           )}
@@ -430,10 +434,10 @@ function KanbanColumn({
         </span>
       </div>
 
-      {/* Subcards — crescem com o conteúdo */}
-      <div ref={setNodeRef} className="flex flex-col gap-1.5 px-2 pb-2.5 min-h-[40px]">
+      {/* Subcards */}
+      <div ref={setNodeRef} className="flex flex-col gap-2 px-3 min-h-[40px]">
         {visible.length === 0 ? (
-          <p className="text-[11px] text-muted-foreground/40 text-center py-3">
+          <p className="text-[11px] text-muted-foreground/40 text-center py-4">
             —
           </p>
         ) : (
@@ -460,6 +464,22 @@ function KanbanColumn({
           </button>
         )}
       </div>
+
+      {/* Botão nova task */}
+      <div className="px-3 py-3">
+        <button
+          type="button"
+          onClick={onNewTask}
+          className={cn(
+            "flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-medium transition-colors",
+            "bg-background/50 hover:bg-background/80 border border-dashed border-border/60 hover:border-border",
+            config.headerText,
+          )}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Nova task
+        </button>
+      </div>
     </div>
   );
 }
@@ -468,10 +488,12 @@ function KanbanBoard({
   issues,
   projectId,
   onShowIssues,
+  onNewTask,
 }: {
   issues: IntentionDocument[];
   projectId: string;
   onShowIssues: () => void;
+  onNewTask: () => void;
 }) {
   const { move } = useMoveStatus();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -505,7 +527,7 @@ function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex items-start gap-3 overflow-x-auto pb-2">
+      <div className="flex items-start gap-5 overflow-x-auto pb-4">
         {KANBAN_COLUMNS.map((col) => (
           <KanbanColumn
             key={col.status}
@@ -514,6 +536,7 @@ function KanbanBoard({
             projectId={projectId}
             onShowMore={onShowIssues}
             activeId={activeId}
+            onNewTask={onNewTask}
           />
         ))}
       </div>
@@ -540,6 +563,7 @@ function OverviewTab({
   isLoading,
   issues,
   onSwitchToIssues,
+  onNewTask,
 }: {
   projectId: string;
   project:
@@ -553,14 +577,15 @@ function OverviewTab({
   isLoading: boolean;
   issues: IntentionDocument[];
   onSwitchToIssues: () => void;
+  onNewTask: () => void;
 }) {
   const totalIssues = issues.length;
   const executingCount = issues.filter((i) => i.status === "executing").length;
   const doneCount = issues.filter((i) => i.status === "done").length;
 
   return (
-    <div className="px-8 py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="px-10 py-10">
+      <div className="space-y-8">
         {/* Project header */}
         <div className="space-y-3">
           <ProjectIcon nome={project?.nome} size="lg" />
@@ -608,6 +633,7 @@ function OverviewTab({
             issues={issues}
             projectId={projectId}
             onShowIssues={onSwitchToIssues}
+            onNewTask={onNewTask}
           />
         </section>
       </div>
