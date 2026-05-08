@@ -59,8 +59,8 @@ A cada nova tela do Linear que for clonada:
   - (a) Criar modelo novo `DTeam` no backend.
   - (b) Reusar polimorfismo: nova `DClasse` (ex.: `-XXX TEAM`) em `DEntidade`, com `idLocEscritu` apontando para a Org.
   - (c) Pular Teams agora — mostrar Projects direto sob a Org. Reabrir quando relevante.
-- **Status:** `pendente`
-- **Decisão:** —
+- **Status:** `aplicado`
+- **Decisão:** Opção (a) — Modelo `DTeam` polimórfico V1.0 entregue no backend 06/05/2026, score 8.5/10. Frontend completo 08/05/2026, score 9.0/10 (CRUD + sidebar dinâmica + 2 telas: /team/projects, /team/issues). 12 endpoints REST, RBAC via flags backend, Zustand store.
 
 ---
 

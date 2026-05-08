@@ -37,6 +37,7 @@ import {
 } from "@/lib/hooks/use-sidebar-customization";
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
+import { TeamSelectorSidebar } from "@/components/teams/team-selector-sidebar";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -170,7 +171,7 @@ export function AppSidebar() {
             <SidebarLink
               key={item.href}
               item={item}
-              active={isNavItemActive(pathname, item.href)}
+              active={isNavItemActive(pathname, item.href, item.exact)}
               onOpenCustomize={() => setCustomizeOpen(true)}
             />
           ))}
@@ -189,6 +190,9 @@ export function AppSidebar() {
             onOpenCustomize={() => setCustomizeOpen(true)}
           />
         ))}
+
+        {/* Secao "Seus times" — dinamica, vem do backend */}
+        <TeamSelectorSidebar />
       </nav>
 
       {/* Customize sidebar modal */}
@@ -288,7 +292,7 @@ function Section({
                   <SidebarLink
                     key={item.href}
                     item={item}
-                    active={isNavItemActive(pathname, item.href)}
+                    active={isNavItemActive(pathname, item.href, item.exact)}
                     onOpenCustomize={onOpenCustomize}
                   />
                 ))}
@@ -299,7 +303,7 @@ function Section({
               <SidebarLink
                 key={item.href}
                 item={item}
-                active={isNavItemActive(pathname, item.href)}
+                active={isNavItemActive(pathname, item.href, item.exact)}
                 onOpenCustomize={onOpenCustomize}
               />
             ))

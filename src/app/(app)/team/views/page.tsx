@@ -8,9 +8,8 @@ export default function TeamViewsPage() {
   usePageTitle("Time — Visualizacoes");
   return (
     <SidebarStub
-      title="Visualizacoes do time"
-      description="Visualizacoes (filtros salvos) compartilhadas no escopo do time. Depende dos modelos DTeam e DView."
-      gapRef="Bloqueado pelos gaps #1 (Times) e #2 (Visualizacoes) — ver LINEAR_PIVOT_GAPS.md"
+      title="Views do time"
+      description="Views compartilhadas estarao disponiveis em breve."
       icon={Layers}
     />
   );

@@ -141,6 +141,13 @@ export const ENDPOINTS = {
   AGENT_REGENERATE_TOKEN: (id: string) =>
     `/agents/${id}/regenerate-install-token`,
 
+  // Teams (modulo Times — DEntidade idClasse=-460)
+  TEAMS: "/teams",
+  TEAMS_MINE: "/teams/mine",
+  TEAM: (id: string) => `/teams/${id}`,
+  TEAM_MEMBERS: (id: string) => `/teams/${id}/members`,
+  TEAM_MEMBER: (id: string, userId: string) => `/teams/${id}/members/${userId}`,
+
   // Automation - Vinculo Projeto<->Agente (Fase 2)
   PROJECT_AGENT_LINK: (id: string) => `/projects/${id}/agent-link`,
   PROJECT_AGENT_STATUS: (id: string) => `/projects/${id}/agent-status`,

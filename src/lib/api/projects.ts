@@ -29,8 +29,13 @@ function mapProject(raw: any): Project {
 }
 
 export const projectsApi = {
-  list: async (organizationId?: string): Promise<Project[]> => {
-    const params = organizationId ? { organizationId } : {};
+  list: async (
+    organizationId?: string,
+    teamId?: string,
+  ): Promise<Project[]> => {
+    const params: Record<string, string> = {};
+    if (organizationId) params.organizationId = organizationId;
+    if (teamId) params.teamId = teamId;
     const { data } = await api.get(ENDPOINTS.PROJECTS, { params });
     return (Array.isArray(data) ? data : []).map(mapProject);
   },

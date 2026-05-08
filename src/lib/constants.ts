@@ -150,40 +150,79 @@ export function getColumnStatusVar(
 
 export const RISK_LEVEL_CONFIG = {
   LOW: {
-    label: 'Baixo',
-    className: 'bg-green-500/10 text-green-600 border border-green-500/30',
-    iconColor: 'text-green-500',
+    label: "Baixo",
+    className: "bg-green-500/10 text-green-600 border border-green-500/30",
+    iconColor: "text-green-500",
   },
   MEDIUM: {
-    label: 'Médio',
-    className: 'bg-amber-500/10 text-amber-600 border border-amber-500/30',
-    iconColor: 'text-amber-500',
+    label: "Médio",
+    className: "bg-amber-500/10 text-amber-600 border border-amber-500/30",
+    iconColor: "text-amber-500",
   },
   HIGH: {
-    label: 'Alto',
-    className: 'bg-red-500/10 text-red-600 border border-red-500/30',
-    iconColor: 'text-red-500',
+    label: "Alto",
+    className: "bg-red-500/10 text-red-600 border border-red-500/30",
+    iconColor: "text-red-500",
   },
-} as const
+} as const;
 
 export const APPROVAL_FLOW_CONFIG = {
-  queued: { label: 'Em fila', className: 'bg-blue-500/10 text-blue-600 border border-blue-500/30' },
-  awaiting_approval: { label: 'Aguard. aprovação', className: 'bg-purple-500/10 text-purple-600 border border-purple-500/30' },
-  approved: { label: 'Aprovado', className: 'bg-green-500/10 text-green-600 border border-green-500/30' },
-  rejected: { label: 'Rejeitado', className: 'bg-red-500/10 text-red-600 border border-red-500/30' },
-  expired: { label: 'Expirado', className: 'bg-muted text-muted-foreground border border-border' },
-} as const
+  queued: {
+    label: "Em fila",
+    className: "bg-blue-500/10 text-blue-600 border border-blue-500/30",
+  },
+  awaiting_approval: {
+    label: "Aguard. aprovação",
+    className: "bg-purple-500/10 text-purple-600 border border-purple-500/30",
+  },
+  approved: {
+    label: "Aprovado",
+    className: "bg-green-500/10 text-green-600 border border-green-500/30",
+  },
+  rejected: {
+    label: "Rejeitado",
+    className: "bg-red-500/10 text-red-600 border border-red-500/30",
+  },
+  expired: {
+    label: "Expirado",
+    className: "bg-muted text-muted-foreground border border-border",
+  },
+} as const;
 
 export const EXECUTION_STATUS_CONFIG = {
-  queued: { label: 'Em fila', className: 'bg-blue-500/10 text-blue-600 border border-blue-500/30' },
-  running: { label: 'Rodando', className: 'bg-amber-500/10 text-amber-600 border border-amber-500/30' },
-  awaiting_approval: { label: 'Aguard. aprovação', className: 'bg-purple-500/10 text-purple-600 border border-purple-500/30' },
-  success: { label: 'Sucesso', className: 'bg-green-500/10 text-green-600 border border-green-500/30' },
-  failed: { label: 'Falhou', className: 'bg-red-500/10 text-red-600 border border-red-500/30' },
-  timeout: { label: 'Timeout', className: 'bg-orange-500/10 text-orange-600 border border-orange-500/30' },
-  rolled_back: { label: 'Revertido', className: 'bg-muted text-muted-foreground border border-border' },
-  cancelled: { label: 'Cancelado', className: 'bg-muted text-muted-foreground border border-border' },
-} as const
+  queued: {
+    label: "Em fila",
+    className: "bg-blue-500/10 text-blue-600 border border-blue-500/30",
+  },
+  running: {
+    label: "Rodando",
+    className: "bg-amber-500/10 text-amber-600 border border-amber-500/30",
+  },
+  awaiting_approval: {
+    label: "Aguard. aprovação",
+    className: "bg-purple-500/10 text-purple-600 border border-purple-500/30",
+  },
+  success: {
+    label: "Sucesso",
+    className: "bg-green-500/10 text-green-600 border border-green-500/30",
+  },
+  failed: {
+    label: "Falhou",
+    className: "bg-red-500/10 text-red-600 border border-red-500/30",
+  },
+  timeout: {
+    label: "Timeout",
+    className: "bg-orange-500/10 text-orange-600 border border-orange-500/30",
+  },
+  rolled_back: {
+    label: "Revertido",
+    className: "bg-muted text-muted-foreground border border-border",
+  },
+  cancelled: {
+    label: "Cancelado",
+    className: "bg-muted text-muted-foreground border border-border",
+  },
+} as const;
 
 // WIP limit thresholds
 export const WIP = {
@@ -243,4 +282,10 @@ export const QUERY_KEYS = {
   search: (query: string) => ["search", query] as const,
   agents: (status?: string) => ["agents", status ?? "all"] as const,
   agent: (id: string) => ["agent", id] as const,
+  teams: {
+    mine: ["teams", "mine"] as const,
+    list: (orgId: string) => ["teams", "list", orgId] as const,
+    detail: (id: string) => ["teams", id] as const,
+    members: (teamId: string) => ["teams", teamId, "members"] as const,
+  },
 } as const;
