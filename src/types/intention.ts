@@ -63,6 +63,7 @@ export const CANAL_TO_ID: Record<IntentionCanal, string> = {
   email: CANAL_IDS.EMAIL,
   slack: CANAL_IDS.SLACK,
   api: CANAL_IDS.API,
+  telegram: "-456",
 };
 
 export type IntentionStatus =
@@ -89,7 +90,7 @@ export type IntentionType =
 
 export type IntentionPriority = "urgent" | "high" | "medium" | "low";
 
-export type IntentionCanal = "web" | "whatsapp" | "email" | "slack" | "api";
+export type IntentionCanal = "web" | "whatsapp" | "email" | "slack" | "api" | "telegram";
 
 export interface IntentionDeliverables {
   prUrl?: string;

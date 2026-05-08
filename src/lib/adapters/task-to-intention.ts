@@ -91,19 +91,19 @@ const TYPE_CODE_MAP: Record<string, IntentionType> = {
 };
 
 function resolveType(tipoTask: Task["tipoTask"]): IntentionType {
-  if (!tipoTask) return "code";
+  if (!tipoTask) return "feature";
 
   if (tipoTask.codigo) {
     const normalized = tipoTask.codigo.toLowerCase().replace(/[-_\s]/g, "");
-    return TYPE_CODE_MAP[normalized] ?? "code";
+    return TYPE_CODE_MAP[normalized] ?? "feature";
   }
 
   if (tipoTask.nome) {
     const normalized = tipoTask.nome.toLowerCase().replace(/[-_\s]/g, "");
-    return TYPE_CODE_MAP[normalized] ?? "code";
+    return TYPE_CODE_MAP[normalized] ?? "feature";
   }
 
-  return "code";
+  return "feature";
 }
 
 // ============================================================
@@ -278,18 +278,20 @@ export function mapTaskToIntention(task: any): IntentionDocument {
     : null;
   const priority = resolvePriority(normalizedPrio);
 
-  // Canal (backend: canal object, frontend: not in type yet)
+  // Canal (backend: canal object com codigo ex: "CANAL_WEB", "CANAL_TELEGRAM", "WEB")
   const canalObj = (raw.canal ?? null) as Record<string, unknown> | null;
   let canal: IntentionCanal = "web";
   if (canalObj) {
     const canalCode = String(canalObj.codigo ?? canalObj.code ?? "");
-    const canalNorm = canalCode.toLowerCase().replace("canal_", "");
+    // Remove prefixo CANAL_ e normaliza para lowercase
+    const canalNorm = canalCode.toLowerCase().replace(/^canal_/, "").trim();
     const canalMap: Record<string, IntentionCanal> = {
       web: "web",
       whatsapp: "whatsapp",
       email: "email",
       slack: "slack",
       api: "api",
+      telegram: "telegram",
     };
     canal = canalMap[canalNorm] ?? "web";
   }

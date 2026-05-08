@@ -47,6 +47,7 @@ const CANAL_CONFIG: Record<
   email: { label: "Email", icon: Mail, className: "text-amber-500" },
   slack: { label: "Slack", icon: Hash, className: "text-purple-500" },
   api: { label: "API", icon: Code, className: "text-cyan-500" },
+  telegram: { label: "Telegram", icon: Send, className: "text-sky-500" },
 };
 
 const TYPE_CONFIG: Record<
