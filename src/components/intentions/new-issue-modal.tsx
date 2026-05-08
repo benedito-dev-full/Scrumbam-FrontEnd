@@ -3,17 +3,16 @@
 import { forwardRef, useEffect, useState } from "react";
 import {
   X,
-  Maximize2,
-  CircleDashed,
   MoreHorizontal,
-  User as UserIcon,
   Box,
-  Tag,
-  Paperclip,
   Loader2,
   ChevronRight,
   Play,
   Sparkles,
+  Bug,
+  TrendingUp,
+  Eye,
+  HelpCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -27,25 +26,64 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useCreateIntention } from "@/lib/hooks/use-intentions";
 import { TYPE_IDS, PRIORITY_IDS } from "@/types/intention";
 import { cn } from "@/lib/utils";
 
-type StatusKey = "backlog" | "todo" | "inProgress" | "done" | "canceled";
+// ============================================================
+// Tipos suportados pelo backend (CreateIntentionDto.taskTypeId)
+// ============================================================
 
-const STATUS_OPTIONS: {
-  key: StatusKey;
+type TypeKey = "feature" | "bug" | "improvement" | "review" | "explain";
+
+const TYPE_OPTIONS: {
+  key: TypeKey;
   label: string;
+  icon: LucideIcon;
   iconClass: string;
+  id: string;
 }[] = [
-  { key: "backlog", label: "Backlog", iconClass: "text-amber-500" },
-  { key: "todo", label: "A fazer", iconClass: "text-zinc-400" },
-  { key: "inProgress", label: "Em andamento", iconClass: "text-amber-400" },
-  { key: "done", label: "Concluida", iconClass: "text-emerald-500" },
-  { key: "canceled", label: "Cancelada", iconClass: "text-zinc-500" },
+  {
+    key: "feature",
+    label: "Feature",
+    icon: Sparkles,
+    iconClass: "text-blue-500",
+    id: TYPE_IDS.FEATURE,
+  },
+  {
+    key: "bug",
+    label: "Bug",
+    icon: Bug,
+    iconClass: "text-red-500",
+    id: TYPE_IDS.BUG,
+  },
+  {
+    key: "improvement",
+    label: "Melhoria",
+    icon: TrendingUp,
+    iconClass: "text-violet-500",
+    id: TYPE_IDS.IMPROVEMENT,
+  },
+  {
+    key: "review",
+    label: "Review",
+    icon: Eye,
+    iconClass: "text-amber-500",
+    id: TYPE_IDS.REVIEW,
+  },
+  {
+    key: "explain",
+    label: "Explicar",
+    icon: HelpCircle,
+    iconClass: "text-orange-500",
+    id: TYPE_IDS.EXPLAIN,
+  },
 ];
+
+// ============================================================
+// Prioridades — todas persistem (PRIORITY_IDS)
+// ============================================================
 
 type PriorityKey = "none" | "urgent" | "high" | "medium" | "low";
 
@@ -102,6 +140,13 @@ interface NewIssueModalProps {
 
 const MIN_DESCRIPTION_LENGTH = 20;
 
+/**
+ * Modal de criacao de issue.
+ *
+ * Backend persiste: title, description (>=20 chars), taskTypeId, priorityId,
+ * projectId. So estes campos sao expostos — assignee/status/labels nao
+ * persistem ainda e foram removidos para nao induzir ao erro.
+ */
 export function NewIssueModal({
   open,
   onOpenChange,
@@ -109,16 +154,14 @@ export function NewIssueModal({
 }: NewIssueModalProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { data: members } = useOrgMembers(user?.orgId);
   const { data: projects } = useProjects();
   const createIntention = useCreateIntention();
 
-  // Form state
+  // Form state — apenas os campos que persistem
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<StatusKey>("backlog");
+  const [type, setType] = useState<TypeKey>("feature");
   const [priority, setPriority] = useState<PriorityKey>("none");
-  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? "");
   const [createMore, setCreateMore] = useState(false);
 
@@ -133,9 +176,8 @@ export function NewIssueModal({
   const reset = () => {
     setTitle("");
     setDescription("");
-    setStatus("backlog");
+    setType("feature");
     setPriority("none");
-    setAssigneeId(null);
   };
 
   const handleClose = () => {
@@ -155,11 +197,12 @@ export function NewIssueModal({
   const handleSubmit = () => {
     if (!canSubmit) return;
     const priorityOpt = PRIORITY_OPTIONS.find((p) => p.key === priority)!;
+    const typeOpt = TYPE_OPTIONS.find((t) => t.key === type)!;
 
     createIntention.mutate({
       title: title.trim(),
       description: description.trim(),
-      taskTypeId: TYPE_IDS.FEATURE,
+      taskTypeId: typeOpt.id,
       priorityId: priorityOpt.id,
       projectId,
     });
@@ -186,14 +229,10 @@ export function NewIssueModal({
 
   // Derived
   const project = projects?.find((p) => p.chave === projectId) ?? null;
-  const assignee = members?.find((m) => m.id === assigneeId) ?? null;
-  const statusOpt = STATUS_OPTIONS.find((s) => s.key === status)!;
+  const typeOpt = TYPE_OPTIONS.find((t) => t.key === type)!;
   const priorityOpt = PRIORITY_OPTIONS.find((p) => p.key === priority)!;
 
   const teamLabel = (user?.orgNome || "DEV").slice(0, 4).toUpperCase();
-
-  // Quick suggestion: current user as assignee
-  const suggestion = members?.find((m) => m.id === user?.entidadeId) ?? null;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -212,25 +251,14 @@ export function NewIssueModal({
             <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
             <span className="font-medium">Nova issue</span>
           </DialogTitle>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled
-              title="Expand (em breve)"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-              aria-label="Expand"
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </header>
 
         {/* Body */}
@@ -247,11 +275,11 @@ export function NewIssueModal({
 
           {/* Description */}
           <textarea
-            placeholder="Adicione uma descricao..."
+            placeholder="Descreva o problema, contexto, criterios de aceite..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none min-h-[80px]"
+            rows={5}
+            className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none min-h-[100px]"
           />
           {!descriptionOk && (
             <p className="text-[11px] text-destructive">
@@ -260,61 +288,36 @@ export function NewIssueModal({
             </p>
           )}
 
-          {/* Quick suggestions */}
-          {suggestion && (
-            <div className="flex items-center gap-2 pt-2 border-t border-border">
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <Sparkles className="h-3 w-3" />
-                Sugestoes rapidas
-              </div>
-              <button
-                type="button"
-                onClick={() => setAssigneeId(suggestion.id)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md border border-dashed px-2 py-0.5 text-[12px] transition-colors",
-                  assigneeId === suggestion.id
-                    ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
-                    : "border-border hover:border-foreground/30",
-                )}
-              >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-medium text-white">
-                  {initials(suggestion.name)}
-                </span>
-                {suggestion.name.split(" ")[0]}
-              </button>
-            </div>
-          )}
-
-          {/* Properties chips */}
+          {/* Properties chips — somente campos que persistem */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border">
-            {/* Status */}
+            {/* Type */}
             <Popover>
               <PopoverTrigger asChild>
                 <Chip
                   active
-                  icon={CircleDashed}
-                  iconClass={statusOpt.iconClass}
-                  label={statusOpt.label}
+                  icon={typeOpt.icon}
+                  iconClass={typeOpt.iconClass}
+                  label={typeOpt.label}
                 />
               </PopoverTrigger>
               <PopoverContent align="start" className="w-44 p-1">
-                {STATUS_OPTIONS.map((s) => (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => setStatus(s.key)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      status === s.key && "bg-accent",
-                    )}
-                  >
-                    <CircleDashed className={cn("h-3.5 w-3.5", s.iconClass)} />
-                    {s.label}
-                  </button>
-                ))}
-                <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Backend usa workflow V3 proprio
-                </p>
+                {TYPE_OPTIONS.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setType(t.key)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                        type === t.key && "bg-accent",
+                      )}
+                    >
+                      <Icon className={cn("h-3.5 w-3.5", t.iconClass)} />
+                      {t.label}
+                    </button>
+                  );
+                })}
               </PopoverContent>
             </Popover>
 
@@ -352,49 +355,6 @@ export function NewIssueModal({
               </PopoverContent>
             </Popover>
 
-            {/* Assignee */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Chip
-                  active={!!assignee}
-                  icon={UserIcon}
-                  label={assignee ? assignee.name.split(" ")[0] : "Responsavel"}
-                />
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-56 p-1 max-h-64 overflow-auto"
-              >
-                <button
-                  type="button"
-                  onClick={() => setAssigneeId(null)}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors"
-                >
-                  <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  Sem responsavel
-                </button>
-                {(members ?? []).map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setAssigneeId(m.id)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      assigneeId === m.id && "bg-accent",
-                    )}
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-medium text-white">
-                      {initials(m.name)}
-                    </span>
-                    <span className="truncate">{m.name}</span>
-                  </button>
-                ))}
-                <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Nao persiste — DTO do backend incompleto
-                </p>
-              </PopoverContent>
-            </Popover>
-
             {/* Project (required) */}
             <Popover>
               <PopoverTrigger asChild>
@@ -424,57 +384,35 @@ export function NewIssueModal({
                 ))}
               </PopoverContent>
             </Popover>
-
-            {/* Labels (stub) */}
-            <Chip
-              icon={Tag}
-              label="Etiquetas"
-              disabled
-              hint="Em breve — gap #14"
-            />
-
-            {/* More menu */}
-            <Chip icon={MoreHorizontal} label="" disabled hint="Em breve" />
           </div>
         </div>
 
         {/* Footer */}
         <footer className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
-          <button
-            type="button"
-            disabled
-            title="Anexos — gap #39"
-            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-            aria-label="Attach"
-          >
-            <Paperclip className="h-3.5 w-3.5" />
-          </button>
+          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground select-none cursor-pointer">
+            <Switch
+              checked={createMore}
+              onCheckedChange={setCreateMore}
+              className="scale-75"
+            />
+            Criar mais
+          </label>
 
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground select-none cursor-pointer">
-              <Switch
-                checked={createMore}
-                onCheckedChange={setCreateMore}
-                className="scale-75"
-              />
-              Criar mais
-            </label>
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={!canSubmit || createIntention.isPending}
-              className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {createIntention.isPending ? (
-                <>
-                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                "Criar issue"
-              )}
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!canSubmit || createIntention.isPending}
+            className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {createIntention.isPending ? (
+              <>
+                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                Criando...
+              </>
+            ) : (
+              "Criar issue"
+            )}
+          </Button>
         </footer>
       </DialogContent>
     </Dialog>
@@ -482,7 +420,7 @@ export function NewIssueModal({
 }
 
 // ============================================================
-// Chip primitive (reused pattern from new-project-modal)
+// Chip primitive
 // ============================================================
 
 interface ChipProps {
@@ -521,12 +459,3 @@ const Chip = forwardRef<
     </button>
   );
 });
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}

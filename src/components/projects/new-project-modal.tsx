@@ -1,22 +1,12 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { useState } from "react";
 import {
   X,
-  Box,
-  CircleDashed,
-  MoreHorizontal,
-  User as UserIcon,
-  Users,
-  Calendar,
-  Tag,
-  GitMerge,
-  Plus,
   Loader2,
   ChevronRight,
   Play,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -25,72 +15,36 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { projectsApi } from "@/lib/api/projects";
 import { QUERY_KEYS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-
-type StatusKey = "backlog" | "planned" | "inProgress" | "completed" | "canceled";
-type PriorityKey = "none" | "urgent" | "high" | "medium" | "low";
-
-const STATUS_OPTIONS: {
-  key: StatusKey;
-  label: string;
-  iconClass: string;
-}[] = [
-  { key: "backlog", label: "Backlog", iconClass: "text-amber-500" },
-  { key: "planned", label: "Planejado", iconClass: "text-zinc-400" },
-  { key: "inProgress", label: "Em andamento", iconClass: "text-amber-400" },
-  { key: "completed", label: "Concluido", iconClass: "text-violet-500" },
-  { key: "canceled", label: "Cancelado", iconClass: "text-zinc-500" },
-];
-
-const PRIORITY_OPTIONS: {
-  key: PriorityKey;
-  label: string;
-  symbol: string;
-  bg: string;
-}[] = [
-  { key: "none", label: "Sem prioridade", symbol: "—", bg: "bg-muted" },
-  { key: "urgent", label: "Urgente", symbol: "!", bg: "bg-red-500" },
-  { key: "high", label: "Alta", symbol: "▲", bg: "bg-orange-500" },
-  { key: "medium", label: "Media", symbol: "=", bg: "bg-amber-500" },
-  { key: "low", label: "Baixa", symbol: "▽", bg: "bg-zinc-500" },
-];
 
 interface NewProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Modal de criacao de projeto.
+ *
+ * O backend (POST /projects) so persiste `name` + `description`. Por isso
+ * o modal expoe apenas esses dois campos — qualquer outro chip (status,
+ * prioridade, datas, membros) seria stub e induz o usuario ao erro de
+ * achar que valores foram salvos.
+ */
 export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: members } = useOrgMembers(user?.orgId);
 
-  // Form state
   const [name, setName] = useState("");
-  const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<StatusKey>("backlog");
-  const [priority, setPriority] = useState<PriorityKey>("none");
-  const [leadId, setLeadId] = useState<string | null>(null);
-  const [memberIds, setMemberIds] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState<string>("");
-  const [targetDate, setTargetDate] = useState<string>("");
 
   const createMutation = useMutation({
     mutationFn: () =>
       projectsApi.create({
         nome: name.trim(),
-        descricao: summary.trim() || description.trim() || undefined,
+        descricao: description.trim() || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.projects });
@@ -105,14 +59,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
 
   const reset = () => {
     setName("");
-    setSummary("");
     setDescription("");
-    setStatus("backlog");
-    setPriority("none");
-    setLeadId(null);
-    setMemberIds([]);
-    setStartDate("");
-    setTargetDate("");
   };
 
   const handleCancel = () => {
@@ -120,12 +67,17 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     onOpenChange(false);
   };
 
-  const lead = members?.find((m) => m.id === leadId) ?? null;
-  const selectedMembers = (members ?? []).filter((m) =>
-    memberIds.includes(m.id),
-  );
-  const statusOpt = STATUS_OPTIONS.find((s) => s.key === status)!;
-  const priorityOpt = PRIORITY_OPTIONS.find((p) => p.key === priority)!;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      e.key === "Enter" &&
+      name.trim() &&
+      !createMutation.isPending
+    ) {
+      e.preventDefault();
+      createMutation.mutate();
+    }
+  };
 
   const teamLabel = (user?.orgNome || "DEV").slice(0, 4).toUpperCase();
 
@@ -134,6 +86,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       <DialogContent
         showCloseButton={false}
         className="sm:max-w-2xl p-0 gap-0 max-h-[85vh] overflow-hidden border-border"
+        onKeyDown={handleKeyDown}
       >
         {/* Header */}
         <header className="flex items-center justify-between px-5 py-3 border-b border-border">
@@ -156,17 +109,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
         </header>
 
         {/* Body */}
-        <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
-          {/* Project icon (stub — sem campo no schema) */}
-          <button
-            type="button"
-            disabled
-            title="Icone do projeto (em breve)"
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card cursor-not-allowed"
-          >
-            <Box className="h-4 w-4 text-muted-foreground" />
-          </button>
-
+        <div className="flex-1 overflow-auto px-5 py-4 space-y-3">
           {/* Name */}
           <input
             type="text"
@@ -177,359 +120,43 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             className="h-10 w-full rounded-md bg-muted/40 px-3 text-[18px] font-semibold text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors"
           />
 
-          {/* Summary */}
-          <input
-            type="text"
-            placeholder="Adicione um resumo curto..."
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            className="h-9 w-full rounded-md bg-muted/40 px-3 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors"
-          />
-
-          {/* Properties chips row */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            {/* Status */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Chip
-                  active
-                  icon={CircleDashed}
-                  iconClass={statusOpt.iconClass}
-                  label={statusOpt.label}
-                />
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-44 p-1"
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => setStatus(s.key)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      status === s.key && "bg-accent",
-                    )}
-                  >
-                    <CircleDashed className={cn("h-3.5 w-3.5", s.iconClass)} />
-                    {s.label}
-                  </button>
-                ))}
-                <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Nao persiste — gap #37
-                </p>
-              </PopoverContent>
-            </Popover>
-
-            {/* Priority */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Chip
-                  active={priority !== "none"}
-                  icon={MoreHorizontal}
-                  label={priorityOpt.label}
-                />
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-44 p-1">
-                {PRIORITY_OPTIONS.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => setPriority(p.key)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      priority === p.key && "bg-accent",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex h-3.5 w-3.5 items-center justify-center rounded text-[9px] font-bold text-white",
-                        p.bg,
-                      )}
-                    >
-                      {p.symbol}
-                    </span>
-                    {p.label}
-                  </button>
-                ))}
-                <p className="mt-1 px-2 py-1 text-[10px] text-muted-foreground/60 border-t border-border">
-                  Nao persiste — gap #5
-                </p>
-              </PopoverContent>
-            </Popover>
-
-            {/* Lead */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Chip
-                  active={!!lead}
-                  icon={UserIcon}
-                  label={lead ? lead.name.split(" ")[0] : "Responsavel"}
-                />
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-1">
-                <button
-                  type="button"
-                  onClick={() => setLeadId(null)}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors"
-                >
-                  <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  Sem responsavel
-                </button>
-                {(members ?? []).map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setLeadId(m.id)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      leadId === m.id && "bg-accent",
-                    )}
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-medium text-white">
-                      {initials(m.name)}
-                    </span>
-                    <span className="truncate">{m.name}</span>
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-
-            {/* Members */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Chip
-                  active={selectedMembers.length > 0}
-                  icon={Users}
-                  label={
-                    selectedMembers.length === 0
-                      ? "Membros"
-                      : `${selectedMembers.length} membro${selectedMembers.length > 1 ? "s" : ""}`
-                  }
-                />
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-1 max-h-64 overflow-auto">
-                {(members ?? []).map((m) => {
-                  const checked = memberIds.includes(m.id);
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() =>
-                        setMemberIds((ids) =>
-                          checked
-                            ? ids.filter((i) => i !== m.id)
-                            : [...ids, m.id],
-                        )
-                      }
-                      className={cn(
-                        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                        checked && "bg-accent",
-                      )}
-                    >
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-medium text-white">
-                        {initials(m.name)}
-                      </span>
-                      <span className="flex-1 truncate text-left">{m.name}</span>
-                      {checked && (
-                        <span className="text-[10px] text-cyan-400">✓</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </PopoverContent>
-            </Popover>
-
-            {/* Start date */}
-            <DateChip
-              icon={Calendar}
-              label="Inicio"
-              value={startDate}
-              onChange={setStartDate}
-            />
-
-            {/* Target date */}
-            <DateChip
-              icon={Calendar}
-              label="Entrega"
-              value={targetDate}
-              onChange={setTargetDate}
-            />
-
-            {/* Labels (stub) */}
-            <Chip
-              icon={Tag}
-              label="Etiquetas"
-              disabled
-              hint="Em breve — gap #14"
-            />
-
-            {/* Dependencies (stub) */}
-            <Chip
-              icon={GitMerge}
-              label="Dependencias"
-              disabled
-              hint="Em breve — gap #38"
-            />
-          </div>
-
           {/* Description */}
           <textarea
-            placeholder="Escreva uma descricao, um brief do projeto ou colete ideias..."
+            placeholder="Descreva o projeto, escopo, objetivo..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={6}
             className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none"
           />
-
-          {/* Milestones (stub) */}
-          <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2.5">
-            <span className="text-[13px] text-muted-foreground">
-              Marcos
-            </span>
-            <button
-              type="button"
-              disabled
-              title="Em breve — gap #11"
-              className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-            >
-              <Plus className="h-3 w-3" />
-            </button>
-          </div>
         </div>
 
         {/* Footer */}
-        <footer className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
-          <p className="text-[11px] text-muted-foreground/70">
-            Backend persiste apenas <code>nome</code> e <code>resumo</code>.
-            Demais campos serao salvos quando o backend ampliar o DTO.
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              className="text-[12px] h-8"
-            >
-              Cancelar
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => createMutation.mutate()}
-              disabled={!name.trim() || createMutation.isPending}
-              className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {createMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                "Criar projeto"
-              )}
-            </Button>
-          </div>
+        <footer className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            className="text-[12px] h-8"
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => createMutation.mutate()}
+            disabled={!name.trim() || createMutation.isPending}
+            className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {createMutation.isPending ? (
+              <>
+                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                Criando...
+              </>
+            ) : (
+              "Criar projeto"
+            )}
+          </Button>
         </footer>
       </DialogContent>
     </Dialog>
   );
-}
-
-// ============================================================
-// Chip primitive
-// ============================================================
-
-interface ChipProps {
-  icon: LucideIcon;
-  label: string;
-  iconClass?: string;
-  active?: boolean;
-  disabled?: boolean;
-  hint?: string;
-}
-
-const Chip = forwardRef<
-  HTMLButtonElement,
-  ChipProps & React.ButtonHTMLAttributes<HTMLButtonElement>
->(function Chip(
-  { icon: Icon, label, iconClass, active, disabled, hint, ...rest },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      disabled={disabled}
-      title={hint}
-      {...rest}
-      className={cn(
-        "flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[12px] transition-colors",
-        active
-          ? "bg-accent text-foreground"
-          : "bg-card text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-        disabled && "opacity-60 cursor-not-allowed",
-      )}
-    >
-      <Icon className={cn("h-3.5 w-3.5 shrink-0", iconClass)} />
-      <span>{label}</span>
-    </button>
-  );
-});
-
-// ============================================================
-// Date chip (popover with native date input)
-// ============================================================
-
-function DateChip({
-  icon: Icon,
-  label,
-  value,
-  onChange,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const display = value
-    ? new Date(value).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })
-    : label;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Chip icon={Icon} label={display} active={!!value} />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-2">
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="rounded border border-border bg-card px-2 py-1 text-[12px]"
-        />
-        {value && (
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            className="ml-2 text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            Clear
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
