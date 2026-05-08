@@ -232,7 +232,7 @@ export function NewIssueModal({
   const typeOpt = TYPE_OPTIONS.find((t) => t.key === type)!;
   const priorityOpt = PRIORITY_OPTIONS.find((p) => p.key === priority)!;
 
-  const teamLabel = (user?.orgNome || "DEV").slice(0, 4).toUpperCase();
+  const workspaceLabel = user?.orgNome || "Workspace";
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -243,13 +243,13 @@ export function NewIssueModal({
       >
         {/* Header */}
         <header className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-1.5 text-[13px]">
-            <span className="flex items-center gap-1.5 rounded px-1.5 py-0.5 bg-emerald-500/15 text-emerald-300 text-[12px] font-medium">
-              <Play className="h-3 w-3 fill-emerald-400" />
-              {teamLabel}
+          <DialogTitle className="flex items-center gap-1.5 text-[13px] min-w-0">
+            <span className="flex items-center gap-1.5 rounded px-1.5 py-0.5 bg-emerald-500/15 text-emerald-300 text-[12px] font-medium truncate max-w-[200px]">
+              <Play className="h-3 w-3 fill-emerald-400 shrink-0" />
+              <span className="truncate">{workspaceLabel}</span>
             </span>
-            <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-            <span className="font-medium">Nova issue</span>
+            <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+            <span className="font-medium truncate">Nova issue</span>
           </DialogTitle>
           <button
             type="button"
