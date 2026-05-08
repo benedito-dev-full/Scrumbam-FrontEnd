@@ -3,7 +3,6 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import {
-  Box,
   Star,
   MoreHorizontal,
   Link2,
@@ -11,12 +10,10 @@ import {
   ChevronRight,
   CircleDashed,
   CheckCircle2,
-  Plus,
   Calendar,
-  User as UserIcon,
-  Hash,
   PenSquare,
   Cpu,
+  Clock,
 } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
@@ -32,6 +29,57 @@ import type {
   IntentionPriority,
   IntentionStatus,
 } from "@/types/intention";
+
+// ============================================================
+// Helpers de ícone colorido (mesma lógica dos cards de projeto)
+// ============================================================
+
+const ICON_COLORS = [
+  "bg-blue-500",
+  "bg-violet-500",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+];
+
+function projectColorClass(nome?: string | null): string {
+  const idx = (nome?.charCodeAt(0) ?? 0) % ICON_COLORS.length;
+  return ICON_COLORS[idx];
+}
+
+function ProjectIcon({
+  nome,
+  size = "sm",
+}: {
+  nome?: string | null;
+  size?: "sm" | "lg";
+}) {
+  const color = projectColorClass(nome);
+  const initial = nome?.[0]?.toUpperCase() ?? "P";
+  if (size === "lg") {
+    return (
+      <span
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-md text-[18px] font-bold text-white shrink-0",
+          color,
+        )}
+      >
+        {initial}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-white shrink-0",
+        color,
+      )}
+    >
+      {initial}
+    </span>
+  );
+}
 
 // ============================================================
 // Tabs
@@ -77,7 +125,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
               Projects
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-            <Box className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <ProjectIcon nome={project?.nome} />
             <span className="font-medium truncate">
               {project?.nome ?? "..."}
             </span>
@@ -185,7 +233,6 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
           {/* Right side panel (Properties) */}
           <aside className="hidden lg:flex w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
             <PropertiesPanel project={project} />
-            <MilestonesPanel />
             <ActivityPanel projectName={project?.nome} />
           </aside>
         </div>
@@ -212,7 +259,14 @@ function OverviewTab({
   issues,
 }: {
   projectId: string;
-  project: { nome: string; descricao?: string | null } | undefined;
+  project:
+    | {
+        nome: string;
+        descricao?: string | null;
+        dataInicio?: string | null;
+        dataFim?: string | null;
+      }
+    | undefined;
   isLoading: boolean;
   issues: IntentionDocument[];
 }) {
@@ -221,38 +275,28 @@ function OverviewTab({
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Project header */}
         <div className="space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-            <Box className="h-5 w-5 text-foreground" />
-          </div>
+          <ProjectIcon nome={project?.nome} size="lg" />
           <h1 className="text-3xl font-semibold tracking-tight">
-            {isLoading ? "..." : (project?.nome ?? "Project")}
+            {isLoading ? "..." : (project?.nome ?? "Projeto")}
           </h1>
-          <p className="text-[13px] text-muted-foreground">
-            {project?.descricao || "Adicione um resumo curto..."}
-          </p>
+          {project?.descricao && (
+            <p className="text-[13px] text-muted-foreground">
+              {project.descricao}
+            </p>
+          )}
         </div>
 
-        {/* Inline properties strip */}
-        <PropertiesStrip />
+        {/* Inline properties strip — apenas dados reais */}
+        <PropertiesStrip project={project} />
 
-        {/* Resources */}
-        <ResourcesRow />
-
-        {/* Project update CTA */}
-        <ProjectUpdateCTA />
-
-        {/* Description / linked issues */}
-        <section className="space-y-2">
-          <h2 className="text-[13px] font-medium text-muted-foreground">
-            Description
-          </h2>
-          <div className="space-y-2">
-            {issues.length === 0 ? (
-              <p className="text-[12px] text-muted-foreground/70">
-                No issues linked yet.
-              </p>
-            ) : (
-              issues.slice(0, 5).map((i) => (
+        {/* Intenções vinculadas */}
+        {issues.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-[13px] font-medium text-muted-foreground">
+              Intenções recentes
+            </h2>
+            <div className="space-y-2">
+              {issues.slice(0, 5).map((i) => (
                 <Link
                   key={i.id}
                   href={`/projects/${projectId}/issues/${i.id}`}
@@ -264,144 +308,76 @@ function OverviewTab({
                   </span>
                   <span className="truncate">{i.title}</span>
                 </Link>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Milestone CTA (gap #11) */}
-        <button
-          type="button"
-          className="flex items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-          title="Em breve (gap de schema)"
-          disabled
-        >
-          <Plus className="h-3 w-3" />
-          Marco
-        </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
 }
 
-function PropertiesStrip() {
+function PropertiesStrip({
+  project,
+}: {
+  project?:
+    | {
+        dataInicio?: string | null;
+        dataFim?: string | null;
+      }
+    | null
+    | undefined;
+}) {
+  const hasDataFim = !!project?.dataFim;
+  const hasDataInicio = !!project?.dataInicio;
+
+  if (!hasDataFim && !hasDataInicio) return null;
+
   return (
     <div className="flex flex-wrap items-center gap-2 text-[12px]">
       <span className="text-muted-foreground mr-1">Propriedades</span>
-      <ChipButton
-        icon={CircleDashed}
-        label="Backlog"
-        iconClass="text-amber-400"
-      />
-      <ChipButton
-        icon={MoreHorizontal}
-        label="Sem prioridade"
-        stub
-        title="Gap #5"
-      />
-      <ChipButton
-        icon={UserIcon}
-        label="Responsavel"
-        stub
-        title="Sem responsavel no schema do projeto"
-      />
-      <ChipButton icon={Calendar} label="Data alvo" />
-      <ChipButton
-        icon={Hash}
-        label="Devari Tecnologia"
-        stub
-        title="Gap #1 (Times)"
-      />
-      <button
-        type="button"
-        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-        aria-label="Mais propriedades"
-        title="Mais propriedades"
-      >
-        <MoreHorizontal className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
-
-function ResourcesRow() {
-  return (
-    <div className="flex items-center gap-2 text-[12px]">
-      <span className="text-muted-foreground mr-1">Recursos</span>
-      <button
-        type="button"
-        disabled
-        title="Em breve (gap #12)"
-        className="flex items-center gap-1 rounded-md border border-dashed border-muted-foreground/40 px-2 py-1 text-muted-foreground/70 cursor-not-allowed"
-      >
-        <Plus className="h-3 w-3" />
-        Adicionar documento ou link...
-      </button>
-    </div>
-  );
-}
-
-function ProjectUpdateCTA() {
-  return (
-    <button
-      type="button"
-      disabled
-      title="Em breve (gap #10)"
-      className={cn(
-        "flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-muted-foreground/30 bg-card/40 px-4 py-4",
-        "text-[13px] text-muted-foreground/80 cursor-not-allowed",
+      {(hasDataInicio || hasDataFim) && (
+        <span className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          {hasDataInicio && (
+            <span>
+              {new Date(project!.dataInicio!).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </span>
+          )}
+          {hasDataInicio && hasDataFim && (
+            <span className="text-muted-foreground">→</span>
+          )}
+          {hasDataFim && (
+            <span>
+              {new Date(project!.dataFim!).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </span>
+          )}
+        </span>
       )}
-    >
-      <PenSquare className="h-4 w-4" />
-      Escrever primeira atualizacao do projeto
-    </button>
-  );
-}
-
-function ChipButton({
-  icon: Icon,
-  label,
-  iconClass,
-  stub,
-  title,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  iconClass?: string;
-  stub?: boolean;
-  title?: string;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={stub}
-      title={title}
-      className={cn(
-        "flex items-center gap-1.5 rounded-md border border-border px-2 py-1 transition-colors",
-        stub
-          ? "text-muted-foreground/60 cursor-not-allowed"
-          : "text-foreground hover:bg-accent",
-      )}
-    >
-      <Icon className={cn("h-3.5 w-3.5 shrink-0", iconClass)} />
-      <span>{label}</span>
-    </button>
+    </div>
   );
 }
 
 // ============================================================
-// Activity tab (stub minimal)
+// Activity tab
 // ============================================================
 
 function ActivityTab() {
   return (
-    <div className="px-8 py-8">
-      <div className="mx-auto max-w-3xl">
-        <p className="text-[12px] text-muted-foreground">
-          Feed de atividade em breve. (Backend tem `DEvento` filtrado por
-          `idProject`; falta hook no frontend.)
-        </p>
-      </div>
+    <div className="px-8 py-16 flex flex-col items-center justify-center text-center">
+      <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
+      <p className="text-[13px] font-medium text-muted-foreground">
+        Nenhuma atividade ainda
+      </p>
+      <p className="text-[12px] text-muted-foreground/60 mt-1">
+        As atualizações do projeto aparecerão aqui.
+      </p>
     </div>
   );
 }
@@ -458,102 +434,74 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
 function PropertiesPanel({
   project,
 }: {
-  project: { nome: string; descricao?: string | null } | undefined;
+  project:
+    | {
+        nome: string;
+        descricao?: string | null;
+        dataInicio?: string | null;
+        dataFim?: string | null;
+        responsavel?: { chave: string; nome: string } | null;
+      }
+    | undefined;
 }) {
+  const hasDataInicio = !!project?.dataInicio;
+  const hasDataFim = !!project?.dataFim;
+  const hasDates = hasDataInicio || hasDataFim;
+  const hasResponsavel = !!project?.responsavel?.nome;
+
+  const hasAnyProp = hasDates || hasResponsavel;
+
   return (
     <section className="border-b border-border px-4 py-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Propriedades
-        </h3>
-        <button
-          type="button"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          aria-label="Adicionar propriedade"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
-      <dl className="space-y-2 text-[12px]">
-        <PropRow label="Status" value="Backlog" iconColor="text-amber-400" />
-        <PropRow
-          label="Prioridade"
-          value="Sem prioridade"
-          stub
-          title="Gap #5"
-        />
-        <PropRow label="Responsavel" value="Adicionar responsavel" stub />
-        <PropRow label="Membros" value="Adicionar membros" />
-        <PropRow label="Datas" value="Inicio → Entrega" />
-        <PropRow
-          label="Times"
-          value="Devari Tecnologia"
-          iconColor="text-emerald-500"
-          stub
-          title="Gap #1 (Times)"
-        />
-        <PropRow label="Slack" value="Canal Slack" stub title="Gap #13" />
-        <PropRow
-          label="Etiquetas"
-          value="Adicionar etiqueta"
-          stub
-          title="Gap #14"
-        />
-      </dl>
-      {project?.nome && <span className="sr-only">{project.nome}</span>}
-    </section>
-  );
-}
-
-function PropRow({
-  label,
-  value,
-  iconColor,
-  stub,
-  title,
-}: {
-  label: string;
-  value: string;
-  iconColor?: string;
-  stub?: boolean;
-  title?: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 py-0.5" title={title}>
-      <dt className="w-16 shrink-0 text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "flex items-center gap-1.5 truncate",
-          stub && "text-muted-foreground/60",
-        )}
-      >
-        <CircleDashed className={cn("h-3 w-3 shrink-0", iconColor)} />
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-function MilestonesPanel() {
-  return (
-    <section className="border-b border-border px-4 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Marcos
-        </h3>
-        <button
-          type="button"
-          disabled
-          title="Gap #11"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-        Adicione marcos para organizar o trabalho do projeto em etapas mais
-        granulares.
-      </p>
+      <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground mb-3">
+        Propriedades
+      </h3>
+      {!hasAnyProp ? (
+        <p className="text-[11px] text-muted-foreground/60">
+          Nenhuma propriedade disponível.
+        </p>
+      ) : (
+        <dl className="space-y-2 text-[12px]">
+          {hasResponsavel && (
+            <div className="flex items-center gap-2 py-0.5">
+              <dt className="w-20 shrink-0 text-muted-foreground">
+                Responsável
+              </dt>
+              <dd className="flex items-center gap-1.5 truncate text-foreground">
+                <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground" />
+                {project!.responsavel!.nome}
+              </dd>
+            </div>
+          )}
+          {hasDates && (
+            <div className="flex items-center gap-2 py-0.5">
+              <dt className="w-20 shrink-0 text-muted-foreground">Datas</dt>
+              <dd className="flex items-center gap-1 text-foreground">
+                <Calendar className="h-3 w-3 shrink-0 text-muted-foreground" />
+                {hasDataInicio && (
+                  <span>
+                    {new Date(project!.dataInicio!).toLocaleDateString(
+                      "pt-BR",
+                      { day: "2-digit", month: "short" },
+                    )}
+                  </span>
+                )}
+                {hasDataInicio && hasDataFim && (
+                  <span className="text-muted-foreground">→</span>
+                )}
+                {hasDataFim && (
+                  <span>
+                    {new Date(project!.dataFim!).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </span>
+                )}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
     </section>
   );
 }
@@ -565,15 +513,9 @@ function ActivityPanel({ projectName }: { projectName?: string }) {
         <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
           Atividade
         </h3>
-        <button
-          type="button"
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Ver tudo
-        </button>
       </div>
       <div className="flex items-start gap-2 text-[12px]">
-        <Box className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
+        <CircleDashed className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
         <span className="text-muted-foreground">
           Projeto {projectName ?? ""} criado
         </span>
