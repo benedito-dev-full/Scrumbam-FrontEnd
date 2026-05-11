@@ -132,10 +132,9 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/import", label: "Importar issues", icon: Download, stub: true },
       {
-        href: "/invite",
+        href: "/settings/workspace/members",
         label: "Convidar pessoas",
         icon: UserPlus,
-        stub: true,
       },
       { href: "/initiatives", label: "Iniciativas", icon: Target, stub: true },
       {
