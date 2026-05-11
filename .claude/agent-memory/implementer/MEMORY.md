@@ -1,0 +1,2 @@
+- [useProject returns ProjectDetail](project_useproject_returns_projectdetail.md) — tipo retornado por useProject(id) omite taskCount/teamId embora estejam em runtime
+- [ESLint hook bloqueia Edits intermediarios](feedback_eslint_hook_blocks_intermediate_edits.md) — PostToolUse:Edit roda eslint max-warnings 0; agrupar import+uso na mesma Edit

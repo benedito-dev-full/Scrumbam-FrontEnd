@@ -1,0 +1,3 @@
+- [Decisoes Automation Zero-Friction](project_automation_zero_friction_decisoes.md) — 7 decisoes autonomas tomadas no plan task01 (2026-05-07): paste-token, PAT por org, AES-256-GCM, ConnectionKeeper pull, Octokit no backend, claudeSessionId em DExecution, install.sh auto-detect
+- [Decisoes UX Polish task01 Frontend](project_frontend_typography_decisao.md) — sistema tipografico 6 niveis (body=14px), cards/PageHeader via componente, atalho ? cheat-sheet, anti-padroes (text-[13px] em h1, ghost+destructive)
+- [Decisao naming rotas frontend](project_frontend_routes_naming_decisao.md) — path /projects/[id]/issues/[issueId] (ingles tecnico) vs copy UI "intencao" (pt-BR); /intentions/* so para cross-project (inbox/new)
