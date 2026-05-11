@@ -41,6 +41,7 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
+import { useProjectActivity } from "@/lib/hooks/use-activity";
 import { ProjectInsights } from "@/components/projects/project-insights";
 import { ProjectReports } from "@/components/projects/project-reports";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
@@ -255,7 +256,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 onNewTask={() => setNewIssueOpen(true)}
               />
             )}
-            {activeTab === "activity" && <ActivityTab />}
+            {activeTab === "activity" && <ActivityTab projectId={projectId} />}
             {activeTab === "issues" && <IssuesTab issues={issuesList} />}
             {activeTab === "insights" && (
               <ProjectInsights projectId={projectId} />
@@ -845,16 +846,81 @@ function PropertiesStrip({
 // Activity tab
 // ============================================================
 
-function ActivityTab() {
+function ActivityTab({ projectId }: { projectId: string }) {
+  const { data, isLoading } = useProjectActivity(projectId, { limit: 50 });
+
+  if (isLoading) {
+    return (
+      <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
+        <Clock className="h-8 w-8 text-muted-foreground/30 mb-3 animate-pulse" />
+        <p className="text-[13px] text-muted-foreground">Carregando…</p>
+      </div>
+    );
+  }
+
+  const events = data?.events ?? [];
+
+  if (events.length === 0) {
+    return (
+      <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
+        <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
+        <p className="text-[13px] font-medium text-muted-foreground">
+          Nenhuma atividade ainda
+        </p>
+        <p className="text-[12px] text-muted-foreground/60 mt-1">
+          As atualizações do projeto aparecerão aqui.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
-      <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
-      <p className="text-[13px] font-medium text-muted-foreground">
-        Nenhuma atividade ainda
-      </p>
-      <p className="text-[12px] text-muted-foreground/60 mt-1">
-        As atualizações do projeto aparecerão aqui.
-      </p>
+    <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <ul className="space-y-3">
+        {events.map((ev) => (
+          <li
+            key={ev.id}
+            className="flex items-start gap-3 rounded-md border border-border/40 bg-card px-3 py-2.5"
+          >
+            <Clock className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] leading-snug">
+                <span className="font-medium">
+                  {ev.details?.actorName ?? "Sistema"}
+                </span>{" "}
+                <span className="text-muted-foreground">— {ev.tipo}</span>
+                {ev.intentionTitle && ev.intentionTitle !== "Sem titulo" && (
+                  <>
+                    {": "}
+                    <span className="text-foreground">{ev.intentionTitle}</span>
+                  </>
+                )}
+              </p>
+              {(ev.details?.motivo || ev.details?.prUrl) && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {ev.details?.motivo}
+                  {ev.details?.prUrl && (
+                    <>
+                      {" · "}
+                      <a
+                        href={ev.details.prUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:text-foreground"
+                      >
+                        PR
+                      </a>
+                    </>
+                  )}
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground/70 tabular-nums mt-0.5">
+                {formatRelative(ev.timestamp)}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
