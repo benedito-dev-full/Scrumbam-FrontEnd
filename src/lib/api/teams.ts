@@ -11,10 +11,42 @@ import type {
 } from "@/types/team";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function unwrapList<T>(data: any): T[] {
+function unwrapItems(data: any): any[] {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
   return [];
+}
+
+// V2 retorna { id, nome, prefix, orgId, memberCount, criadoEm, atualizadoEm, description? }
+// Frontend espera { id, name, key, color, icon, organizationId, lastIssueSeq, memberCount, createdAt, canEdit, canDelete }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTeam(raw: any): Team {
+  return {
+    id: String(raw.id ?? raw.chave ?? ""),
+    name: String(raw.nome ?? raw.name ?? ""),
+    key: String(raw.prefix ?? raw.key ?? "DEV"),
+    color: raw.color ?? raw.dados?.color ?? null,
+    icon: raw.icon ?? raw.dados?.icon ?? null,
+    organizationId: String(raw.orgId ?? raw.organizationId ?? ""),
+    lastIssueSeq: Number(raw.lastIssueSeq ?? 0),
+    memberCount: Number(raw.memberCount ?? 0),
+    createdAt: String(
+      raw.criadoEm ?? raw.createdAt ?? new Date().toISOString(),
+    ),
+    canEdit: Boolean(raw.canEdit ?? false),
+    canDelete: Boolean(raw.canDelete ?? false),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapMember(raw: any): TeamMember {
+  return {
+    userId: String(raw.userId ?? raw.id ?? raw.chave ?? ""),
+    name: String(raw.name ?? raw.nome ?? ""),
+    email: raw.email ?? null,
+    cargo: (raw.cargo ?? "MEMBER") as TeamMember["cargo"],
+    joinedAt: String(raw.joinedAt ?? raw.criadoEm ?? raw.createdAt ?? ""),
+  };
 }
 
 function resolveOrgId(orgIdParam?: string): string {
@@ -31,7 +63,7 @@ export const teamsApi = {
   /** Lista times onde o usuario logado e membro (JWT). */
   listMine: async (): Promise<Team[]> => {
     const { data } = await api.get(ENDPOINTS.TEAMS_MINE);
-    return unwrapList<Team>(data);
+    return unwrapItems(data).map(mapTeam);
   },
 
   /** Lista times da organizacao. V2: GET /organizations/:orgId/teams. */
@@ -39,17 +71,17 @@ export const teamsApi = {
     const orgId = resolveOrgId(organizationId);
     if (!orgId) return [];
     const { data } = await api.get(`/organizations/${orgId}/teams`);
-    return unwrapList<Team>(data);
+    return unwrapItems(data).map(mapTeam);
   },
 
   getById: async (id: string): Promise<Team> => {
-    const { data } = await api.get<Team>(ENDPOINTS.TEAM(id));
-    return data;
+    const { data } = await api.get(ENDPOINTS.TEAM(id));
+    return mapTeam(data);
   },
 
   getMembers: async (id: string): Promise<TeamMember[]> => {
     const { data } = await api.get(ENDPOINTS.TEAM_MEMBERS(id));
-    return unwrapList<TeamMember>(data);
+    return unwrapItems(data).map(mapMember);
   },
 
   /**
@@ -69,11 +101,8 @@ export const teamsApi = {
     Object.keys(payload).forEach((k) => {
       if (payload[k] === undefined || payload[k] === null) delete payload[k];
     });
-    const { data } = await api.post<Team>(
-      `/organizations/${orgId}/teams`,
-      payload,
-    );
-    return data;
+    const { data } = await api.post(`/organizations/${orgId}/teams`, payload);
+    return mapTeam(data);
   },
 
   /** Edita time. V2: PATCH /teams/:id. Mapeia name→nome. */
@@ -81,8 +110,8 @@ export const teamsApi = {
     const payload: Record<string, unknown> = {};
     if (dto.name !== undefined) payload.nome = dto.name;
     // key/color/icon nao existem no V2 — omitidos
-    const { data } = await api.patch<Team>(ENDPOINTS.TEAM(id), payload);
-    return data;
+    const { data } = await api.patch(ENDPOINTS.TEAM(id), payload);
+    return mapTeam(data);
   },
 
   remove: async (id: string): Promise<void> => {
@@ -96,11 +125,8 @@ export const teamsApi = {
   ): Promise<TeamMember> => {
     const cargo: "LEAD" | "MEMBER" = dto.cargo === "ADMIN" ? "LEAD" : "MEMBER";
     const payload = { userId: dto.userId, cargo };
-    const { data } = await api.post<TeamMember>(
-      ENDPOINTS.TEAM_MEMBERS(teamId),
-      payload,
-    );
-    return data;
+    const { data } = await api.post(ENDPOINTS.TEAM_MEMBERS(teamId), payload);
+    return mapMember(data);
   },
 
   /** Edita cargo do membro. V2: PATCH /teams/:id/members/:userId, body { cargo }. */
