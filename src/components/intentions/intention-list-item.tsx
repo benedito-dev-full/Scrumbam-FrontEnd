@@ -43,11 +43,16 @@ const CANAL_CONFIG: Record<
   }
 > = {
   web: { label: "Web", icon: Globe, className: "text-blue-500" },
-  whatsapp: { label: "WhatsApp", icon: MessageCircle, className: "text-green-500" },
+  whatsapp: {
+    label: "WhatsApp",
+    icon: MessageCircle,
+    className: "text-green-500",
+  },
   email: { label: "Email", icon: Mail, className: "text-amber-500" },
   slack: { label: "Slack", icon: Hash, className: "text-purple-500" },
   api: { label: "API", icon: Code, className: "text-cyan-500" },
   telegram: { label: "Telegram", icon: Send, className: "text-sky-500" },
+  mcp: { label: "MCP", icon: Code, className: "text-fuchsia-500" },
 };
 
 const TYPE_CONFIG: Record<
@@ -58,15 +63,27 @@ const TYPE_CONFIG: Record<
     className: string;
   }
 > = {
-  feature:       { label: "Feature",       icon: Sparkles,    className: "text-blue-500" },
-  bug:           { label: "Bug",           icon: Bug,         className: "text-red-500" },
-  improvement:   { label: "Melhoria",      icon: TrendingUp,  className: "text-violet-500" },
-  review:        { label: "Review",        icon: Eye,         className: "text-amber-500" },
-  refactor:      { label: "Refactor",      icon: Code,        className: "text-cyan-500" },
-  code:          { label: "Código",        icon: Code,        className: "text-slate-500" },
-  analysis:      { label: "Análise",       icon: HelpCircle,  className: "text-orange-500" },
-  documentation: { label: "Docs",          icon: HelpCircle,  className: "text-teal-500" },
-  test:          { label: "Teste",         icon: CheckCheck,  className: "text-emerald-500" },
+  feature: { label: "Feature", icon: Sparkles, className: "text-blue-500" },
+  bug: { label: "Bug", icon: Bug, className: "text-red-500" },
+  improvement: {
+    label: "Melhoria",
+    icon: TrendingUp,
+    className: "text-violet-500",
+  },
+  review: { label: "Review", icon: Eye, className: "text-amber-500" },
+  refactor: { label: "Refactor", icon: Code, className: "text-cyan-500" },
+  code: { label: "Código", icon: Code, className: "text-slate-500" },
+  analysis: {
+    label: "Análise",
+    icon: HelpCircle,
+    className: "text-orange-500",
+  },
+  documentation: {
+    label: "Docs",
+    icon: HelpCircle,
+    className: "text-teal-500",
+  },
+  test: { label: "Teste", icon: CheckCheck, className: "text-emerald-500" },
 };
 
 // ============================================================

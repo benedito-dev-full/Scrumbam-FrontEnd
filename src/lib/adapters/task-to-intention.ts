@@ -256,6 +256,15 @@ const V2_PRIORITY_TO_STRING: Record<string, IntentionPriority> = {
   LOW: "low",
 };
 
+// V2 taskType enum (string top-level) -> frontend IntentionType
+const V2_TASKTYPE_TO_FRONTEND: Record<string, IntentionType> = {
+  FEATURE: "feature",
+  BUG: "bug",
+  IMPROVEMENT: "improvement",
+  REVIEW: "review",
+  EXPLAIN: "analysis",
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapTaskToIntention(task: any): IntentionDocument {
   // Normalize: V2 returns id/nome/status="INBOX"/priority="HIGH"/dados{…},
@@ -282,22 +291,33 @@ export function mapTaskToIntention(task: any): IntentionDocument {
     });
   }
 
-  // Type — V2 nao tem tipoTask. Tenta ler de dados.taskType ou inferir.
-  const typeFromDados = isObj(dados.taskType)
-    ? (dados.taskType as Record<string, unknown>)
-    : null;
-  const typeObj =
-    (raw.tipoTask as Record<string, unknown> | null) ??
-    (raw.taskType as Record<string, unknown> | null) ??
-    typeFromDados;
-  const normalizedType = typeObj
-    ? {
-        chave: String(typeObj.chave ?? typeObj.id ?? ""),
-        nome: String(typeObj.nome ?? typeObj.name ?? ""),
-        codigo: String(typeObj.codigo ?? typeObj.code ?? ""),
-      }
-    : null;
-  const type = resolveType(normalizedType);
+  // Type — V2 agora retorna `taskType` como string enum top-level (FEATURE/BUG/...).
+  // Prioriza isso; faz fallback para objeto legado (tipoTask) ou dados.taskType.
+  let type: IntentionType;
+  if (
+    typeof raw.taskType === "string" &&
+    V2_TASKTYPE_TO_FRONTEND[raw.taskType as string]
+  ) {
+    type = V2_TASKTYPE_TO_FRONTEND[raw.taskType as string];
+  } else {
+    const typeFromDados = isObj(dados.taskType)
+      ? (dados.taskType as Record<string, unknown>)
+      : null;
+    const typeObj =
+      (raw.tipoTask as Record<string, unknown> | null) ??
+      (isObj(raw.taskType)
+        ? (raw.taskType as Record<string, unknown>)
+        : null) ??
+      typeFromDados;
+    const normalizedType = typeObj
+      ? {
+          chave: String(typeObj.chave ?? typeObj.id ?? ""),
+          nome: String(typeObj.nome ?? typeObj.name ?? ""),
+          codigo: String(typeObj.codigo ?? typeObj.code ?? ""),
+        }
+      : null;
+    type = resolveType(normalizedType);
+  }
 
   // Priority — V2 retorna string enum 'CRITICAL'|'HIGH'|... ou null; legado retornava objeto.
   let priority: IntentionPriority;
@@ -337,6 +357,7 @@ export function mapTaskToIntention(task: any): IntentionDocument {
       slack: "slack",
       api: "api",
       telegram: "telegram",
+      mcp: "mcp",
     };
     canal = canalMap[canalNorm] ?? "web";
   } else if (typeof dados.source === "string") {
@@ -348,7 +369,8 @@ export function mapTaskToIntention(task: any): IntentionDocument {
       src === "email" ||
       src === "slack" ||
       src === "api" ||
-      src === "telegram"
+      src === "telegram" ||
+      src === "mcp"
     ) {
       canal = src as IntentionCanal;
     }

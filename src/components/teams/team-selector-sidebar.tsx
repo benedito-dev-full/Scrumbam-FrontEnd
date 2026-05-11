@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Settings2,
   Trash2,
   Users,
 } from "lucide-react";
@@ -95,6 +96,14 @@ export function TeamSelectorSidebar() {
         <span className="flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Seus times
         </span>
+        <Link
+          href="/settings/workspace/teams"
+          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          aria-label="Gerenciar times"
+          title="Gerenciar times"
+        >
+          <Settings2 className="h-3 w-3" />
+        </Link>
         {isAdmin && (
           <button
             type="button"

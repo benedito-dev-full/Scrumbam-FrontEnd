@@ -21,6 +21,7 @@ import type {
   CreateIntentionDto,
   IntentionStatus,
   IntentionPriority,
+  IntentionCanal,
 } from "@/types/intention";
 import {
   mapTaskToIntention,
@@ -38,6 +39,41 @@ const PRIORITY_ID_TO_V2: Record<string, string> = {
   "-422": "MEDIUM",
   "-423": "LOW",
 };
+
+// Chaves DClasse (negativas) usadas no frontend → enum taskType do V2.
+const TYPE_ID_TO_V2: Record<string, string> = {
+  "-431": "FEATURE",
+  "-432": "BUG",
+  "-433": "IMPROVEMENT",
+  "-434": "REVIEW",
+  "-435": "EXPLAIN",
+};
+
+function taskTypeIdToV2(id?: string): string | undefined {
+  if (!id) return undefined;
+  return TYPE_ID_TO_V2[id];
+}
+
+/**
+ * Mapeia canal do frontend para o enum `source` aceito pelo V2.
+ * V2 aceita apenas: web | telegram | api | mcp. Demais canais (whatsapp/email/slack)
+ * são descartados silenciosamente — o backend rejeitaria com 400.
+ */
+function canalToSource(canal?: IntentionCanal): string | undefined {
+  if (!canal) return undefined;
+  switch (canal) {
+    case "web":
+      return "web";
+    case "telegram":
+      return "telegram";
+    case "api":
+      return "api";
+    case "mcp":
+      return "mcp";
+    default:
+      return undefined;
+  }
+}
 
 function priorityEnumToV2(p?: IntentionPriority): string | undefined {
   if (!p) return undefined;
@@ -80,7 +116,17 @@ export const intentionsApi = {
     if (dto.description) payload.descricao = dto.description;
     const prio = PRIORITY_ID_TO_V2[dto.priorityId];
     if (prio) payload.priority = prio;
-    // taskTypeId nao existe no V2 (sem tipos de task) — omitido.
+
+    // V2 agora suporta taskType (enum string FEATURE|BUG|IMPROVEMENT|REVIEW|EXPLAIN)
+    const taskType = taskTypeIdToV2(dto.taskTypeId);
+    if (taskType) payload.taskType = taskType;
+
+    // Responsável opcional — V2 aceita `assigneeId` (string com chave DEntidade)
+    if (dto.assigneeId) payload.assigneeId = dto.assigneeId;
+
+    // Canal opcional — mapeado para enum `source`; canais não suportados são descartados
+    const source = canalToSource(dto.canal);
+    if (source) payload.source = source;
 
     const { data } = await api.post<Task>(ENDPOINTS.TASKS, payload);
     return mapTaskToIntention(data);
@@ -103,6 +149,18 @@ export const intentionsApi = {
     if (fields.priority !== undefined) {
       const prio = priorityEnumToV2(fields.priority);
       if (prio) payload.priority = prio;
+    }
+    // taskType pode ser atualizado via update (V2 expõe top-level)
+    if (fields.type !== undefined) {
+      const typeToV2: Record<string, string> = {
+        feature: "FEATURE",
+        bug: "BUG",
+        improvement: "IMPROVEMENT",
+        review: "REVIEW",
+        analysis: "EXPLAIN",
+      };
+      const mapped = typeToV2[fields.type];
+      if (mapped) payload.taskType = mapped;
     }
     // Campos V3 (problema/contexto/criteriosAceite/etc.) sao omitidos — V2 rejeita.
 

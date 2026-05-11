@@ -13,6 +13,8 @@ import {
   TrendingUp,
   Eye,
   HelpCircle,
+  User as UserIcon,
+  Radio,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -28,8 +30,24 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useCreateIntention } from "@/lib/hooks/use-intentions";
+import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { TYPE_IDS, PRIORITY_IDS } from "@/types/intention";
+import type { IntentionCanal } from "@/types/intention";
 import { cn } from "@/lib/utils";
+
+// ============================================================
+// Canais — V2 aceita web/telegram/api/mcp via enum `source`.
+// IntentionCanal foi estendido para incluir 'mcp'.
+// ============================================================
+
+type CanalKey = Extract<IntentionCanal, "web" | "telegram" | "api" | "mcp">;
+
+const CANAL_OPTIONS: { key: CanalKey; label: string }[] = [
+  { key: "web", label: "Web" },
+  { key: "telegram", label: "Telegram" },
+  { key: "api", label: "API" },
+  { key: "mcp", label: "MCP" },
+];
 
 // ============================================================
 // Tipos suportados pelo backend (CreateIntentionDto.taskTypeId)
@@ -155,14 +173,17 @@ export function NewIssueModal({
   const router = useRouter();
   const { user } = useAuth();
   const { data: projects } = useProjects();
+  const { data: orgMembers } = useOrgMembers(user?.orgId);
   const createIntention = useCreateIntention();
 
-  // Form state — apenas os campos que persistem
+  // Form state — campos que persistem no backend V2
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<TypeKey>("feature");
   const [priority, setPriority] = useState<PriorityKey>("none");
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? "");
+  const [assigneeId, setAssigneeId] = useState<string>(""); // "" = sem responsável
+  const [canal, setCanal] = useState<IntentionCanal>("web");
   const [createMore, setCreateMore] = useState(false);
 
   useEffect(() => {
@@ -178,6 +199,8 @@ export function NewIssueModal({
     setDescription("");
     setType("feature");
     setPriority("none");
+    setAssigneeId("");
+    setCanal("web");
   };
 
   const handleClose = () => {
@@ -205,6 +228,8 @@ export function NewIssueModal({
       taskTypeId: typeOpt.id,
       priorityId: priorityOpt.id,
       projectId,
+      ...(assigneeId ? { assigneeId } : {}),
+      ...(canal ? { canal } : {}),
     });
 
     if (createMore) {
@@ -384,6 +409,92 @@ export function NewIssueModal({
                 ))}
               </PopoverContent>
             </Popover>
+
+            {/* Assignee (responsável) */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Chip
+                  active={!!assigneeId}
+                  icon={UserIcon}
+                  label={
+                    assigneeId
+                      ? (orgMembers?.find((m) => m.id === assigneeId)?.name ??
+                        "Responsável")
+                      : "Sem responsável"
+                  }
+                />
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-56 p-1 max-h-64 overflow-auto"
+              >
+                <button
+                  type="button"
+                  onClick={() => setAssigneeId("")}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                    assigneeId === "" && "bg-accent",
+                  )}
+                >
+                  <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="truncate">Sem responsável</span>
+                </button>
+                {(orgMembers ?? []).map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setAssigneeId(m.id)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                      assigneeId === m.id && "bg-accent",
+                    )}
+                  >
+                    <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{m.name}</span>
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+
+            {/* Canal */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Chip
+                  active
+                  icon={Radio}
+                  label={
+                    CANAL_OPTIONS.find((c) => c.key === canal)?.label ?? "Canal"
+                  }
+                />
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-40 p-1">
+                {CANAL_OPTIONS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setCanal(c.key)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                      canal === c.key && "bg-accent",
+                    )}
+                  >
+                    <Radio className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{c.label}</span>
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+
+            {/* Criador (read-only) */}
+            {user?.nome && (
+              <span
+                className="flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-[12px] text-muted-foreground"
+                title="Criador (você)"
+              >
+                <UserIcon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{user.nome} (você)</span>
+              </span>
+            )}
           </div>
         </div>
 

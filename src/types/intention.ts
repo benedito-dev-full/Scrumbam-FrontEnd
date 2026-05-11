@@ -64,6 +64,7 @@ export const CANAL_TO_ID: Record<IntentionCanal, string> = {
   slack: CANAL_IDS.SLACK,
   api: CANAL_IDS.API,
   telegram: "-456",
+  mcp: "-457",
 };
 
 export type IntentionStatus =
@@ -90,7 +91,14 @@ export type IntentionType =
 
 export type IntentionPriority = "urgent" | "high" | "medium" | "low";
 
-export type IntentionCanal = "web" | "whatsapp" | "email" | "slack" | "api" | "telegram";
+export type IntentionCanal =
+  | "web"
+  | "whatsapp"
+  | "email"
+  | "slack"
+  | "api"
+  | "telegram"
+  | "mcp";
 
 export interface IntentionDeliverables {
   prUrl?: string;
@@ -169,6 +177,10 @@ export interface CreateIntentionDto {
   taskTypeId: string; // "-431" FEATURE | "-432" BUG | "-433" IMPROVEMENT
   priorityId: string; // "-424" URGENT | "-421" HIGH | "-422" MEDIUM | "-423" LOW
   projectId: string;
+  /** ID do responsável (DEntidade chave). Quando ausente, task fica sem assignee. */
+  assigneeId?: string;
+  /** Canal de origem da intenção. V2 aceita apenas web/telegram/api; outros são descartados. */
+  canal?: IntentionCanal;
 }
 
 /**
