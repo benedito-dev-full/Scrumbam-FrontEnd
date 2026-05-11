@@ -846,8 +846,41 @@ function PropertiesStrip({
 // Activity tab
 // ============================================================
 
+type ActivityFilter = "all" | "created" | "status" | "deleted";
+
+const CATEGORY_LABEL: Record<ActivityFilter, string> = {
+  all: "Tudo",
+  created: "Criadas",
+  status: "Status",
+  deleted: "Excluidas",
+};
+
+const CATEGORY_DOT: Record<string, string> = {
+  created: "#22c55e",
+  status: "#3b82f6",
+  deleted: "#ef4444",
+  other: "#94a3b8",
+};
+
 function ActivityTab({ projectId }: { projectId: string }) {
   const { data, isLoading } = useProjectActivity(projectId, { limit: 50 });
+  const [filter, setFilter] = useState<ActivityFilter>("all");
+
+  const events = data?.events ?? [];
+  const filtered =
+    filter === "all" ? events : events.filter((e) => e.category === filter);
+
+  // Contadores por categoria pra mostrar nos chips
+  const counts = events.reduce<Record<ActivityFilter, number>>(
+    (acc, e) => {
+      acc.all++;
+      if (e.category === "created") acc.created++;
+      else if (e.category === "status") acc.status++;
+      else if (e.category === "deleted") acc.deleted++;
+      return acc;
+    },
+    { all: 0, created: 0, status: 0, deleted: 0 },
+  );
 
   if (isLoading) {
     return (
@@ -858,8 +891,6 @@ function ActivityTab({ projectId }: { projectId: string }) {
     );
   }
 
-  const events = data?.events ?? [];
-
   if (events.length === 0) {
     return (
       <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
@@ -868,7 +899,7 @@ function ActivityTab({ projectId }: { projectId: string }) {
           Nenhuma atividade ainda
         </p>
         <p className="text-[12px] text-muted-foreground/60 mt-1">
-          As atualizações do projeto aparecerão aqui.
+          As atualizações deste projeto aparecerão aqui.
         </p>
       </div>
     );
@@ -876,51 +907,56 @@ function ActivityTab({ projectId }: { projectId: string }) {
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-      <ul className="space-y-3">
-        {events.map((ev) => (
-          <li
-            key={ev.id}
-            className="flex items-start gap-3 rounded-md border border-border/40 bg-card px-3 py-2.5"
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {(Object.keys(CATEGORY_LABEL) as ActivityFilter[]).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setFilter(k)}
+            className={cn(
+              "px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors",
+              filter === k
+                ? "bg-foreground text-background"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted",
+            )}
           >
-            <Clock className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] leading-snug">
-                <span className="font-medium">
-                  {ev.details?.actorName ?? "Sistema"}
-                </span>{" "}
-                <span className="text-muted-foreground">— {ev.tipo}</span>
-                {ev.intentionTitle && ev.intentionTitle !== "Sem titulo" && (
-                  <>
-                    {": "}
-                    <span className="text-foreground">{ev.intentionTitle}</span>
-                  </>
-                )}
-              </p>
-              {(ev.details?.motivo || ev.details?.prUrl) && (
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {ev.details?.motivo}
-                  {ev.details?.prUrl && (
-                    <>
-                      {" · "}
-                      <a
-                        href={ev.details.prUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline hover:text-foreground"
-                      >
-                        PR
-                      </a>
-                    </>
-                  )}
-                </p>
-              )}
-              <p className="text-[11px] text-muted-foreground/70 tabular-nums mt-0.5">
-                {formatRelative(ev.timestamp)}
-              </p>
-            </div>
-          </li>
+            {CATEGORY_LABEL[k]}
+            <span className="ml-1.5 opacity-60 tabular-nums">{counts[k]}</span>
+          </button>
         ))}
-      </ul>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-[12px] text-muted-foreground/70 text-center py-8">
+          Nenhuma atividade nesta categoria.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((ev) => (
+            <li
+              key={ev.id}
+              className="flex items-start gap-3 rounded-md border border-border/40 bg-card px-3 py-2.5"
+            >
+              <div
+                className="h-2 w-2 rounded-full mt-1.5 shrink-0"
+                style={{ backgroundColor: CATEGORY_DOT[ev.category] }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] leading-snug">
+                  <span className="font-medium">
+                    {ev.actorId ? `Usuario #${ev.actorId}` : "Sistema"}
+                  </span>{" "}
+                  <span className="text-foreground">— {ev.message}</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 tabular-nums mt-0.5">
+                  {formatRelative(ev.timestamp)}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

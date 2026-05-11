@@ -1,6 +1,5 @@
 import api from "./client";
 import { ENDPOINTS } from "./endpoints";
-import type { ActivityEvent, ActivityEventType } from "@/types/intention";
 
 export interface ActivityQueryParams {
   cursor?: string;
@@ -22,55 +21,116 @@ interface V2ActivityResponse {
   };
 }
 
-// V2 emite tipos como "task.created", "task.status_changed", etc.
-// O ActivityEventType do frontend so aceita "intention.*". Mapeamos abaixo.
-const V2_TO_FRONTEND_TYPE: Record<string, ActivityEventType> = {
-  "task.created": "intention.created",
-  "task.deleted": "intention.cancelled",
-};
+/**
+ * Categoria amigavel do evento — usada pra filtrar e estilizar.
+ */
+export type ActivityCategory = "created" | "status" | "deleted" | "other";
 
-const STATUS_TO_TYPE: Record<string, ActivityEventType> = {
-  READY: "intention.ready",
-  EXECUTING: "intention.executing",
-  DONE: "intention.completed",
-  FAILED: "intention.failed",
-  CANCELLED: "intention.cancelled",
-  DISCARDED: "intention.discarded",
-  VALIDATING: "intention.validating",
-  VALIDATED: "intention.validated",
-};
-
-function mapTipo(
-  tipo: string,
-  meta: Record<string, unknown> | null,
-): ActivityEventType {
-  if (V2_TO_FRONTEND_TYPE[tipo]) return V2_TO_FRONTEND_TYPE[tipo];
-
-  // V2 emite "task.status_changed" — derivar do metaDados.toStatus
-  if (tipo === "task.status_changed" && meta?.toStatus) {
-    const mapped = STATUS_TO_TYPE[String(meta.toStatus)];
-    if (mapped) return mapped;
-  }
-
-  return "intention.created";
+/**
+ * Evento de atividade enriquecido para a UI.
+ */
+export interface ProjectActivity {
+  id: string;
+  /** Tipo bruto do V2 (ex: "task.created", "task.status.changed"). */
+  rawTipo: string;
+  /** Categoria amigavel (created/status/deleted/other) — para filtros e icone. */
+  category: ActivityCategory;
+  /** Mensagem humanizada em PT pronta para render. */
+  message: string;
+  /** ID da task vinculada quando aplicavel. */
+  taskId: string | null;
+  /** Identifier publico (ex: "DEV-7") quando disponivel. */
+  identifier: string | null;
+  /** Nome curto da task quando disponivel. */
+  taskNome: string | null;
+  /** ID do ator (DUserGroup ou DEntidade chave). Sem hidratacao de nome no V2. */
+  actorId: string | null;
+  /** Status anterior em transicoes (ex: "INBOX"). */
+  fromStatus: string | null;
+  /** Status novo em transicoes (ex: "READY"). */
+  toStatus: string | null;
+  /** Timestamp ISO 8601. */
+  timestamp: string;
 }
 
-function mapEvent(raw: V2ActivityItem, projectId: string): ActivityEvent {
+const STATUS_PT: Record<string, string> = {
+  INBOX: "Inbox",
+  READY: "Pronto",
+  EXECUTING: "Em execucao",
+  VALIDATING: "Validando",
+  VALIDATED: "Validado",
+  DONE: "Concluido",
+  FAILED: "Falhou",
+  CANCELLED: "Cancelado",
+  DISCARDED: "Descartado",
+};
+
+function statusLabel(s: string | null | undefined): string {
+  if (!s) return "";
+  return STATUS_PT[s] ?? s;
+}
+
+function pickStr(meta: Record<string, unknown>, key: string): string | null {
+  const v = meta[key];
+  return v !== undefined && v !== null ? String(v) : null;
+}
+
+function categorize(tipo: string): ActivityCategory {
+  if (tipo === "task.created") return "created";
+  if (tipo.startsWith("task.status")) return "status";
+  if (
+    tipo === "task.deleted" ||
+    tipo === "project.deleted" ||
+    tipo === "org.deleted"
+  )
+    return "deleted";
+  return "other";
+}
+
+function buildMessage(
+  rawTipo: string,
+  category: ActivityCategory,
+  meta: Record<string, unknown>,
+): string {
+  const identifier = pickStr(meta, "identifier");
+  const taskNome = pickStr(meta, "nome") ?? pickStr(meta, "taskNome");
+  const from = pickStr(meta, "from");
+  const to = pickStr(meta, "to");
+  const tag = identifier ? `[${identifier}] ` : "";
+
+  switch (category) {
+    case "created":
+      return `${tag}Task criada${taskNome ? `: ${taskNome}` : ""}`;
+    case "status":
+      if (from && to) {
+        return `${tag}Movida de ${statusLabel(from)} para ${statusLabel(to)}`;
+      }
+      if (to) return `${tag}Movida para ${statusLabel(to)}`;
+      return `${tag}Status atualizado`;
+    case "deleted":
+      if (rawTipo === "project.deleted") return "Projeto excluido";
+      if (rawTipo === "org.deleted") return "Organizacao excluida";
+      return `${tag}Task excluida`;
+    default:
+      return `${tag}${rawTipo}`;
+  }
+}
+
+function mapEvent(raw: V2ActivityItem): ProjectActivity {
   const meta = raw.metaDados ?? {};
+  const category = categorize(raw.tipo);
   return {
     id: String(raw.id),
-    tipo: mapTipo(raw.tipo, meta),
-    projectSlug: projectId,
-    intentionTitle: String(
-      meta.intentionTitle ?? meta.taskTitle ?? meta.nome ?? "Sem titulo",
-    ),
-    intentionId: String(meta.intentionId ?? meta.taskId ?? ""),
+    rawTipo: raw.tipo,
+    category,
+    message: buildMessage(raw.tipo, category, meta),
+    taskId: pickStr(meta, "taskId"),
+    identifier: pickStr(meta, "identifier"),
+    taskNome: pickStr(meta, "nome") ?? pickStr(meta, "taskNome"),
+    actorId: pickStr(meta, "userId") ?? pickStr(meta, "movedBy"),
+    fromStatus: pickStr(meta, "from"),
+    toStatus: pickStr(meta, "to"),
     timestamp: raw.criadoEm,
-    details: {
-      actorName: meta.actorName ? String(meta.actorName) : undefined,
-      prUrl: meta.prUrl ? String(meta.prUrl) : undefined,
-      motivo: meta.motivo ? String(meta.motivo) : undefined,
-    },
   };
 }
 
@@ -78,15 +138,15 @@ export const activityApi = {
   /**
    * Busca timeline de atividade de um projeto (V2 /projects/:id/activity).
    *
-   * V2 retorna `{ items: V2ActivityItem[], pagination: {...} }`.
-   * Cada item vem como DEvento bruto (tipo, metaDados, criadoEm) —
-   * traduzimos pro shape ActivityEvent que o UI espera.
+   * V2 filtra automaticamente por `idEntidade=projectId`, retornando
+   * DEventos das classes -497 (task.created), -498 (status.changed),
+   * -499 (project.deleted), -500 (org.deleted).
    */
   getProjectActivity: async (
     projectId: string,
     params?: ActivityQueryParams,
   ): Promise<{
-    events: ActivityEvent[];
+    events: ProjectActivity[];
     hasMore: boolean;
     nextCursor: string | null;
     projectId: string;
@@ -97,7 +157,7 @@ export const activityApi = {
     );
 
     return {
-      events: (data.items ?? []).map((e) => mapEvent(e, projectId)),
+      events: (data.items ?? []).map(mapEvent),
       hasMore: data.pagination?.hasMore ?? false,
       nextCursor: data.pagination?.nextCursor ?? null,
       projectId,
