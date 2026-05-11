@@ -90,9 +90,8 @@ export const projectsApi = {
     return data;
   },
 
-  getSummaries: async (organizationId?: string): Promise<ProjectSummary[]> => {
-    const params = organizationId ? { organizationId } : {};
-    const { data } = await api.get(ENDPOINTS.PROJECT_SUMMARIES, { params });
-    return data.summaries ?? [];
+  // Stub — V2 nao implementa /projects/summaries. UI mostra estado vazio.
+  getSummaries: async (_organizationId?: string): Promise<ProjectSummary[]> => {
+    return [];
   },
 };

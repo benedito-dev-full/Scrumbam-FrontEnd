@@ -1,5 +1,6 @@
 import api from "./client";
 import { ENDPOINTS } from "./endpoints";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import type {
   Team,
   TeamMember,
@@ -9,76 +10,109 @@ import type {
   UpdateTeamMemberRoleDto,
 } from "@/types/team";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function unwrapList<T>(data: any): T[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+}
+
+function resolveOrgId(orgIdParam?: string): string {
+  return orgIdParam || useAuthStore.getState().user?.orgId || "";
+}
+
 /**
- * Cliente API do modulo Times (12 endpoints `/api/v1/teams*`).
- * Padrao espelha `agents.ts`. Backend retorna camelCase ja no shape final.
+ * Cliente API do modulo Times (V2).
+ *
+ * V2 usa rotas namespaced sob `/organizations/:orgId/teams` para listar/criar.
+ * Rotas individuais `/teams/:id` e `/teams/mine` permanecem.
  */
 export const teamsApi = {
   /** Lista times onde o usuario logado e membro (JWT). */
   listMine: async (): Promise<Team[]> => {
-    const { data } = await api.get<Team[]>(ENDPOINTS.TEAMS_MINE);
-    return Array.isArray(data) ? data : [];
+    const { data } = await api.get(ENDPOINTS.TEAMS_MINE);
+    return unwrapList<Team>(data);
   },
 
-  /** Lista times da organizacao (?organizationId=X). */
+  /** Lista times da organizacao. V2: GET /organizations/:orgId/teams. */
   list: async (organizationId: string): Promise<Team[]> => {
-    const { data } = await api.get<Team[]>(ENDPOINTS.TEAMS, {
-      params: { organizationId },
-    });
-    return Array.isArray(data) ? data : [];
+    const orgId = resolveOrgId(organizationId);
+    if (!orgId) return [];
+    const { data } = await api.get(`/organizations/${orgId}/teams`);
+    return unwrapList<Team>(data);
   },
 
-  /** Detalhe de um time. */
   getById: async (id: string): Promise<Team> => {
     const { data } = await api.get<Team>(ENDPOINTS.TEAM(id));
     return data;
   },
 
-  /** Membros do time. */
   getMembers: async (id: string): Promise<TeamMember[]> => {
-    const { data } = await api.get<TeamMember[]>(ENDPOINTS.TEAM_MEMBERS(id));
-    return Array.isArray(data) ? data : [];
+    const { data } = await api.get(ENDPOINTS.TEAM_MEMBERS(id));
+    return unwrapList<TeamMember>(data);
   },
 
-  /** Cria time. ADMIN only. */
-  create: async (dto: CreateTeamDto): Promise<Team> => {
-    const { data } = await api.post<Team>(ENDPOINTS.TEAMS, dto);
-    return data;
-  },
-
-  /** Edita time. */
-  update: async (id: string, dto: UpdateTeamDto): Promise<Team> => {
-    const { data } = await api.patch<Team>(ENDPOINTS.TEAM(id), dto);
-    return data;
-  },
-
-  /** Soft delete. Retorna 409 se ainda ha projetos vinculados. */
-  remove: async (id: string): Promise<void> => {
-    await api.delete(ENDPOINTS.TEAM(id));
-  },
-
-  /** Adiciona membro. ADMIN only. */
-  addMember: async (
-    teamId: string,
-    dto: AddTeamMemberDto,
-  ): Promise<TeamMember> => {
-    const { data } = await api.post<TeamMember>(
-      ENDPOINTS.TEAM_MEMBERS(teamId),
-      dto,
+  /**
+   * Cria time. V2: POST /organizations/:orgId/teams.
+   * Mapeia name→nome, key→prefix. color/icon nao existem no V2 (ignorados).
+   */
+  create: async (
+    dto: CreateTeamDto,
+    organizationId?: string,
+  ): Promise<Team> => {
+    const orgId = resolveOrgId(organizationId);
+    if (!orgId) throw new Error("organizationId required to create team");
+    const payload: Record<string, unknown> = {
+      nome: dto.name,
+      prefix: dto.key,
+    };
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined || payload[k] === null) delete payload[k];
+    });
+    const { data } = await api.post<Team>(
+      `/organizations/${orgId}/teams`,
+      payload,
     );
     return data;
   },
 
-  /** Edita cargo do membro. */
+  /** Edita time. V2: PATCH /teams/:id. Mapeia name→nome. */
+  update: async (id: string, dto: UpdateTeamDto): Promise<Team> => {
+    const payload: Record<string, unknown> = {};
+    if (dto.name !== undefined) payload.nome = dto.name;
+    // key/color/icon nao existem no V2 — omitidos
+    const { data } = await api.patch<Team>(ENDPOINTS.TEAM(id), payload);
+    return data;
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(ENDPOINTS.TEAM(id));
+  },
+
+  /** Adiciona membro. V2 exige `cargo` ('LEAD'|'MEMBER'). */
+  addMember: async (
+    teamId: string,
+    dto: AddTeamMemberDto,
+  ): Promise<TeamMember> => {
+    const cargo: "LEAD" | "MEMBER" = dto.cargo === "ADMIN" ? "LEAD" : "MEMBER";
+    const payload = { userId: dto.userId, cargo };
+    const { data } = await api.post<TeamMember>(
+      ENDPOINTS.TEAM_MEMBERS(teamId),
+      payload,
+    );
+    return data;
+  },
+
+  /** Edita cargo do membro. V2: PATCH /teams/:id/members/:userId, body { cargo }. */
   updateMemberRole: async (
     teamId: string,
     userId: string,
     dto: UpdateTeamMemberRoleDto,
   ): Promise<void> => {
-    await api.patch(ENDPOINTS.TEAM_MEMBER(teamId, userId), dto);
+    const cargo: "LEAD" | "MEMBER" = dto.cargo === "ADMIN" ? "LEAD" : "MEMBER";
+    await api.patch(ENDPOINTS.TEAM_MEMBER(teamId, userId), { cargo });
   },
 
-  /** Remove membro. */
   removeMember: async (teamId: string, userId: string): Promise<void> => {
     await api.delete(ENDPOINTS.TEAM_MEMBER(teamId, userId));
   },

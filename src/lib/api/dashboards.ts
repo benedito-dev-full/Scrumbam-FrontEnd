@@ -23,14 +23,14 @@ export const dashboardsApi = {
     return mapApiTeamDashboard(data);
   },
 
+  // Stub — V2 nao implementa /dashboards/me. Retorna dashboard vazio.
   getMyMetrics: async (): Promise<MemberDashboard> => {
-    const { data } = await api.get(ENDPOINTS.DASHBOARDS_ME);
-    return mapApiMemberDashboard(data);
+    return mapApiMemberDashboard({});
   },
 
+  // Stub — V2 nao implementa /dashboards/company. Retorna overview vazio.
   getCompanyOverview: async (): Promise<CompanyOverview> => {
-    const { data } = await api.get(ENDPOINTS.DASHBOARDS_COMPANY);
-    return mapApiCompanyOverview(data);
+    return mapApiCompanyOverview({});
   },
 
   getDailySummary: async (projectId: string): Promise<DailySummary> => {

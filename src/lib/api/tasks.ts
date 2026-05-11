@@ -3,14 +3,15 @@ import { ENDPOINTS } from "./endpoints";
 import { mapApiTask, mapApiTasks } from "@/lib/adapters/api-task-adapter";
 import type { Task, CreateTaskDto, UpdateTaskDto } from "@/types";
 
+// V2 contract: GET /tasks aceita apenas projectId, status (enum V3), assigneeId, sprintId, cursor, limit.
+// Status V3 enum: INBOX|READY|EXECUTING|DONE|FAILED|CANCELLED|DISCARDED|VALIDATING|VALIDATED
+// Filtros legacy (priorityId, taskTypeId, tag, search) nao existem no V2.
 export interface TaskFilters {
-  statusId?: string;
+  status?: string; // enum V3, ex: "INBOX"
   assigneeId?: string;
   sprintId?: string;
-  priorityId?: string;
-  taskTypeId?: string;
-  tag?: string;
-  search?: string;
+  cursor?: string;
+  limit?: number;
 }
 
 export interface MoveStatusResult {
@@ -23,46 +24,36 @@ export const tasksApi = {
     projectId: string,
     filters?: TaskFilters,
   ): Promise<Task[]> => {
-    // Remove undefined values from filters
-    const params: Record<string, string> = { projectId };
+    const params: Record<string, string | number> = { projectId };
     if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
-          params[key] = value;
-        }
-      });
+      if (filters.status) params.status = filters.status;
+      if (filters.assigneeId) params.assigneeId = filters.assigneeId;
+      if (filters.sprintId) params.sprintId = filters.sprintId;
+      if (filters.cursor) params.cursor = filters.cursor;
+      if (filters.limit !== undefined) params.limit = filters.limit;
     }
-    const { data } = await api.get(ENDPOINTS.TASKS, {
-      params,
-    });
-    return mapApiTasks(data);
+    const { data } = await api.get(ENDPOINTS.TASKS, { params });
+    // V2 retorna { items, pagination } — legacy retornava array
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    return mapApiTasks(items);
   },
 
   create: async (dto: CreateTaskDto): Promise<Task> => {
-    // Mapear campos PT do frontend para EN do backend
+    // V2 CreateTaskDto: nome (obrigatorio), projectId (obrigatorio), descricao?, priority?, assigneeId?, sprintId?, rawText?, source?
+    // priority eh enum 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' — nao usa idPrioridade
     const payload: Record<string, unknown> = {
-      name: dto.titulo ?? dto.name,
+      nome: dto.titulo ?? dto.name,
       projectId: dto.idProject ?? dto.projectId,
-      description: dto.descricao ?? dto.description,
-      statusId: dto.idStatus ?? dto.statusId,
+      descricao: dto.descricao ?? dto.description,
       assigneeId: dto.idAssignee ?? dto.assigneeId,
-      priorityId: dto.idPrioridade ?? dto.priorityId,
-      taskTypeId: dto.idTipoTask ?? dto.taskTypeId,
       sprintId: dto.idSprint ?? dto.sprintId,
-      storyPoints: dto.storyPoints,
-      order: dto.order,
-      // Campos V3 mantêm o mesmo nome
-      problema: dto.problema,
-      contexto: dto.contexto,
-      solucaoProposta: dto.solucaoProposta,
-      criteriosAceite: dto.criteriosAceite,
-      naoObjetivos: dto.naoObjetivos,
-      riscos: dto.riscos,
-      canalId: dto.canalId,
-      hillPosition: dto.hillPosition,
     };
 
-    // Remover campos undefined
+    // priority: aceita string enum direto; ignora idPrioridade (chave DTabela)
+    const priorityEnum = (dto as { priority?: string }).priority;
+    if (priorityEnum) payload.priority = priorityEnum;
+
+    // Remove campos undefined (V2 com forbidNonWhitelisted: extras causam 400)
     Object.keys(payload).forEach((key) => {
       if (payload[key] === undefined) delete payload[key];
     });
@@ -72,32 +63,17 @@ export const tasksApi = {
   },
 
   update: async (taskId: string, dto: UpdateTaskDto): Promise<Task> => {
-    // Mapear campos PT do frontend para EN do backend
+    // V2 UpdateTaskDto: nome?, descricao?, priority?, assigneeId?
+    // Para status use moveStatus(); para sprint use moveSprint() (PUT /tasks/:id/sprint).
     const payload: Record<string, unknown> = {
-      name: dto.titulo ?? dto.name,
-      description: dto.descricao ?? dto.description,
+      nome: dto.titulo ?? dto.name,
+      descricao: dto.descricao ?? dto.description,
       assigneeId: dto.idAssignee ?? dto.assigneeId,
-      priorityId: dto.idPrioridade ?? dto.priorityId,
-      taskTypeId: dto.idTipoTask ?? dto.taskTypeId,
-      storyPoints: dto.estimativaHoras ?? dto.storyPoints,
-      order: dto.order,
-      // Campos V3 mantêm o mesmo nome
-      problema: dto.problema,
-      contexto: dto.contexto,
-      solucaoProposta: dto.solucaoProposta,
-      criteriosAceite: dto.criteriosAceite,
-      naoObjetivos: dto.naoObjetivos,
-      riscos: dto.riscos,
-      canalId: dto.canalId,
-      hillPosition: dto.hillPosition,
-      // Deliverables
-      prUrl: dto.prUrl,
-      deliverySummary: dto.deliverySummary,
-      filesChanged: dto.filesChanged,
-      failureReason: dto.failureReason,
     };
 
-    // Remover campos undefined (nao enviar campos nao alterados)
+    const priorityEnum = (dto as { priority?: string }).priority;
+    if (priorityEnum) payload.priority = priorityEnum;
+
     Object.keys(payload).forEach((key) => {
       if (payload[key] === undefined) delete payload[key];
     });
@@ -106,39 +82,51 @@ export const tasksApi = {
     return mapApiTask(data);
   },
 
+  /**
+   * Move task entre estados V3 (state machine).
+   *
+   * V2 espera status como enum V3 (INBOX|READY|EXECUTING|DONE|FAILED|CANCELLED|DISCARDED|VALIDATING|VALIDATED).
+   * Se o UI ainda envia chave de DTabela (legacy column), backend rejeita com 400.
+   */
   moveStatus: async (
     taskId: string,
-    idStatus: string,
+    status: string,
   ): Promise<MoveStatusResult> => {
-    const response = await api.put(ENDPOINTS.TASK_STATUS(taskId), {
-      statusId: idStatus,
-    });
+    const response = await api.put(ENDPOINTS.TASK_STATUS(taskId), { status });
     return {
       data: mapApiTask(response.data),
       wipWarning: response.headers["x-wip-warning"] as string | undefined,
     };
   },
 
+  /**
+   * Stub — V2 nao suporta reorder por enquanto.
+   */
   reorder: async (
-    projectId: string,
-    items: Array<{ chave: string; ordem: number }>,
+    _projectId: string,
+    _items: Array<{ chave: string; ordem: number }>,
   ): Promise<void> => {
-    await api.put(ENDPOINTS.PROJECT_TASKS_REORDER(projectId), { items });
+    // No-op: V2 nao tem endpoint /projects/:id/tasks/reorder.
+    return;
   },
 
   delete: async (taskId: string): Promise<void> => {
     await api.delete(ENDPOINTS.TASK(taskId));
   },
 
-  addTag: async (taskId: string, tagId: string): Promise<Task> => {
-    const { data } = await api.post(ENDPOINTS.TASK_TAGS(taskId), {
-      tagId,
-    });
+  /**
+   * Stub — V2 nao suporta tags por task.
+   */
+  addTag: async (taskId: string, _tagId: string): Promise<Task> => {
+    const { data } = await api.get(ENDPOINTS.TASK(taskId));
     return mapApiTask(data);
   },
 
-  removeTag: async (taskId: string, tagId: string): Promise<Task> => {
-    const { data } = await api.delete(ENDPOINTS.TASK_TAG(taskId, tagId));
+  /**
+   * Stub — V2 nao suporta tags por task.
+   */
+  removeTag: async (taskId: string, _tagId: string): Promise<Task> => {
+    const { data } = await api.get(ENDPOINTS.TASK(taskId));
     return mapApiTask(data);
   },
 };

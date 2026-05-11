@@ -21,8 +21,10 @@ export const inAppNotificationsApi = {
       ? `${ENDPOINTS.IN_APP_NOTIFICATIONS}?${query.toString()}`
       : ENDPOINTS.IN_APP_NOTIFICATIONS;
 
-    const { data } = await api.get<InAppNotification[]>(url);
-    return data;
+    // V2 retorna { items, pagination } — legacy retornava array
+    const { data } = await api.get(url);
+    if (Array.isArray(data)) return data as InAppNotification[];
+    return (data?.items ?? []) as InAppNotification[];
   },
 
   getUnreadCount: async (): Promise<UnreadCountResponse> => {
@@ -32,16 +34,28 @@ export const inAppNotificationsApi = {
     return data;
   },
 
+  /**
+   * Marca varias notificacoes como lidas.
+   *
+   * V2 nao tem bulk endpoint — emulamos chamando PATCH /notifications/:id/read
+   * em paralelo para cada id.
+   */
   markAsRead: async (ids: string[]): Promise<MarkReadResponse> => {
-    const { data } = await api.put<MarkReadResponse>(
-      ENDPOINTS.IN_APP_NOTIFICATIONS_READ,
-      { ids },
+    if (!ids?.length) {
+      return { updated: 0 } as MarkReadResponse;
+    }
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        api.patch(`${ENDPOINTS.IN_APP_NOTIFICATIONS}/${id}/read`),
+      ),
     );
-    return data;
+    const updated = results.filter((r) => r.status === "fulfilled").length;
+    return { updated } as MarkReadResponse;
   },
 
+  /** V2 usa PATCH (legacy era PUT). */
   markAllAsRead: async (): Promise<MarkReadResponse> => {
-    const { data } = await api.put<MarkReadResponse>(
+    const { data } = await api.patch<MarkReadResponse>(
       ENDPOINTS.IN_APP_NOTIFICATIONS_READ_ALL,
     );
     return data;
