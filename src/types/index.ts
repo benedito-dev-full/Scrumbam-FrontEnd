@@ -4,8 +4,8 @@ export type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
-  MemberInfo,
-  OrganizationInfo,
+  AuthResponse,
+  UserProfile,
   User,
 } from "./auth";
 export type {

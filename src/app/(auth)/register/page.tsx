@@ -50,20 +50,20 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const data = await authApi.register({
-        nome: nome.trim(),
+        name: nome.trim(),
         email: email.trim(),
-        senha: password,
-        nomeOrganizacao: nomeOrganizacao.trim(),
+        password,
+        organizationName: nomeOrganizacao.trim(),
       });
 
       const user: User = {
-        id: data.member.chave,
-        entidadeId: data.member.chave,
-        nome: data.member.nome,
-        email: data.member.email,
-        role: "admin",
-        orgId: data.organization.chave,
-        orgNome: data.organization.nome,
+        id: data.user.id,
+        entidadeId: data.user.entidadeId ?? data.user.id,
+        nome: data.user.name,
+        email: data.user.email,
+        role: data.user.orgRole?.toLowerCase() || data.user.role || "admin",
+        orgId: data.user.organizationId || "",
+        orgNome: data.user.organizationName || "",
       };
 
       login(user);

@@ -6,51 +6,38 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  nome: string; // Nome do admin (backend: "nome", NAO "nomeAdmin")
+  name: string;
   email: string;
-  senha: string; // PORTUGUES! Backend usa "senha", nao "password"
-  nomeOrganizacao: string;
-  cpfCnpj?: string; // Opcional
+  password: string;
+  organizationName?: string;
 }
 
 // === Response DTOs (o que o backend RETORNA) ===
 
-/**
- * Login response — JWT e setado como cookie httpOnly pelo backend.
- * Body retorna apenas dados do usuario.
- */
-export interface LoginResponse {
-  user: {
-    id: string;
-    entidadeId: string | null;
-    name: string;
-    email: string;
-    organizationId: string;
-    organizationName: string | null;
-    role: string;
-  };
-}
-
-export interface MemberInfo {
-  chave: string;
-  nome: string;
+export interface UserProfile {
+  id: string;
+  entidadeId: string | null;
+  name: string;
   email: string;
+  organizationId?: string;
+  organizationName?: string | null;
   role?: string;
-}
-
-export interface OrganizationInfo {
-  chave: string;
-  nome: string;
+  orgRole?: string;
 }
 
 /**
- * Register response — JWT e setado como cookie httpOnly pelo backend.
- * Body retorna organization e member (sem tokens).
+ * Backend AuthResponseDto — retornado por /auth/login, /auth/register e /auth/refresh.
  */
-export interface RegisterResponse {
-  organization: OrganizationInfo;
-  member: MemberInfo;
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: "Bearer";
+  user: UserProfile;
 }
+
+export type LoginResponse = AuthResponse;
+export type RegisterResponse = AuthResponse;
 
 // === User (estado local no Zustand, montado a partir dos responses) ===
 
