@@ -230,10 +230,38 @@ function resolveTimeline(task: Task, status: IntentionStatus): TimelineEvent[] {
 // Main mapper: Task -> IntentionDocument
 // ============================================================
 
+// Detect if value is V2 string enum vs legacy object shape.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isObj(v: any): v is Record<string, unknown> {
+  return v !== null && typeof v === "object";
+}
+
+// V2 status strings (uppercase enum) -> frontend lowercase status
+const V2_STATUS_TO_STRING: Record<string, IntentionStatus> = {
+  INBOX: "inbox",
+  READY: "ready",
+  EXECUTING: "executing",
+  DONE: "done",
+  FAILED: "failed",
+  CANCELLED: "cancelled",
+  DISCARDED: "discarded",
+  VALIDATING: "validating",
+  VALIDATED: "validated",
+};
+
+const V2_PRIORITY_TO_STRING: Record<string, IntentionPriority> = {
+  CRITICAL: "urgent",
+  HIGH: "high",
+  MEDIUM: "medium",
+  LOW: "low",
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapTaskToIntention(task: any): IntentionDocument {
-  // Normalize: backend returns id/name/status.id/status.code, frontend type uses chave/titulo/status.chave
+  // Normalize: V2 returns id/nome/status="INBOX"/priority="HIGH"/dados{…},
+  // legacy returned chave/titulo/status={id,code,name}/priority={…}
   const raw = task as Record<string, unknown>;
+  const dados = isObj(raw.dados) ? (raw.dados as Record<string, unknown>) : {};
 
   // ID
   const id = String(raw.chave ?? raw.id ?? "");
@@ -241,20 +269,27 @@ export function mapTaskToIntention(task: any): IntentionDocument {
   // Title
   const title = String(raw.titulo ?? raw.name ?? raw.nome ?? "");
 
-  // Status object (backend: {id, name, code}, frontend: {chave, nome, codigo})
-  const statusObj = (raw.status ?? {}) as Record<string, unknown>;
-  const normalizedStatus = {
-    chave: String(statusObj.chave ?? statusObj.id ?? ""),
-    nome: String(statusObj.nome ?? statusObj.name ?? ""),
-    codigo: String(statusObj.codigo ?? statusObj.code ?? ""),
-  };
-  const status = resolveStatus(normalizedStatus);
+  // Status — V2 retorna string enum direto; legado retornava objeto.
+  let status: IntentionStatus;
+  if (typeof raw.status === "string") {
+    status = V2_STATUS_TO_STRING[raw.status as string] ?? "inbox";
+  } else {
+    const statusObj = (raw.status ?? {}) as Record<string, unknown>;
+    status = resolveStatus({
+      chave: String(statusObj.chave ?? statusObj.id ?? ""),
+      nome: String(statusObj.nome ?? statusObj.name ?? ""),
+      codigo: String(statusObj.codigo ?? statusObj.code ?? ""),
+    });
+  }
 
-  // Type (backend: taskType, frontend: tipoTask)
-  const typeObj = (raw.tipoTask ?? raw.taskType ?? null) as Record<
-    string,
-    unknown
-  > | null;
+  // Type — V2 nao tem tipoTask. Tenta ler de dados.taskType ou inferir.
+  const typeFromDados = isObj(dados.taskType)
+    ? (dados.taskType as Record<string, unknown>)
+    : null;
+  const typeObj =
+    (raw.tipoTask as Record<string, unknown> | null) ??
+    (raw.taskType as Record<string, unknown> | null) ??
+    typeFromDados;
   const normalizedType = typeObj
     ? {
         chave: String(typeObj.chave ?? typeObj.id ?? ""),
@@ -264,27 +299,37 @@ export function mapTaskToIntention(task: any): IntentionDocument {
     : null;
   const type = resolveType(normalizedType);
 
-  // Priority (backend: priority, frontend: prioridade)
-  const prioObj = (raw.prioridade ?? raw.priority ?? null) as Record<
-    string,
-    unknown
-  > | null;
-  const normalizedPrio = prioObj
-    ? {
-        chave: String(prioObj.chave ?? prioObj.id ?? ""),
-        nome: String(prioObj.nome ?? prioObj.name ?? ""),
-        codigo: String(prioObj.codigo ?? prioObj.code ?? ""),
-      }
-    : null;
-  const priority = resolvePriority(normalizedPrio);
+  // Priority — V2 retorna string enum 'CRITICAL'|'HIGH'|... ou null; legado retornava objeto.
+  let priority: IntentionPriority;
+  if (typeof raw.priority === "string") {
+    priority = V2_PRIORITY_TO_STRING[raw.priority as string] ?? "medium";
+  } else {
+    const prioObj = (raw.prioridade ?? raw.priority ?? null) as Record<
+      string,
+      unknown
+    > | null;
+    priority = resolvePriority(
+      prioObj
+        ? {
+            chave: String(prioObj.chave ?? prioObj.id ?? ""),
+            nome: String(prioObj.nome ?? prioObj.name ?? ""),
+            codigo: String(prioObj.codigo ?? prioObj.code ?? ""),
+          }
+        : null,
+    );
+  }
 
-  // Canal (backend: canal object com codigo ex: "CANAL_WEB", "CANAL_TELEGRAM", "WEB")
-  const canalObj = (raw.canal ?? null) as Record<string, unknown> | null;
+  // Canal: V2 nao retorna. Tenta dados.canal (codigo) ou raw.canal (legado).
+  const canalObj =
+    (raw.canal as Record<string, unknown> | null) ??
+    (isObj(dados.canal) ? (dados.canal as Record<string, unknown>) : null);
   let canal: IntentionCanal = "web";
   if (canalObj) {
     const canalCode = String(canalObj.codigo ?? canalObj.code ?? "");
-    // Remove prefixo CANAL_ e normaliza para lowercase
-    const canalNorm = canalCode.toLowerCase().replace(/^canal_/, "").trim();
+    const canalNorm = canalCode
+      .toLowerCase()
+      .replace(/^canal_/, "")
+      .trim();
     const canalMap: Record<string, IntentionCanal> = {
       web: "web",
       whatsapp: "whatsapp",
@@ -294,92 +339,139 @@ export function mapTaskToIntention(task: any): IntentionDocument {
       telegram: "telegram",
     };
     canal = canalMap[canalNorm] ?? "web";
+  } else if (typeof dados.source === "string") {
+    // V2 salva 'source' enum em dados (ou no proprio campo)
+    const src = String(dados.source).toLowerCase();
+    if (
+      src === "web" ||
+      src === "whatsapp" ||
+      src === "email" ||
+      src === "slack" ||
+      src === "api" ||
+      src === "telegram"
+    ) {
+      canal = src as IntentionCanal;
+    }
   }
 
   // Project
   const projectSlug = String(raw.idProject ?? raw.projectId ?? "");
 
-  // Assignee name
-  const assignee = raw.assignee as Record<string, unknown> | null;
-  const createdBy = assignee
-    ? String(assignee.nome ?? assignee.name ?? "Sistema")
-    : "Sistema";
+  // Assignee — V2 retorna so `assigneeId` (string) sem objeto; legado tinha `assignee` objeto.
+  const assigneeObj = isObj(raw.assignee)
+    ? (raw.assignee as Record<string, unknown>)
+    : null;
+  const _assigneeIdFromRaw =
+    raw.assigneeId !== undefined && raw.assigneeId !== null
+      ? String(raw.assigneeId)
+      : assigneeObj?.chave
+        ? String(assigneeObj.chave)
+        : assigneeObj?.id
+          ? String(assigneeObj.id)
+          : null;
+  // Para compatibilidade com filtros que esperam `assignee.chave`, sintetizamos
+  // o objeto a partir do assigneeId. Nome fica vazio quando V2 nao hidrata.
+  const assigneeForFilter = _assigneeIdFromRaw
+    ? {
+        chave: _assigneeIdFromRaw,
+        nome: assigneeObj
+          ? String(assigneeObj.nome ?? assigneeObj.name ?? "")
+          : "",
+      }
+    : null;
+  // createdBy: prefere idCreator (V2) -> dados.createdBy -> assignee.nome -> "Sistema"
+  const createdBy = raw.idCreator
+    ? String(raw.idCreator)
+    : typeof dados.createdBy === "string"
+      ? String(dados.createdBy)
+      : assigneeObj
+        ? String(assigneeObj.nome ?? assigneeObj.name ?? "Sistema")
+        : "Sistema";
 
-  // Timestamps (backend: createdAt, frontend: criadoEm)
+  // Timestamps
   const createdAt = String(
     raw.criadoEm ?? raw.createdAt ?? new Date().toISOString(),
   );
   const updatedAt = String(raw.atualizadoEm ?? raw.updatedAt ?? createdAt);
 
-  // V3 timestamps from backend
-  const readyAt = raw.readyAt
-    ? String(raw.readyAt)
-    : status !== "inbox"
+  // V3 timestamps — V2 guarda em dados.telemetry.{readyAt,executingAt,doneAt}
+  const telemetry = isObj(dados.telemetry)
+    ? (dados.telemetry as Record<string, unknown>)
+    : {};
+  const readyAt =
+    (raw.readyAt as string | undefined) ??
+    (telemetry.readyAt as string | undefined) ??
+    (status !== "inbox" ? updatedAt : null);
+  const executingAt =
+    (raw.executingAt as string | undefined) ??
+    (telemetry.executingAt as string | undefined) ??
+    (status === "executing" || status === "done" || status === "failed"
       ? updatedAt
-      : null;
-  const executingAt = raw.executingAt
-    ? String(raw.executingAt)
-    : status === "executing" || status === "done" || status === "failed"
-      ? updatedAt
-      : null;
-  const completedAt = raw.completedAt
-    ? String(raw.completedAt)
-    : status === "done"
-      ? updatedAt
-      : null;
+      : null);
+  const completedAt =
+    (raw.completedAt as string | undefined) ??
+    (telemetry.doneAt as string | undefined) ??
+    (telemetry.completedAt as string | undefined) ??
+    (status === "done" ? updatedAt : null);
 
-  // V3 fields (backend has these as real columns now)
-  const problema = String(raw.problema ?? "");
-  const contexto = String(raw.contexto ?? "");
-  const solucaoProposta = String(raw.solucaoProposta ?? "");
+  // V3 fields: prefere top-level (legado), fallback pra dados.{...} (V2 com expansão DTO).
+  const pickStr = (k: string): string => String(raw[k] ?? dados[k] ?? "");
+  const problema = pickStr("problema");
+  const contexto = pickStr("contexto");
+  const solucaoProposta = pickStr("solucaoProposta");
 
-  // Arrays: backend may return real arrays or JSON strings
-  const criteriosRaw = raw.criteriosAceite;
-  const criteriosAceite = Array.isArray(criteriosRaw)
-    ? criteriosRaw.map(String)
-    : parseStringArray(criteriosRaw as string);
-  const naoObjRaw = raw.naoObjetivos;
-  const naoObjetivos = Array.isArray(naoObjRaw)
-    ? naoObjRaw.map(String)
-    : parseStringArray(naoObjRaw as string);
-  const riscosRaw = raw.riscos;
-  const riscos = Array.isArray(riscosRaw)
-    ? riscosRaw.map(String)
-    : parseStringArray(riscosRaw as string);
+  // Arrays: aceita array, JSON string, ou faltando
+  const pickArr = (k: string): string[] => {
+    const v = raw[k] ?? dados[k];
+    if (Array.isArray(v)) return v.map(String);
+    if (typeof v === "string") return parseStringArray(v);
+    return [];
+  };
+  const criteriosAceite = pickArr("criteriosAceite");
+  const naoObjetivos = pickArr("naoObjetivos");
+  const riscos = pickArr("riscos");
 
-  // Appetite
   const apetiteDias = Number(
     raw.storyPoints ??
       raw.apetiteDias ??
+      dados.apetiteDias ??
       raw.estimativa ??
       raw.estimativaHoras ??
       0,
   );
 
-  // Hill position
-  const hillPosition = Number(raw.hillPosition ?? 0);
+  const hillPosition = Number(raw.hillPosition ?? dados.hillPosition ?? 0);
 
-  // Deliverables
-  const prUrl = raw.prUrl ? String(raw.prUrl) : null;
-  const deliverySummary = raw.deliverySummary
-    ? String(raw.deliverySummary)
-    : null;
-  const filesChanged = raw.filesChanged ? Number(raw.filesChanged) : null;
+  // Deliverables — top-level (legado) ou dados.deliverables (V2)
+  const deliverablesDados = isObj(dados.deliverables)
+    ? (dados.deliverables as Record<string, unknown>)
+    : {};
+  const prUrl =
+    (raw.prUrl as string | undefined) ??
+    (deliverablesDados.prUrl as string | undefined) ??
+    null;
+  const deliverySummary =
+    (raw.deliverySummary as string | undefined) ??
+    (deliverablesDados.summary as string | undefined) ??
+    null;
+  const filesChanged = Number(
+    raw.filesChanged ?? deliverablesDados.filesChanged ?? 0,
+  );
   const deliverables: IntentionDeliverables | null = prUrl
     ? {
         prUrl,
-        prNumber: 0,
+        prNumber: Number(deliverablesDados.prNumber ?? 0),
         summary: deliverySummary ?? "",
-        filesChanged: filesChanged ?? 0,
+        filesChanged: filesChanged || 0,
       }
     : null;
 
-  // Failure reason
-  const failureReason = raw.failureReason
-    ? String(raw.failureReason)
-    : undefined;
+  const failureReason =
+    (raw.failureReason as string | undefined) ??
+    (dados.failureReason as string | undefined) ??
+    undefined;
 
-  return {
+  const intention: IntentionDocument = {
     id,
     title,
     status,
@@ -401,7 +493,7 @@ export function mapTaskToIntention(task: any): IntentionDocument {
         chave: id,
         criadoEm: createdAt,
         atualizadoEm: updatedAt,
-        assignee: assignee ? { nome: createdBy } : null,
+        assignee: assigneeObj ? { nome: createdBy } : null,
       } as Task,
       status,
     ),
@@ -414,6 +506,10 @@ export function mapTaskToIntention(task: any): IntentionDocument {
     completedAt,
     failureReason,
   };
+
+  // Anexa `assignee` para componentes que filtram por `i.assignee?.chave`
+  // (a tela /intentions faz cast IntentionDocument & { assignee?: ... }).
+  return Object.assign(intention, { assignee: assigneeForFilter });
 }
 
 /**

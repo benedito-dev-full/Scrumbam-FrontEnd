@@ -1,5 +1,4 @@
 import api from "./client";
-import { ENDPOINTS } from "./endpoints";
 import type {
   Execution as ExecutionV3,
   ClaudeCredentialStatus,
@@ -7,20 +6,27 @@ import type {
 } from "@/types/execution";
 
 // =====================================================================
-// Automation Fase 2 — Vinculo Projeto<->Agente + Git Credentials
+// Automation Client — adaptado ao V2
 // =====================================================================
 //
-// Mapeia os 9 endpoints de `src/automation/projects-link/projects-link.controller.ts`
-// no backend Scrumban. Documentacao backend: `docs/automation-roadmap.md` v3.4.
+// V2 endpoints utilizados:
+// - POST   /projects/:id/agent           link agent (tipo: primary|secondary)
+// - DELETE /projects/:id/agent/:agentId  unlink
+// - GET    /projects/:id/agent/status    status dos agents vinculados
+// - POST   /agents/install-token         gera token one-shot (regenerate)
+// - GET    /executions                   lista global
+// - GET    /executions/:id               detalhe
+// - POST   /projects/:id/execute         dispatch (precisa command estruturado)
+// - POST   /executions/:id/approve       aprova
+// - POST   /executions/:id/reject        rejeita (reason obrigatorio)
+// - POST   /executions/:id/rollback      rollback
+// - GET    /projects/:id/claude-credential-status
+// - GET    /projects/:id/claude-token-instructions
 //
-// Fluxo de uso na UI:
-// 1. Cadastrar agente (pagina /agents) -- Fase 1
-// 2. Em /projects/[id]/automation:
-//    a. PATCH agent-link (vincula agente ao projeto + remotePath/branch/repo)
-//    b. POST git-credentials/generate (gera deploy key SSH na VPS)
-//    c. Operador cadastra public key no GitHub manualmente
-//    d. POST git-credentials/apply-config (aplica .gitconfig na VPS)
-//    e. GET agent-status?livePing=true (testa conectividade real)
+// V2 NAO TEM (stub no-op):
+// - Git credentials (generate/get/revoke/apply-config)
+// - Dispatch por intentionId (V2 quer command estruturado)
+// - PATCH agent-link com remotePath/branch/repo (V2 so vincula agentId+tipo)
 
 // === Types ===
 
@@ -78,13 +84,6 @@ export interface AgentStatusResponse {
   } | null;
 }
 
-/**
- * Resposta de POST /projects/:id/git-credentials/generate.
- *
- * Issue M1 (review backend Fase 2): `privateKeyPath` foi removido para
- * nao expor layout do filesystem da VPS. Public key + fingerprint sao
- * suficientes para a UI; instrucoes guiam o operador.
- */
 export interface GenerateGitCredentialsResponse {
   projectId: string;
   publicKey: string;
@@ -129,139 +128,163 @@ export interface ListExecutionsQuery {
   limit?: number;
 }
 
+// === Helpers ===
+
+// V2 V2ProjectAgentStatus item shape (ver agent-status-response.dto.ts):
+// { linkId, agentId, tipo, name, statusCode, lastSeen?, version?, claudeVersion?, tunnelPort }
+// Adaptamos para o ProjectAgentLink legado escolhendo o primary.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapStatusToLink(projectId: string, raw: any): ProjectAgentLink {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items: any[] = raw?.items ?? raw?.agents ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const primary = items.find((i: any) => i?.tipo === "primary") ?? items[0];
+  return {
+    projectId,
+    agent: primary
+      ? {
+          id: primary.agentId,
+          nome: primary.name ?? "",
+          status: (primary.statusCode as AgentStatusValue) ?? "never_connected",
+          hostname: primary.name ?? null,
+          tunnelPort: primary.tunnelPort ?? null,
+          lastHeartbeat: primary.lastSeen ?? null,
+        }
+      : null,
+    remotePath: null,
+    remoteBranch: null,
+    remoteRepoUrl: null,
+    gitBotEmail: "",
+    gitBotName: "",
+    executionTimeoutMs: 600000,
+  };
+}
+
 // === API client ===
 
 export const automationApi = {
   // ----- Agent Link -----
 
-  /** GET /projects/:id/agent-link — info do vinculo. */
+  /** GET /projects/:id/agent/status — info do vinculo. V2 retorna lista; expomos o primary. */
   getLink: async (projectId: string): Promise<ProjectAgentLink> => {
-    const { data } = await api.get<ProjectAgentLink>(
-      ENDPOINTS.PROJECT_AGENT_LINK(projectId),
-    );
-    return data;
+    const { data } = await api.get(`/projects/${projectId}/agent/status`);
+    return mapStatusToLink(projectId, data);
   },
 
-  /** PATCH /projects/:id/agent-link — vincula agente ao projeto. ADMIN only. */
+  /**
+   * POST /projects/:id/agent — vincula agente. V2 so aceita { agentId, tipo }.
+   * remotePath/branch/repo/gitBot/timeout do legado sao ignorados (V2 nao tem).
+   */
   link: async (
     projectId: string,
     input: LinkAgentInput,
   ): Promise<ProjectAgentLink> => {
-    const { data } = await api.patch<ProjectAgentLink>(
-      ENDPOINTS.PROJECT_AGENT_LINK(projectId),
-      input,
-    );
-    return data;
-  },
-
-  /** DELETE /projects/:id/agent-link — desvincula agente. ADMIN only. */
-  unlink: async (projectId: string): Promise<void> => {
-    await api.delete(ENDPOINTS.PROJECT_AGENT_LINK(projectId));
+    await api.post(`/projects/${projectId}/agent`, {
+      agentId: input.idAgent,
+      tipo: "primary",
+    });
+    return automationApi.getLink(projectId);
   },
 
   /**
-   * GET /projects/:id/agent-status?livePing=true|false
-   *
-   * Quando `livePing=true`, dispara PING via tunel SSH (latencia real).
-   * Quando false, retorna apenas status do banco (mais barato).
+   * DELETE /projects/:id/agent/:agentId.
+   * Como nao temos o agentId aqui, busca primary via status e desvincula.
    */
+  unlink: async (projectId: string): Promise<void> => {
+    const link = await automationApi.getLink(projectId);
+    if (link.agent?.id) {
+      await api.delete(`/projects/${projectId}/agent/${link.agent.id}`);
+    }
+  },
+
+  /** GET /projects/:id/agent/status (V2 nao tem livePing — flag ignorada). */
   getStatus: async (
     projectId: string,
-    livePing = false,
+    _livePing = false,
   ): Promise<AgentStatusResponse> => {
-    const { data } = await api.get<AgentStatusResponse>(
-      ENDPOINTS.PROJECT_AGENT_STATUS(projectId),
-      { params: { livePing } },
-    );
-    return data;
+    const link = await automationApi.getLink(projectId);
+    return {
+      projectId,
+      agent: link.agent,
+      livePing: null,
+    };
   },
 
-  // ----- Git Credentials -----
+  // ----- Git Credentials (stubs — V2 nao implementa) -----
 
-  /**
-   * POST /projects/:id/git-credentials/generate
-   *
-   * Dispara `ssh-keygen -t ed25519` no agente. Retorna public key +
-   * fingerprint para UI exibir. Private key NUNCA chega ao backend.
-   * ADMIN only.
-   */
   generateGitCredentials: async (
     projectId: string,
   ): Promise<GenerateGitCredentialsResponse> => {
-    const { data } = await api.post<GenerateGitCredentialsResponse>(
-      ENDPOINTS.PROJECT_GIT_CREDENTIALS_GENERATE(projectId),
-    );
-    return data;
+    return {
+      projectId,
+      publicKey: "",
+      fingerprint: "",
+      instructions: ["Git credentials ainda nao estao disponiveis no V2."],
+    };
   },
 
-  /** GET /projects/:id/git-credentials — info publica (sem private key). */
   getGitCredentials: async (projectId: string): Promise<GitCredentialsInfo> => {
-    const { data } = await api.get<GitCredentialsInfo>(
-      ENDPOINTS.PROJECT_GIT_CREDENTIALS(projectId),
-    );
-    return data;
+    return {
+      projectId,
+      hasKey: false,
+      publicKey: null,
+      fingerprint: null,
+      gitBotEmail: "",
+      gitBotName: "",
+    };
   },
 
-  /**
-   * DELETE /projects/:id/git-credentials — revoga deploy key (apenas
-   * apaga colunas no DProject; operador remove do GitHub manualmente).
-   * ADMIN only.
-   */
-  revokeGitCredentials: async (projectId: string): Promise<void> => {
-    await api.delete(ENDPOINTS.PROJECT_GIT_CREDENTIALS(projectId));
+  revokeGitCredentials: async (_projectId: string): Promise<void> => {
+    return;
   },
 
-  /**
-   * POST /projects/:id/git-credentials/apply-config
-   *
-   * Aplica `.gitconfig` na VPS via comando `GIT_CONFIG_APPLY`. Define
-   * core.sshCommand para usar a deploy key + user.email/name do bot.
-   * Pre-requisito: deploy key gerada. ADMIN only.
-   */
-  applyGitConfig: async (projectId: string): Promise<void> => {
-    await api.post(ENDPOINTS.PROJECT_GIT_CREDENTIALS_APPLY(projectId));
+  applyGitConfig: async (_projectId: string): Promise<void> => {
+    return;
   },
 
   // ----- Executions -----
 
-  /** GET /projects/:id/executions?status=&cursor=&limit= — historico. */
+  /** GET /executions?projectId=... — V2 nao tem rota nested em /projects, usa /executions com filtro. */
   listExecutions: async (
     projectId: string,
     query?: ListExecutionsQuery,
   ): Promise<ListExecutionsResponse> => {
-    const { data } = await api.get<ListExecutionsResponse>(
-      ENDPOINTS.PROJECT_EXECUTIONS(projectId),
-      { params: query },
-    );
-    return data;
+    const params: Record<string, unknown> = { projectId };
+    if (query?.status) params.status = query.status;
+    if (query?.cursor) params.cursor = query.cursor;
+    if (query?.limit !== undefined) params.limit = query.limit;
+    const { data } = await api.get("/executions", { params });
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    return {
+      items,
+      nextCursor: data?.pagination?.nextCursor ?? data?.nextCursor ?? null,
+      hasMore: data?.pagination?.hasMore ?? data?.hasMore ?? false,
+    };
   },
 
-  // ----- Execucoes Fase 3 -----
-
-  /** GET /executions/:id — detalhe completo de uma execucao. */
   getExecution: async (executionId: string): Promise<ExecutionV3> => {
     const { data } = await api.get<ExecutionV3>(`/executions/${executionId}`);
     return data;
   },
 
-  /** POST /projects/:id/execute — dispara execucao. ADMIN only. */
+  /**
+   * POST /projects/:id/execute — V2 exige command estruturado.
+   * Stub: o contrato legado de "dispatch por intentionId" nao mapeia 1:1
+   * para o V2. Lanca erro descritivo para a UI tratar.
+   */
   dispatchExecution: async (
-    projectId: string,
-    body: { intentionId: string },
+    _projectId: string,
+    _body: { intentionId: string },
   ): Promise<{ executionId: string }> => {
-    const { data } = await api.post<{ executionId: string }>(
-      `/projects/${projectId}/execute`,
-      body,
+    throw new Error(
+      "Dispatch por intentionId ainda nao suportado no V2 — V2 exige command estruturado.",
     );
-    return data;
   },
 
-  /** POST /executions/:id/approve — aprova execucao awaiting_approval. ADMIN only. */
   approveExecution: async (executionId: string): Promise<void> => {
-    await api.post(`/executions/${executionId}/approve`);
+    await api.post(`/executions/${executionId}/approve`, {});
   },
 
-  /** POST /executions/:id/reject — rejeita execucao. ADMIN only. */
   rejectExecution: async (
     executionId: string,
     body: { reason: string },
@@ -269,17 +292,10 @@ export const automationApi = {
     await api.post(`/executions/${executionId}/reject`, body);
   },
 
-  /** POST /executions/:id/rollback — rollback manual de execucao. ADMIN only. */
   rollbackExecution: async (executionId: string): Promise<void> => {
     await api.post(`/executions/${executionId}/rollback`);
   },
 
-  /**
-   * GET /projects/:id/claude-credential-status
-   *
-   * Proba credencial Claude na VPS (on-demand, sem cache).
-   * Use como mutation, nao query.
-   */
   getClaudeCredentialStatus: async (
     projectId: string,
   ): Promise<ClaudeCredentialStatus> => {
@@ -289,7 +305,6 @@ export const automationApi = {
     return data;
   },
 
-  /** GET /projects/:id/claude-token-instructions — instrucoes SSH para setup do token. */
   getClaudeTokenInstructions: async (
     projectId: string,
   ): Promise<{
@@ -307,7 +322,7 @@ export const automationApi = {
     return data;
   },
 
-  /** GET /executions?projectId=&status=&cursor=&limit= — historico global da org. */
+  /** GET /executions global. */
   listExecutionsGlobal: async (params?: {
     projectId?: string;
     status?: string;

@@ -1,5 +1,4 @@
 import api from "./client";
-import { ENDPOINTS } from "./endpoints";
 
 // === Types ===
 
@@ -12,38 +11,68 @@ export interface McpKeyInfo {
 
 export interface GenerateMcpKeyResponse {
   key: string; // plaintext — show ONCE
-  prefix: string; // scrumban_mcp_42_a8f3...
+  prefix: string;
   createdAt: string;
 }
 
-// === API Client ===
+// V2 shapes
+interface McpKeyListItem {
+  id: string;
+  prefix: string;
+  scopes: string[];
+  disabled: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
 
+interface McpKeyCreated {
+  id: string;
+  prefix: string;
+  plaintext: string;
+  scopes: string[];
+  createdAt: string;
+}
+
+const BASE = "/mcp/keys";
+
+/**
+ * Cliente MCP Keys (V2).
+ *
+ * V2 suporta multiplas keys por usuario. O frontend assume key unica
+ * (legacy contract), entao representamos como "a primeira ativa".
+ *
+ * - `getInfo`: lista keys e retorna a primeira nao-disabled
+ * - `generate`: cria nova key; backend NAO revoga as antigas automaticamente
+ * - `revoke`: revoga TODAS as keys ativas (mantem semantica do contrato legado)
+ */
 export const mcpKeysApi = {
-  /**
-   * Get MCP Key info (prefix, status, last used).
-   * Returns hasKey=false if user never generated one.
-   * Auth: JWT.
-   */
   getInfo: async (): Promise<McpKeyInfo> => {
-    const { data } = await api.get<McpKeyInfo>(ENDPOINTS.MCP_KEY);
-    return data;
+    const { data } = await api.get<McpKeyListItem[]>(BASE);
+    const active = (Array.isArray(data) ? data : []).find((k) => !k.disabled);
+    if (!active) {
+      return { hasKey: false, prefix: null, createdAt: null, lastUsedAt: null };
+    }
+    return {
+      hasKey: true,
+      prefix: active.prefix,
+      createdAt: active.createdAt,
+      lastUsedAt: active.lastUsedAt,
+    };
   },
 
-  /**
-   * Generate a new MCP Key. REPLACES the previous one (revoke + create atomic).
-   * Returns plaintext ONCE; subsequent GETs return only the prefix.
-   * Auth: JWT.
-   */
   generate: async (): Promise<GenerateMcpKeyResponse> => {
-    const { data } = await api.post<GenerateMcpKeyResponse>(ENDPOINTS.MCP_KEY);
-    return data;
+    const { data } = await api.post<McpKeyCreated>(BASE, {});
+    return {
+      key: data.plaintext,
+      prefix: data.prefix,
+      createdAt: data.createdAt,
+    };
   },
 
-  /**
-   * Revoke the active MCP Key. After this, agents using the key will get 401.
-   * Auth: JWT.
-   */
+  /** Revoga TODAS as MCP keys ativas (mantem contrato legado de "uma key por user"). */
   revoke: async (): Promise<void> => {
-    await api.delete(ENDPOINTS.MCP_KEY);
+    const { data } = await api.get<McpKeyListItem[]>(BASE);
+    const active = (Array.isArray(data) ? data : []).filter((k) => !k.disabled);
+    await Promise.allSettled(active.map((k) => api.delete(`${BASE}/${k.id}`)));
   },
 };
