@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: me.role,
             orgId: me.organizationId,
             orgNome: me.organizationName,
-            onboardingCompleted: me.onboardingCompleted ?? false,
           });
           markValidated();
         })
@@ -70,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user && isPublicPath) {
       router.replace("/intentions");
     }
-  }, [user, pathname, router, isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, pathname, router, isHydrated]);
 
   // Enquanto nao hydratou, nao renderiza nada (evita flash de redirect)
   if (!isHydrated) {

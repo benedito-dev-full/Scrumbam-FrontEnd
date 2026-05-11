@@ -5,7 +5,6 @@ import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/common/app-sidebar";
 import { MobileSidebar } from "@/components/common/mobile-sidebar";
 import { CommandPalette } from "@/components/common/command-palette";
-import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -31,7 +30,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-hidden">{children}</main>
 
       <CommandPalette />
-      <OnboardingWizard />
     </div>
   );
 }

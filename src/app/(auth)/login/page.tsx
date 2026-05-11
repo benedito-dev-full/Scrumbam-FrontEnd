@@ -47,17 +47,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Salva tokens ANTES de chamar getMe — o request interceptor precisa do accessToken
-      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
-
-      let onboardingCompleted = false;
-      try {
-        const me = await authApi.getMe();
-        onboardingCompleted = me.onboardingCompleted ?? false;
-      } catch {
-        // se falhar, assume false
-      }
-
+      // Salva tokens via login() abaixo — request interceptor le do store.
       const user: User = {
         id: data.user.id,
         entidadeId: data.user.entidadeId,
@@ -66,7 +56,6 @@ export default function LoginPage() {
         role: data.user.role || "member",
         orgId: data.user.organizationId || "",
         orgNome: data.user.organizationName || "",
-        onboardingCompleted,
       };
 
       login(user, data.accessToken, data.refreshToken);

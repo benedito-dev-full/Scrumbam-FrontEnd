@@ -56,7 +56,6 @@ export interface MeResponse {
   organizationId: string;
   organizationName: string;
   createdAt: string;
-  onboardingCompleted?: boolean;
 }
 
 export interface UpdateMeDto {
@@ -64,5 +63,4 @@ export interface UpdateMeDto {
   email?: string;
   currentPassword?: string;
   newPassword?: string;
-  onboardingCompleted?: boolean;
 }
