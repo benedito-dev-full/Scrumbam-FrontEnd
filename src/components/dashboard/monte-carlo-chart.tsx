@@ -137,7 +137,7 @@ export function MonteCarloChart({ projectId }: MonteCarloChartProps) {
         )}
 
         {isError && (
-          <EmptyMetrics description="Sem dados historicos suficientes para previsao. Conclua intencoes para gerar historico." />
+          <EmptyMetrics description="Projeto criado recentemente, sem histórico suficiente para previsões. Conclua algumas tarefas para gerar dados." />
         )}
 
         {data && (
