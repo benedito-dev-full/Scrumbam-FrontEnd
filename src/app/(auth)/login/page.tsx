@@ -47,6 +47,9 @@ export default function LoginPage() {
         return;
       }
 
+      // Salva tokens ANTES de chamar getMe — o request interceptor precisa do accessToken
+      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
+
       let onboardingCompleted = false;
       try {
         const me = await authApi.getMe();
@@ -66,7 +69,7 @@ export default function LoginPage() {
         onboardingCompleted,
       };
 
-      login(user);
+      login(user, data.accessToken, data.refreshToken);
       router.replace("/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {
@@ -111,14 +114,18 @@ export default function LoginPage() {
           />
         </Field>
 
-        <Field id="password" label="Senha" hint={
-          <Link
-            href="#"
-            className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Esqueceu?
-          </Link>
-        }>
+        <Field
+          id="password"
+          label="Senha"
+          hint={
+            <Link
+              href="#"
+              className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Esqueceu?
+            </Link>
+          }
+        >
           <div className="relative">
             <Input
               id="password"
@@ -137,7 +144,11 @@ export default function LoginPage() {
               tabIndex={-1}
               aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </Field>
@@ -204,4 +215,3 @@ function Field({
     </div>
   );
 }
-

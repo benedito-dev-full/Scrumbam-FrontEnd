@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 import { useAuthStore } from "../stores/auth-store";
 
@@ -8,7 +8,22 @@ const API_BASE_URL =
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
-  withCredentials: true, // Envia cookies httpOnly automaticamente
+});
+
+// Request interceptor: injeta Authorization: Bearer <accessToken>
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const url = config.url || "";
+  // Endpoints publicos (login/register) nao precisam de Authorization
+  const isPublicAuthRoute =
+    url.includes("/auth/login") || url.includes("/auth/register");
+
+  if (!isPublicAuthRoute) {
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+      config.headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+  return config;
 });
 
 // Response interceptor: refresh token on 401, then retry
@@ -29,9 +44,13 @@ const processQueue = (error: unknown) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    const url = originalRequest?.url || "";
+  async (error: AxiosError) => {
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+    if (!originalRequest) return Promise.reject(error);
+
+    const url = originalRequest.url || "";
     const isAuthRoute =
       url.includes("/auth/login") ||
       url.includes("/auth/register") ||
@@ -42,6 +61,15 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !isAuthRoute
     ) {
+      const refreshToken = useAuthStore.getState().refreshToken;
+      if (!refreshToken) {
+        useAuthStore.getState().logout();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // Se ja esta refreshing, enfileirar request e esperar
         return new Promise((resolve, reject) => {
@@ -53,9 +81,15 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh");
+        const { data } = await api.post<{
+          accessToken: string;
+          refreshToken: string;
+        }>("/auth/refresh", { refreshToken });
+
+        useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
+
         processQueue(null);
-        return api(originalRequest); // retry com novo cookie
+        return api(originalRequest); // retry com novo token (request interceptor injeta)
       } catch (refreshError) {
         processQueue(refreshError);
         useAuthStore.getState().logout();

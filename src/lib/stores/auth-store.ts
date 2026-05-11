@@ -4,9 +4,12 @@ import type { User } from "@/types/auth";
 
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   lastValidatedAt: number | null;
   setUser: (user: User) => void;
-  login: (user: User) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  login: (user: User, accessToken?: string, refreshToken?: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
   markValidated: () => void;
@@ -17,15 +20,32 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      accessToken: null,
+      refreshToken: null,
       lastValidatedAt: null,
 
       setUser: (user) => set({ user }),
 
-      login: (user) => set({ user, lastValidatedAt: Date.now() }),
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken }),
 
-      logout: () => set({ user: null, lastValidatedAt: null }),
+      login: (user, accessToken, refreshToken) =>
+        set({
+          user,
+          ...(accessToken ? { accessToken } : {}),
+          ...(refreshToken ? { refreshToken } : {}),
+          lastValidatedAt: Date.now(),
+        }),
 
-      isAuthenticated: () => !!get().user,
+      logout: () =>
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          lastValidatedAt: null,
+        }),
+
+      isAuthenticated: () => !!get().user && !!get().accessToken,
 
       markValidated: () => set({ lastValidatedAt: Date.now() }),
 
@@ -39,6 +59,8 @@ export const useAuthStore = create<AuthState>()(
       name: "scrumban-auth",
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         lastValidatedAt: state.lastValidatedAt,
       }),
     },

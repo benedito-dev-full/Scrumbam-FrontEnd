@@ -66,7 +66,7 @@ export default function RegisterPage() {
         orgNome: data.user.organizationName || "",
       };
 
-      login(user);
+      login(user, data.accessToken, data.refreshToken);
       router.replace("/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {
