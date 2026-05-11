@@ -9,22 +9,23 @@ import type {
   DeleteProjectResponse,
 } from "@/types";
 
-// Maps backend response (id/name) to frontend types (chave/nome)
+// Maps backend V2 ProjectResponseDto to frontend Project type
+// V2 returns: id, nome, prefix, description, orgId, memberCount, automationEnabled, gitRepo, criadoEm, atualizadoEm
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapProject(raw: any): Project {
   return {
     chave: raw.id || raw.chave,
-    nome: raw.name || raw.nome,
+    nome: raw.nome || raw.name,
     descricao: raw.description || raw.descricao || null,
     dataInicio: raw.startDate || raw.dataInicio || null,
     dataFim: raw.endDate || raw.dataFim || null,
-    criadoEm: raw.createdAt || raw.criadoEm,
-    taskCount: raw.taskCount ?? 0,
+    criadoEm: raw.criadoEm || raw.createdAt,
+    taskCount: raw.taskCount ?? raw.memberCount ?? 0,
     teamId: raw.teamId ?? null,
     responsavel: raw.owner
       ? {
           chave: raw.owner.id || raw.owner.chave,
-          nome: raw.owner.name || raw.owner.nome,
+          nome: raw.owner.nome || raw.owner.name,
         }
       : raw.responsavel || null,
   };
@@ -32,14 +33,14 @@ function mapProject(raw: any): Project {
 
 export const projectsApi = {
   list: async (
-    organizationId?: string,
-    teamId?: string,
+    _organizationId?: string,
+    _teamId?: string,
   ): Promise<Project[]> => {
-    const params: Record<string, string> = {};
-    if (organizationId) params.organizationId = organizationId;
-    if (teamId) params.teamId = teamId;
-    const { data } = await api.get(ENDPOINTS.PROJECTS, { params });
-    return (Array.isArray(data) ? data : []).map(mapProject);
+    // V2 GET /projects: filtra automaticamente por user do JWT.
+    // Aceita apenas cursor/limit. Retorna { items, pagination }.
+    const { data } = await api.get(ENDPOINTS.PROJECTS);
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    return items.map(mapProject);
   },
 
   getById: async (id: string): Promise<ProjectDetail> => {
@@ -55,35 +56,29 @@ export const projectsApi = {
     dto: CreateProjectDto,
     organizationId?: string,
   ): Promise<Project> => {
+    // V2 CreateProjectDto: { nome, prefix?, description?, orgId?, automationEnabled?, gitRepo? }
+    // idTeam/memberIds nao existem em V2 — usar /projects/:id/members em chamada separada.
     const { useAuthStore } = await import("@/lib/stores/auth-store");
     const orgId = organizationId || useAuthStore.getState().user?.orgId || "";
     const { data } = await api.post(ENDPOINTS.PROJECTS, {
-      name: dto.nome,
+      nome: dto.nome,
       description: dto.descricao || undefined,
-      organizationId: orgId,
-      idTeam: dto.idTeam || undefined,
-      memberIds:
-        dto.memberIds && dto.memberIds.length > 0 ? dto.memberIds : undefined,
+      orgId: orgId || undefined,
     });
     return mapProject(data);
   },
 
   /**
-   * Atualiza projeto via PATCH /projects/:id (apenas ADMIN no backend).
+   * Atualiza projeto via PATCH /projects/:id (V2 — apenas MANAGER no backend).
    *
-   * Apenas campos enviados sao alterados. Para desvincular o time, envie
-   * `idTeam: null` explicitamente (axios envia null no body, vs undefined que omite).
-   *
-   * Mapeia campos PT-BR (frontend) -> EN (backend):
-   *   nome -> name, descricao -> description, idTeam -> idTeam, startDate -> startDate
+   * V2 UpdateProjectDto aceita: nome, description, prefix, automationEnabled, gitRepo.
+   * NAO aceita idTeam ou startDate (legacy — ignorados aqui).
    */
   update: async (id: string, dto: UpdateProjectDto): Promise<Project> => {
-    // Construir payload apenas com chaves definidas (preserva semantica null vs undefined)
     const payload: Record<string, unknown> = {};
-    if (dto.nome !== undefined) payload.name = dto.nome;
+    if (dto.nome !== undefined) payload.nome = dto.nome;
     if (dto.descricao !== undefined) payload.description = dto.descricao;
-    if (dto.idTeam !== undefined) payload.idTeam = dto.idTeam; // null permitido
-    if (dto.startDate !== undefined) payload.startDate = dto.startDate;
+    // idTeam e startDate sao legacy — V2 nao aceita
     const { data } = await api.patch(ENDPOINTS.PROJECT(id), payload);
     return mapProject(data);
   },
