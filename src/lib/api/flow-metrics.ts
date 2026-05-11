@@ -83,7 +83,7 @@ function mapThroughput(raw: any): ThroughputResponse {
   if (series.length === 0) return EMPTY_THROUGHPUT;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const weeks = series.map((p: any) => ({
-    weekStart: String(p.date ?? ""),
+    week: String(p.date ?? ""),
     count: Number(p.count ?? 0),
   }));
   const total = Number(
