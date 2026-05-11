@@ -78,7 +78,12 @@ function pickStr(meta: Record<string, unknown>, key: string): string | null {
 }
 
 function categorize(tipo: string): ActivityCategory {
-  if (tipo === "task.created") return "created";
+  if (
+    tipo === "task.created" ||
+    tipo === "project.created" ||
+    tipo === "org.created"
+  )
+    return "created";
   if (tipo.startsWith("task.status")) return "status";
   if (
     tipo === "task.deleted" ||
@@ -98,10 +103,16 @@ function buildMessage(
   const taskNome = pickStr(meta, "nome") ?? pickStr(meta, "taskNome");
   const from = pickStr(meta, "from");
   const to = pickStr(meta, "to");
-  const tag = identifier ? `[${identifier}] ` : "";
+  const tag = identifier && identifier !== "?" ? `[${identifier}] ` : "";
 
   switch (category) {
     case "created":
+      if (rawTipo === "project.created") {
+        return `Projeto criado${taskNome ? `: ${taskNome}` : ""}`;
+      }
+      if (rawTipo === "org.created") {
+        return `Organizacao criada${taskNome ? `: ${taskNome}` : ""}`;
+      }
       return `${tag}Task criada${taskNome ? `: ${taskNome}` : ""}`;
     case "status":
       if (from && to) {

@@ -42,6 +42,8 @@ import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { useProjectActivity } from "@/lib/hooks/use-activity";
+import { useOrgMembers } from "@/lib/hooks/use-organization";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectInsights } from "@/components/projects/project-insights";
 import { ProjectReports } from "@/components/projects/project-reports";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
@@ -864,7 +866,16 @@ const CATEGORY_DOT: Record<string, string> = {
 
 function ActivityTab({ projectId }: { projectId: string }) {
   const { data, isLoading } = useProjectActivity(projectId, { limit: 50 });
+  const orgId = useAuthStore((s) => s.user?.orgId);
+  const { data: members } = useOrgMembers(orgId);
   const [filter, setFilter] = useState<ActivityFilter>("all");
+
+  // Map<userId, nome> — hidratacao de nome para eventos legados sem userName
+  const memberNameById = new Map<string, string>(
+    (members ?? [])
+      .filter((m) => Boolean(m.id) && Boolean(m.name))
+      .map((m) => [m.id, m.name] as [string, string]),
+  );
 
   const events = data?.events ?? [];
   const filtered =
@@ -946,6 +957,7 @@ function ActivityTab({ projectId }: { projectId: string }) {
                 <p className="text-[13px] leading-snug">
                   <span className="font-medium">
                     {ev.actorName ??
+                      (ev.actorId && memberNameById.get(ev.actorId)) ??
                       (ev.actorId ? `Usuario #${ev.actorId}` : "Sistema")}
                   </span>{" "}
                   <span className="text-foreground">— {ev.message}</span>
