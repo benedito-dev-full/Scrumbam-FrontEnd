@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             entidadeId: me.id,
             nome: me.name,
             email: me.email ?? user.email,
-            role: me.role,
+            role: me.orgRole?.toLowerCase() || me.role || "member",
             orgId: me.organizationId,
             orgNome: me.organizationName,
           });

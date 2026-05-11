@@ -53,7 +53,7 @@ export default function LoginPage() {
         entidadeId: data.user.entidadeId,
         nome: data.user.name,
         email: data.user.email,
-        role: data.user.role || "member",
+        role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
         orgId: data.user.organizationId || "",
         orgNome: data.user.organizationName || "",
       };

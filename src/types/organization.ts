@@ -52,7 +52,10 @@ export interface MeResponse {
   name: string;
   email?: string;
   phone?: string;
-  role: string;
+  /** Legado — V1 retornava `role`. V2 retorna `orgRole`. Mantido como opcional. */
+  role?: string;
+  /** V2 retorna `orgRole` (ADMIN/MEMBER/VIEWER). */
+  orgRole?: string;
   organizationId: string;
   organizationName: string;
   createdAt: string;
