@@ -16,11 +16,12 @@ export const ENDPOINTS = {
   // Organizations
   ORGANIZATIONS: "/organizations",
   ORG: (orgId: string) => `/organizations/${orgId}`,
-  ORG_USERS: (orgId: string) => `/organizations/${orgId}/users`,
+  // V2 usa /members (legado usava /users)
+  ORG_USERS: (orgId: string) => `/organizations/${orgId}/members`,
   ORG_USER: (orgId: string, userId: string) =>
-    `/organizations/${orgId}/users/${userId}`,
+    `/organizations/${orgId}/members/${userId}`,
   ORG_USER_ROLE: (orgId: string, userId: string) =>
-    `/organizations/${orgId}/users/${userId}/role`,
+    `/organizations/${orgId}/members/${userId}`,
 
   // Projects
   PROJECTS: "/projects",
