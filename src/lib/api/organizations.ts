@@ -1,4 +1,5 @@
 import api from "./client";
+import { invitesApi } from "./invites";
 import { ENDPOINTS } from "./endpoints";
 import type {
   Organization,
@@ -74,18 +75,37 @@ export const organizationsApi = {
   },
 
   /**
-   * V2 espera `{ userId, role: 'MEMBER'|'VIEWER' }` — vincula user JÁ EXISTENTE.
-   * Frontend legado mandava `{ name, email, password }` (criar user na hora).
-   * Como o contrato mudou estruturalmente, expomos um erro descritivo
-   * até a UI ser refeita para "convidar usuario existente por entidadeId".
+   * Convida novo membro por email (ADR-V2-028).
+   *
+   * Substitui o stub legado que criava conta com senha temporaria.
+   * Agora delega para `invitesApi.createInvite` — backend gera token,
+   * persiste em DTabela e dispara email com link `/invite?token=...`.
+   *
+   * NUNCA envia password — accept flow gera credencial no servidor.
+   *
+   * Backend valida que o caller eh ADMIN da org via `OrgTenantGuard`.
+   *
+   * @throws AxiosError 409 — email ja eh membro / convite pendente existe.
+   * @throws AxiosError 429 — rate limit (3/min).
    */
   addUser: async (
-    _orgId: string,
-    _dto: AddOrgMemberDto,
+    orgId: string,
+    dto: AddOrgMemberDto,
   ): Promise<AddOrgMemberResponse> => {
-    throw new Error(
-      "Convite por email ainda nao disponivel no V2. Use 'adicionar membro existente' (precisa entidadeId).",
-    );
+    const role: "MEMBER" | "VIEWER" =
+      dto.role === "VIEWER" ? "VIEWER" : "MEMBER";
+    const created = await invitesApi.createInvite(orgId, {
+      email: dto.email,
+      role,
+    });
+    return {
+      // Convite ainda nao virou user — devolvemos a info que temos.
+      id: created.id,
+      name: dto.name ?? dto.email,
+      email: created.email,
+      role: created.role,
+      organizationId: orgId,
+    };
   },
 
   removeUser: async (orgId: string, userId: string): Promise<void> => {

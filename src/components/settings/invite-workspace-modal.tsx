@@ -1,14 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Copy, Check, AlertTriangle } from "lucide-react";
+import { X, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -22,12 +18,18 @@ interface InviteWorkspaceModalProps {
 
 interface InviteResult {
   email: string;
-  name: string;
-  password: string;
   status: "ok" | "error";
   errorMessage?: string;
 }
 
+/**
+ * Modal de convite de novos membros por email (ADR-V2-028).
+ *
+ * Substitui o fluxo legado que criava contas com senha temporaria. Agora
+ * cada email submetido dispara um convite (backend persiste token em
+ * DTabela e envia email com link /invite?token=...). Rate limit 3/min
+ * por org-admin no backend — o loop trata 429 explicitamente.
+ */
 export function InviteWorkspaceModal({
   open,
   onOpenChange,
@@ -37,7 +39,6 @@ export function InviteWorkspaceModal({
 
   const [emailsRaw, setEmailsRaw] = useState("");
   const [results, setResults] = useState<InviteResult[] | null>(null);
-  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const orgInitials = (user?.orgNome ?? "DT")
@@ -50,7 +51,6 @@ export function InviteWorkspaceModal({
   const reset = () => {
     setEmailsRaw("");
     setResults(null);
-    setCopied(false);
   };
 
   const handleClose = () => {
@@ -63,17 +63,6 @@ export function InviteWorkspaceModal({
       .split(/[\s,;\n]+/)
       .map((e) => e.trim().toLowerCase())
       .filter((e) => e.length > 0 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
-  };
-
-  const generatePassword = (): string => {
-    // 16 chars, mistura letras+numeros+simbolos. Forte o suficiente como inicial.
-    const charset =
-      "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%";
-    let pwd = "";
-    for (let i = 0; i < 16; i++) {
-      pwd += charset[Math.floor(Math.random() * charset.length)];
-    }
-    return pwd;
   };
 
   const nameFromEmail = (email: string): string => {
@@ -95,27 +84,31 @@ export function InviteWorkspaceModal({
     setSubmitting(true);
     const out: InviteResult[] = [];
     for (const email of emails) {
-      const name = nameFromEmail(email);
-      const password = generatePassword();
       try {
         await addMember.mutateAsync({
-          name,
+          name: nameFromEmail(email),
           email,
-          password,
+          // password ignorado pelo backend — invite gera credencial no accept
+          password: "",
           role: "MEMBER",
         });
-        out.push({ email, name, password, status: "ok" });
+        out.push({ email, status: "ok" });
       } catch (err) {
-        const msg =
-          (err as { response?: { status?: number; data?: { message?: string } } })
-            ?.response?.data?.message ?? "Erro";
-        out.push({
-          email,
-          name,
-          password,
-          status: "error",
-          errorMessage: msg,
-        });
+        const httpErr = err as {
+          response?: { status?: number; data?: { message?: string } };
+        };
+        const status = httpErr?.response?.status;
+        const message =
+          status === 429
+            ? "Limite de convites por minuto atingido — aguarde e tente novamente."
+            : status === 409
+              ? (httpErr.response?.data?.message ??
+                "Email ja eh membro ou ja possui convite pendente.")
+              : status === 403
+                ? "Voce nao eh admin desta organizacao."
+                : (httpErr.response?.data?.message ??
+                  "Erro ao enviar convite.");
+        out.push({ email, status: "error", errorMessage: message });
       }
     }
     setSubmitting(false);
@@ -124,27 +117,11 @@ export function InviteWorkspaceModal({
     const okCount = out.filter((r) => r.status === "ok").length;
     if (okCount > 0) {
       toast.success(
-        `${okCount} conta${okCount > 1 ? "s" : ""} criada${okCount > 1 ? "s" : ""}`,
+        `${okCount} convite${okCount > 1 ? "s" : ""} enviado${okCount > 1 ? "s" : ""}`,
       );
     }
     if (okCount < out.length) {
-      toast.warning(
-        `${out.length - okCount} falhou (provavelmente email duplicado)`,
-      );
-    }
-  };
-
-  const copyAll = async () => {
-    if (!results) return;
-    const ok = results.filter((r) => r.status === "ok");
-    const lines = ok.map((r) => `${r.email} | ${r.password}`).join("\n");
-    try {
-      await navigator.clipboard.writeText(lines);
-      setCopied(true);
-      toast.success("Credenciais copiadas");
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      toast.error("Falha ao copiar");
+      toast.warning(`${out.length - okCount} convite(s) falharam`);
     }
   };
 
@@ -160,13 +137,13 @@ export function InviteWorkspaceModal({
             <span className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
               {orgInitials}
             </span>
-            Invite to your workspace
+            Convidar para o workspace
           </DialogTitle>
           <button
             type="button"
             onClick={handleClose}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Close"
+            aria-label="Fechar"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -176,31 +153,30 @@ export function InviteWorkspaceModal({
         <div className="px-5 py-4 space-y-4">
           {!results ? (
             <>
-              {/* Gap notice */}
-              <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200 dark:text-amber-300">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 rounded-md border border-border bg-card/50 px-3 py-2 text-[11px] text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 <p>
-                  Gap #36 — sem invite por link de email. As contas sao criadas
-                  agora com senha temporaria; comunique fora do sistema.
+                  Cada email recebera um link unico de aceite. O usuario define
+                  o proprio nome e senha. Convites expiram em 7 dias.
                 </p>
               </div>
 
-              {/* Emails input */}
               <div className="space-y-1.5">
                 <label className="text-[12px] font-medium text-foreground/90">
-                  Email
+                  Emails
                 </label>
                 <Textarea
                   value={emailsRaw}
                   onChange={(e) => setEmailsRaw(e.target.value)}
-                  placeholder="email@fortalshop.com, email2@fortalshop.com..."
+                  placeholder="email@empresa.com, email2@empresa.com..."
                   rows={3}
                   autoFocus
                   className="text-[13px] resize-none"
                 />
                 <p className="text-[11px] text-muted-foreground/70">
-                  Separe por virgula, espaco ou quebra de linha. Cada conta
-                  recebera role <code className="text-[10px]">MEMBER</code>.
+                  Separe por virgula, espaco ou quebra de linha. Cada convite
+                  cria um membro com role{" "}
+                  <code className="text-[10px]">MEMBER</code>.
                 </p>
               </div>
 
@@ -214,21 +190,16 @@ export function InviteWorkspaceModal({
                   {submitting ? (
                     <>
                       <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                      Sending...
+                      Enviando...
                     </>
                   ) : (
-                    "Send invites"
+                    "Enviar convites"
                   )}
                 </Button>
               </div>
             </>
           ) : (
-            <ResultsView
-              results={results}
-              copied={copied}
-              onCopyAll={copyAll}
-              onDone={handleClose}
-            />
+            <ResultsView results={results} onDone={handleClose} />
           )}
         </div>
       </DialogContent>
@@ -236,19 +207,11 @@ export function InviteWorkspaceModal({
   );
 }
 
-// ============================================================
-// Results view — credenciais temporarias para distribuir
-// ============================================================
-
 function ResultsView({
   results,
-  copied,
-  onCopyAll,
   onDone,
 }: {
   results: InviteResult[];
-  copied: boolean;
-  onCopyAll: () => void;
   onDone: () => void;
 }) {
   const ok = results.filter((r) => r.status === "ok");
@@ -258,41 +221,17 @@ function ResultsView({
     <div className="space-y-4">
       {ok.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[12px] font-medium">
-              {ok.length} conta{ok.length > 1 ? "s" : ""} criada
-              {ok.length > 1 ? "s" : ""} — distribua as credenciais
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCopyAll}
-              className="text-[11px] h-7"
-            >
-              {copied ? (
-                <>
-                  <Check className="mr-1 h-3 w-3" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-1 h-3 w-3" />
-                  Copy all
-                </>
-              )}
-            </Button>
-          </div>
-
+          <p className="text-[12px] font-medium">
+            {ok.length} convite{ok.length > 1 ? "s" : ""} enviado
+            {ok.length > 1 ? "s" : ""}
+          </p>
           <div className="rounded-md border border-border bg-card overflow-hidden divide-y divide-border">
             {ok.map((r) => (
               <div
                 key={r.email}
-                className="grid grid-cols-[1fr_minmax(0,200px)] gap-3 px-3 py-2 text-[12px]"
+                className="px-3 py-2 text-[12px] font-mono truncate"
               >
-                <span className="truncate font-mono">{r.email}</span>
-                <span className="truncate font-mono text-muted-foreground select-all">
-                  {r.password}
-                </span>
+                {r.email}
               </div>
             ))}
           </div>
@@ -331,7 +270,7 @@ function ResultsView({
           onClick={onDone}
           className="text-[12px] h-8 bg-blue-600 hover:bg-blue-700 text-white"
         >
-          Done
+          Concluir
         </Button>
       </div>
     </div>
