@@ -43,8 +43,10 @@ export interface ProjectActivity {
   identifier: string | null;
   /** Nome curto da task quando disponivel. */
   taskNome: string | null;
-  /** ID do ator (DUserGroup ou DEntidade chave). Sem hidratacao de nome no V2. */
+  /** ID do ator (DEntidade.chave). */
   actorId: string | null;
+  /** Nome do ator quando V2 hidrata via `userName` no metaDados. */
+  actorName: string | null;
   /** Status anterior em transicoes (ex: "INBOX"). */
   fromStatus: string | null;
   /** Status novo em transicoes (ex: "READY"). */
@@ -128,6 +130,7 @@ function mapEvent(raw: V2ActivityItem): ProjectActivity {
     identifier: pickStr(meta, "identifier"),
     taskNome: pickStr(meta, "nome") ?? pickStr(meta, "taskNome"),
     actorId: pickStr(meta, "userId") ?? pickStr(meta, "movedBy"),
+    actorName: pickStr(meta, "userName"),
     fromStatus: pickStr(meta, "from"),
     toStatus: pickStr(meta, "to"),
     timestamp: raw.criadoEm,

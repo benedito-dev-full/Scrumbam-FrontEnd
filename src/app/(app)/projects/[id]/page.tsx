@@ -945,7 +945,8 @@ function ActivityTab({ projectId }: { projectId: string }) {
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] leading-snug">
                   <span className="font-medium">
-                    {ev.actorId ? `Usuario #${ev.actorId}` : "Sistema"}
+                    {ev.actorName ??
+                      (ev.actorId ? `Usuario #${ev.actorId}` : "Sistema")}
                   </span>{" "}
                   <span className="text-foreground">— {ev.message}</span>
                 </p>
