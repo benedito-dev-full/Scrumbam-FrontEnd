@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CircleDot,
   Folder,
+  FolderOpen,
   ListChecks,
   MoreHorizontal,
   Plus,
@@ -50,6 +51,7 @@ export function ProjectSelectorSidebar() {
   const { data: projects, isLoading } = useProjects();
   const userRole = useAuthStore((s) => s.user?.role);
   const isAdmin = userRole?.toUpperCase() === "ADMIN";
+  const [expanded, setExpanded] = useState(true);
 
   const sortedProjects = useMemo(
     () => [...(projects ?? [])].sort((a, b) => a.nome.localeCompare(b.nome)),
@@ -63,12 +65,22 @@ export function ProjectSelectorSidebar() {
 
   return (
     <div className="mt-3">
-      {/* Header */}
+      {/* Header — clique no titulo/icone alterna expand/collapse */}
       <div className="group/header flex items-center gap-1 px-2 py-1">
-        <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="flex-1 text-[13px] font-medium text-foreground/85">
-          Projetos
-        </span>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex flex-1 items-center gap-1.5 text-left text-foreground/85 hover:text-foreground transition-colors"
+          aria-expanded={expanded}
+          aria-controls="sidebar-projects-list"
+        >
+          {expanded ? (
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          ) : (
+            <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          )}
+          <span className="text-[13px] font-medium">Projetos</span>
+        </button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -103,7 +115,7 @@ export function ProjectSelectorSidebar() {
       </div>
 
       {/* Loading */}
-      {isLoading && (
+      {expanded && isLoading && (
         <div className="space-y-1 px-2">
           <Skeleton className="h-7 w-full" />
           <Skeleton className="h-7 w-3/4" />
@@ -111,15 +123,15 @@ export function ProjectSelectorSidebar() {
       )}
 
       {/* Empty */}
-      {!isLoading && sortedProjects.length === 0 && (
+      {expanded && !isLoading && sortedProjects.length === 0 && (
         <div className="px-2 py-2 text-[12px] text-muted-foreground">
           Nenhum projeto disponivel.
         </div>
       )}
 
       {/* Lista de projetos */}
-      {!isLoading && sortedProjects.length > 0 && (
-        <ul className="space-y-px px-2">
+      {expanded && !isLoading && sortedProjects.length > 0 && (
+        <ul id="sidebar-projects-list" className="space-y-px px-2">
           {sortedProjects.map((project) => {
             const selected = project.chave === activeProjectId;
             const projectHref = `/projects/${project.chave}`;
