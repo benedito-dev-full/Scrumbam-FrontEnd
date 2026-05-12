@@ -45,6 +45,8 @@ function mapOrgMember(raw: any): OrgMember {
 function unwrapItems(data: any): any[] {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
+  // V2 /organizations/:id/members retorna { members: [...] }
+  if (Array.isArray(data?.members)) return data.members;
   return [];
 }
 

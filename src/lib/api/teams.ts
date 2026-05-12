@@ -14,6 +14,8 @@ import type {
 function unwrapItems(data: any): any[] {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
+  // V2 envelopa membros em { members: [...] }
+  if (Array.isArray(data?.members)) return data.members;
   return [];
 }
 

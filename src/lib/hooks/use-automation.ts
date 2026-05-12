@@ -385,3 +385,72 @@ export function useClaudeTokenInstructions(projectId: string) {
   });
 }
 
+
+// =====================================================================
+// Painel global de automacao (cross-projeto)
+// =====================================================================
+
+/**
+ * GET execucoes de TODOS os projetos do workspace.
+ *
+ * Backend: `GET /executions` (sem `projectId`) retorna todas as
+ * execucoes que o usuario logado pode visualizar (escopo da org).
+ * Polling automatico de 15s quando filtra `awaiting_approval` para
+ * acompanhar fila de aprovacao em tempo real.
+ */
+export function useGlobalExecutions(filters?: {
+  status?: string;
+  limit?: number;
+  cursor?: string;
+}) {
+  return useQuery({
+    queryKey: ["executions", "global", filters],
+    queryFn: () => automationApi.listExecutionsGlobal(filters),
+    refetchInterval:
+      filters?.status === "awaiting_approval" ? 15_000 : 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Aprova execucao no contexto global (invalida queries globais). */
+export function useApproveExecutionGlobal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (executionId: string) =>
+      automationApi.approveExecution(executionId),
+    onSuccess: () => {
+      toast.success("Execucao aprovada");
+      queryClient.invalidateQueries({ queryKey: ["executions"] });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao aprovar execucao";
+      toast.error(msg);
+    },
+  });
+}
+
+/** Rejeita execucao no contexto global. */
+export function useRejectExecutionGlobal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      executionId,
+      reason,
+    }: {
+      executionId: string;
+      reason: string;
+    }) => automationApi.rejectExecution(executionId, { reason }),
+    onSuccess: () => {
+      toast.success("Execucao rejeitada");
+      queryClient.invalidateQueries({ queryKey: ["executions"] });
+    },
+    onError: (err) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Erro ao rejeitar execucao";
+      toast.error(msg);
+    },
+  });
+}

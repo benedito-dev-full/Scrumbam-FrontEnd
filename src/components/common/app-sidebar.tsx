@@ -36,6 +36,7 @@ import {
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
 import { WorkspaceSwitcher } from "@/components/common/workspace-switcher";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
+import { InviteWorkspaceModal } from "@/components/settings/invite-workspace-modal";
 import { ProjectSelectorSidebar } from "@/components/projects/project-selector-sidebar";
 
 export function AppSidebar() {
@@ -44,6 +45,12 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [newIssueOpen, setNewIssueOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+  // Dispatcher de actions nos items da sidebar (ex.: 'invite-people').
+  const handleAction = useCallback((action: NonNullable<NavItem["action"]>) => {
+    if (action === "invite-people") setInviteOpen(true);
+  }, []);
   const { state: customization } = useSidebarCustomization();
 
   // Filtra item conforme customization (badge=0 por padrao — UI puro)
@@ -59,10 +66,7 @@ export function AppSidebar() {
     items: s.items.filter(visible),
   }));
 
-  const orgInitial = (user?.orgNome || "W")
-    .trim()
-    .charAt(0)
-    .toUpperCase();
+  const orgInitial = (user?.orgNome || "W").trim().charAt(0).toUpperCase();
   const workspaceBadge = (
     <span
       className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[9px] font-bold text-black"
@@ -111,7 +115,7 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <aside className="hidden md:flex h-screen w-[232px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <aside className="hidden md:flex h-screen w-[240px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Workspace switcher + actions */}
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
         {/* ADR-V2-030: switcher de workspaces com dropdown de orgs disponiveis. */}
@@ -137,21 +141,22 @@ export function AppSidebar() {
       </div>
 
       {/* Top items (Inbox, My issues) */}
-      <nav className="px-2">
-        <ul className="space-y-px">
+      <nav className="px-2 pt-1">
+        <ul className="space-y-0.5">
           {filteredTopItems.map((item) => (
             <SidebarLink
-              key={item.href}
+              key={item.href ?? item.label}
               item={item}
-              active={isNavItemActive(pathname, item.href, item.exact)}
+              active={isNavItemActive(pathname, item.href ?? "", item.exact)}
               onOpenCustomize={() => setCustomizeOpen(true)}
+              onAction={handleAction}
             />
           ))}
         </ul>
       </nav>
 
       {/* Sections */}
-      <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
+      <nav className="flex-1 overflow-y-auto px-2 pt-2 pb-3">
         {filteredSections.map((section) => (
           <Fragment key={section.label}>
             <Section
@@ -160,13 +165,15 @@ export function AppSidebar() {
               collapsed={!!collapsed[section.label || ""]}
               onToggle={() => toggle(section.label || "")}
               onOpenCustomize={() => setCustomizeOpen(true)}
+              onAction={handleAction}
               prepend={
                 section.label === "Workspace" ? (
                   <ProjectSelectorSidebar />
                 ) : null
               }
-              labelBadge={
-                section.label === "Workspace" ? workspaceBadge : null
+              labelBadge={section.label === "Workspace" ? workspaceBadge : null}
+              labelHref={
+                section.label === "Workspace" ? "/workspace" : undefined
               }
             />
           </Fragment>
@@ -181,6 +188,9 @@ export function AppSidebar() {
 
       {/* New issue modal (compose button + atalho C global) */}
       <NewIssueModal open={newIssueOpen} onOpenChange={setNewIssueOpen} />
+
+      {/* Modal disparado por items com action="invite-people". */}
+      <InviteWorkspaceModal open={inviteOpen} onOpenChange={setInviteOpen} />
 
       {/* Footer */}
       <div className="border-t border-sidebar-border">
@@ -260,72 +270,104 @@ function Section({
   collapsed,
   onToggle,
   onOpenCustomize,
+  onAction,
   prepend,
   labelBadge,
+  labelHref,
 }: {
   section: NavSection;
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
   onOpenCustomize: () => void;
+  onAction?: (action: NonNullable<NavItem["action"]>) => void;
   prepend?: ReactNode;
   labelBadge?: ReactNode;
+  labelHref?: string;
 }) {
   return (
-    <div className="mt-3 first:mt-0">
+    <div className="mt-5 first:mt-1">
       {section.label && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="group flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
-        >
+        <div className="group flex w-full items-center gap-1.5 px-2 pb-1 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex h-3 w-3 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={collapsed ? "Expandir secao" : "Recolher secao"}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+            ) : (
+              <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+            )}
+          </button>
           {labelBadge}
-          {collapsed ? (
-            <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+          {labelHref ? (
+            <Link
+              href={labelHref}
+              className="hover:text-foreground transition-colors"
+            >
+              {section.label}
+            </Link>
           ) : (
-            <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+            <button
+              type="button"
+              onClick={onToggle}
+              className="hover:text-foreground transition-colors"
+            >
+              {section.label}
+            </button>
           )}
-          <span>{section.label}</span>
-        </button>
+        </div>
       )}
 
       {!collapsed && (
-        <div className="ml-3 border-l border-sidebar-border/60 pl-1">
+        <div className="ml-3 border-l border-sidebar-border/40 pl-1">
           {prepend}
-          <ul className="space-y-px">
+          <ul className="space-y-0.5">
             {section.team ? (
-            <li>
-              <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[14px] font-medium">
-                <section.team.icon
-                  className={cn(
-                    "h-3.5 w-3.5",
-                    section.team.iconColor || "text-muted-foreground",
-                  )}
-                />
-                <span className="truncate">{section.team.name}</span>
-                <ChevronDown className="ml-auto h-3 w-3 text-muted-foreground/60" />
-              </div>
-              <ul className="ml-2 mt-px space-y-px border-l border-sidebar-border pl-2">
-                {section.items.map((item) => (
-                  <SidebarLink
-                    key={item.href}
-                    item={item}
-                    active={isNavItemActive(pathname, item.href, item.exact)}
-                    onOpenCustomize={onOpenCustomize}
+              <li>
+                <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[14px] font-medium">
+                  <section.team.icon
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      section.team.iconColor || "text-muted-foreground",
+                    )}
                   />
-                ))}
-              </ul>
-            </li>
-          ) : (
-            section.items.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-                active={isNavItemActive(pathname, item.href, item.exact)}
-                onOpenCustomize={onOpenCustomize}
-              />
-            ))
-          )}
+                  <span className="truncate">{section.team.name}</span>
+                  <ChevronDown className="ml-auto h-3 w-3 text-muted-foreground/60" />
+                </div>
+                <ul className="ml-2 mt-px space-y-px border-l border-sidebar-border pl-2">
+                  {section.items.map((item) => (
+                    <SidebarLink
+                      key={item.href ?? item.label}
+                      item={item}
+                      active={isNavItemActive(
+                        pathname,
+                        item.href ?? "",
+                        item.exact,
+                      )}
+                      onOpenCustomize={onOpenCustomize}
+                      onAction={onAction}
+                    />
+                  ))}
+                </ul>
+              </li>
+            ) : (
+              section.items.map((item) => (
+                <SidebarLink
+                  key={item.href ?? item.label}
+                  item={item}
+                  active={isNavItemActive(
+                    pathname,
+                    item.href ?? "",
+                    item.exact,
+                  )}
+                  onOpenCustomize={onOpenCustomize}
+                  onAction={onAction}
+                />
+              ))
+            )}
           </ul>
         </div>
       )}
@@ -337,10 +379,12 @@ function SidebarLink({
   item,
   active,
   onOpenCustomize,
+  onAction,
 }: {
   item: NavItem;
   active: boolean;
   onOpenCustomize?: () => void;
+  onAction?: (action: NonNullable<NavItem["action"]>) => void;
 }) {
   // Items com popoverItems renderizam dropdown ao inves de link
   if (item.popoverItems && item.popoverItems.length > 0) {
@@ -353,24 +397,51 @@ function SidebarLink({
     );
   }
 
+  const baseClass = cn(
+    "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13.5px] transition-all duration-150 text-left",
+    active
+      ? "bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm"
+      : "text-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+  );
+
+  const content = (
+    <>
+      <item.icon
+        className={cn(
+          "h-4 w-4 shrink-0 transition-colors",
+          active ? "text-sidebar-foreground" : "text-muted-foreground/80",
+        )}
+      />
+      <span className="truncate">{item.label}</span>
+      {item.badge !== undefined && item.badge > 0 && (
+        <span className="ml-auto flex h-4 min-w-[18px] items-center justify-center rounded-full bg-sidebar-accent/70 px-1.5 text-[10px] font-medium tabular-nums text-foreground/85">
+          {item.badge}
+        </span>
+      )}
+    </>
+  );
+
+  // Item com action vira button (dispara modal/handler).
+  if (item.action) {
+    const action = item.action;
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() => onAction?.(action)}
+          className={baseClass}
+        >
+          {content}
+        </button>
+      </li>
+    );
+  }
+
+  // Item normal vira link de navegacao.
   return (
     <li>
-      <Link
-        href={item.href}
-        className={cn(
-          "flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors",
-          active
-            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-            : "text-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
-        )}
-      >
-        <item.icon className="h-4 w-4 shrink-0" />
-        <span className="truncate">{item.label}</span>
-        {item.badge !== undefined && item.badge > 0 && (
-          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-            {item.badge}
-          </span>
-        )}
+      <Link href={item.href ?? "#"} className={baseClass}>
+        {content}
       </Link>
     </li>
   );

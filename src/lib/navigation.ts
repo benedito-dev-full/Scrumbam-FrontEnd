@@ -25,7 +25,13 @@ export interface PopoverNavItem {
 }
 
 export interface NavItem {
-  href: string;
+  /** Rota a navegar. Omitido quando o item dispara `action` ao inves de navegar. */
+  href?: string;
+  /**
+   * Ação client-side disparada no clique. Quando definida, o item vira
+   * `<button onClick>` em vez de `<Link>`. O handler vive no `AppSidebar`.
+   */
+  action?: "invite-people";
   label: string;
   icon: LucideIcon;
   badge?: number;
@@ -104,7 +110,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/import", label: "Importar issues", icon: Download, stub: true },
       {
-        href: "/settings/workspace/members",
+        action: "invite-people",
         label: "Convidar pessoas",
         icon: UserPlus,
       },

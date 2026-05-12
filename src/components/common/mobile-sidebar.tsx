@@ -66,9 +66,9 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           <ul className="space-y-px">
             {navTopItems.map((item) => (
               <MobileLink
-                key={item.href}
+                key={item.href ?? item.label}
                 item={item}
-                active={isNavItemActive(pathname, item.href, item.exact)}
+                active={isNavItemActive(pathname, item.href ?? "", item.exact)}
                 onClose={close}
               />
             ))}
@@ -97,9 +97,13 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
                   <ul className="ml-2 space-y-px border-l border-sidebar-border pl-2">
                     {section.items.map((item) => (
                       <MobileLink
-                        key={item.href}
+                        key={item.href ?? item.label}
                         item={item}
-                        active={isNavItemActive(pathname, item.href, item.exact)}
+                        active={isNavItemActive(
+                          pathname,
+                          item.href ?? "",
+                          item.exact,
+                        )}
                         onClose={close}
                       />
                     ))}
@@ -109,9 +113,13 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
                 <ul className="space-y-px">
                   {section.items.map((item) => (
                     <MobileLink
-                      key={item.href}
+                      key={item.href ?? item.label}
                       item={item}
-                      active={isNavItemActive(pathname, item.href, item.exact)}
+                      active={isNavItemActive(
+                        pathname,
+                        item.href ?? "",
+                        item.exact,
+                      )}
                       onClose={close}
                     />
                   ))}
@@ -165,7 +173,7 @@ function MobileLink({
   return (
     <li>
       <Link
-        href={item.href}
+        href={item.href ?? "#"}
         onClick={onClose}
         className={cn(
           "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] transition-colors min-h-[40px]",
