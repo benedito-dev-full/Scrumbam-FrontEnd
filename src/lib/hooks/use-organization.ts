@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { organizationsApi } from "@/lib/api/organizations";
+import { invitesApi } from "@/lib/api/invites";
 import { authApi } from "@/lib/api/auth";
 import { QUERY_KEYS } from "@/lib/constants";
 import type {
@@ -47,6 +48,16 @@ export function useOrgMembers(orgId: string | undefined) {
     queryKey: QUERY_KEYS.orgMembers(orgId ?? ""),
     queryFn: () => organizationsApi.listUsers(orgId!),
     enabled: !!orgId,
+  });
+}
+
+/** Lista convites pendentes da org (ADMIN). 404 se nao for ADMIN. */
+export function usePendingInvites(orgId: string | undefined) {
+  return useQuery({
+    queryKey: ["org-invites", orgId ?? ""],
+    queryFn: () => invitesApi.listPending(orgId!),
+    enabled: !!orgId,
+    staleTime: 60_000,
   });
 }
 

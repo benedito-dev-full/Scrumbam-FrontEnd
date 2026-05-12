@@ -9,9 +9,11 @@ import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
   useOrgMembers,
+  usePendingInvites,
   useRemoveOrgMember,
   useUpdateMemberRole,
 } from "@/lib/hooks/use-organization";
+import type { PendingInvite } from "@/lib/api/invites";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +58,7 @@ export default function MembersPage() {
   const isAdmin = user?.role?.toUpperCase() === "ADMIN";
 
   const { data: members, isLoading } = useOrgMembers(orgId);
+  const { data: pendingInvites } = usePendingInvites(isAdmin ? orgId : undefined);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -192,6 +195,11 @@ export default function MembersPage() {
               </>
             )}
           </div>
+
+          {/* Convites pendentes (apenas ADMIN) */}
+          {isAdmin && pendingInvites && pendingInvites.length > 0 && (
+            <InvitesSection invites={pendingInvites} />
+          )}
         </div>
       </div>
 
@@ -439,5 +447,86 @@ function SkeletonRows() {
       ))}
     </>
   );
+}
+
+// ============================================================
+// Convites pendentes (apenas ADMIN)
+// ============================================================
+
+function InvitesSection({ invites }: { invites: PendingInvite[] }) {
+  return (
+    <div className="mt-8">
+      <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
+        <div>Email</div>
+        <div>Cargo</div>
+        <div>Convidado em</div>
+        <div>Expira em</div>
+      </div>
+
+      <div className="bg-muted/20 border-b border-border px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        Convites pendentes <span className="ml-1 text-muted-foreground/70">{invites.length}</span>
+      </div>
+
+      {invites.map((inv) => (
+        <InviteRow key={inv.id} invite={inv} />
+      ))}
+    </div>
+  );
+}
+
+function InviteRow({ invite }: { invite: PendingInvite }) {
+  const createdAt = invite.createdAt ? new Date(invite.createdAt) : null;
+  const expiresAt = invite.expiresAt ? new Date(invite.expiresAt) : null;
+  const createdLabel =
+    createdAt && !Number.isNaN(createdAt.getTime())
+      ? formatRelative(createdAt)
+      : "—";
+  const expiresLabel =
+    expiresAt && !Number.isNaN(expiresAt.getTime())
+      ? formatRelative(expiresAt)
+      : "—";
+
+  const roleBadgeClass =
+    invite.role === "VIEWER"
+      ? "border-border bg-muted/60 text-muted-foreground"
+      : "border-border bg-muted text-foreground/80";
+
+  return (
+    <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px] items-center gap-3 border-b border-border/40 px-3 py-2.5 text-[13px] transition-colors hover:bg-accent/20">
+      <div className="min-w-0 truncate">{invite.email}</div>
+      <div>
+        <span
+          className={cn(
+            "inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
+            roleBadgeClass,
+          )}
+        >
+          {invite.role === "VIEWER" ? "Viewer" : "Member"}
+        </span>
+      </div>
+      <div className="text-[12px] text-muted-foreground">{createdLabel}</div>
+      <div className="text-[12px] text-muted-foreground">{expiresLabel}</div>
+    </div>
+  );
+}
+
+/** Formata data como "ha X min/h/dias" ou "em X dias" para futuras. */
+function formatRelative(date: Date): string {
+  const diffMs = date.getTime() - Date.now();
+  const past = diffMs < 0;
+  const abs = Math.abs(diffMs);
+  const m = Math.round(abs / 60_000);
+  const h = Math.round(abs / 3_600_000);
+  const d = Math.round(abs / 86_400_000);
+
+  if (past) {
+    if (m < 1) return "agora";
+    if (m < 60) return `ha ${m} min`;
+    if (h < 24) return `ha ${h}h`;
+    return `ha ${d} ${d === 1 ? "dia" : "dias"}`;
+  }
+  if (m < 60) return `em ${m} min`;
+  if (h < 24) return `em ${h}h`;
+  return `em ${d} ${d === 1 ? "dia" : "dias"}`;
 }
 
