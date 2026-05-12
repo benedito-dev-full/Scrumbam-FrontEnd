@@ -1,7 +1,6 @@
 import {
   Inbox,
   CircleDot,
-  Box,
   MoreHorizontal,
   Download,
   UserPlus,
@@ -86,10 +85,10 @@ export const navSections: NavSection[] = [
     collapsible: true,
     items: [
       {
-        href: "/projects",
-        label: "Projetos",
-        icon: Box,
-        customizeKey: "projects",
+        href: "/teams",
+        label: "Times",
+        icon: Building2,
+        customizeKey: "teams",
       },
       {
         href: "/vps",
@@ -105,11 +104,6 @@ export const navSections: NavSection[] = [
             href: "/settings/workspace/members",
             label: "Membros",
             icon: Users,
-          },
-          {
-            href: "/team/issues",
-            label: "Times",
-            icon: Building2,
           },
           {
             label: "Personalizar sidebar",

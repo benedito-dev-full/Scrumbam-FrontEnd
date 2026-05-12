@@ -36,7 +36,7 @@ import {
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
 import { WorkspaceSwitcher } from "@/components/common/workspace-switcher";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
-import { TeamSelectorSidebar } from "@/components/teams/team-selector-sidebar";
+import { ProjectSelectorSidebar } from "@/components/projects/project-selector-sidebar";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -139,6 +139,11 @@ export function AppSidebar() {
 
       {/* Sections */}
       <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
+        {/* Projetos: topo da hierarquia (acima do Workspace).
+            Renderizado separadamente porque depende do backend
+            (/api/v1/projects), nao do array estatico navSections. */}
+        <ProjectSelectorSidebar />
+
         {filteredSections.map((section) => (
           <Fragment key={section.label}>
             <Section
@@ -148,10 +153,6 @@ export function AppSidebar() {
               onToggle={() => toggle(section.label || "")}
               onOpenCustomize={() => setCustomizeOpen(true)}
             />
-            {/* "Seus times" entra logo apos "Workspace" (depois do "Mais") —
-                renderizada separadamente porque depende do backend
-                (/api/v1/teams/mine), nao do array estatico navSections. */}
-            {section.label === "Workspace" && <TeamSelectorSidebar />}
           </Fragment>
         ))}
       </nav>

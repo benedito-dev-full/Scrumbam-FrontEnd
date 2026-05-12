@@ -585,6 +585,19 @@ A cada nova tela do Linear que for clonada:
 
 ---
 
+### Gap: endpoint dedicado de membros do projeto
+
+- **Onde apareceu:** Sidebar nova (Projetos > Membros) — `/projects/[id]/members`.
+- **Schema atual:** `useProjects()` retorna `counts.members` (contagem agregada). Sem endpoint para listar a coleção (DVincula existe no backend mas não há rota pública).
+- **Impacto no frontend:** Página `/projects/[id]/members` está placeholder com link para `/teams`.
+- **Opções:**
+  - (a) Expor `GET /projects/:id/members` no V2 derivando de DVincula (idClasse adequado, filtrar por projeto).
+  - (b) Frontend agregar manualmente cruzando times vinculados ao projeto (`teamId`) + `useTeamMembers` — perdemos pessoas vinculadas direto ao projeto sem time.
+- **Status:** `pendente`
+- **Decisão:** —
+
+---
+
 ## Itens que NÃO são gaps de schema (apenas UI/feature)
 
 Registrar aqui para não confundir com gaps de backend:
