@@ -11,9 +11,7 @@ import {
   Users,
   UsersRound,
   Hexagon,
-  Palette,
   Radio,
-  Webhook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,11 +80,7 @@ const GROUPS: NavGroup[] = [
   },
   {
     label: "Workspace (legado)",
-    items: [
-      { href: "/settings/branding", label: "Branding", icon: Palette },
-      { href: "/settings/channels", label: "Canais", icon: Radio },
-      { href: "/settings/webhooks", label: "Webhooks", icon: Webhook },
-    ],
+    items: [{ href: "/settings/channels", label: "Canais", icon: Radio }],
   },
 ];
 
