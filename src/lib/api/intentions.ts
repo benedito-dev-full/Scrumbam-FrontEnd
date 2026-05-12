@@ -177,8 +177,15 @@ export const intentionsApi = {
     console.log("[intentions.update] PUT /tasks/" + id, { fields, payload });
     const { data } = await api.put<Task>(ENDPOINTS.TASK(id), payload);
     // eslint-disable-next-line no-console
-    console.log("[intentions.update] response", data);
-    return mapTaskToIntention(data);
+    console.log("[intentions.update] response.priority RAW:", {
+      raw: (data as unknown as Record<string, unknown>).priority,
+      prioridade: (data as unknown as Record<string, unknown>).prioridade,
+      fullData: data,
+    });
+    const mapped = mapTaskToIntention(data);
+    // eslint-disable-next-line no-console
+    console.log("[intentions.update] mapped.priority:", mapped.priority);
+    return mapped;
   },
 
   delete: async (id: string): Promise<void> => {
