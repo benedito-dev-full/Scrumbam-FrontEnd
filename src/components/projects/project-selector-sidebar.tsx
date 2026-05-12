@@ -6,14 +6,12 @@ import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   ChevronRight,
-  CircleDot,
   Folder,
   FolderOpen,
   ListChecks,
   MoreHorizontal,
   Plus,
   Settings2,
-  Users,
 } from "lucide-react";
 
 import {
@@ -26,27 +24,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isNavItemActive } from "@/lib/navigation";
-
-type SubItem = {
-  hrefSuffix: string;
-  label: string;
-  icon: typeof CircleDot;
-};
-
-const subItems: SubItem[] = [
-  { hrefSuffix: "", label: "Issues", icon: CircleDot },
-  { hrefSuffix: "/members", label: "Membros", icon: Users },
-];
 
 /**
  * Seletor de projetos da sidebar — fica no TOPO da hierarquia.
  *
  * Visual segue padrao ClickUp:
- *  - Header com icone de pasta, label "Projetos", menu "..." e botao "+".
+ *  - Header com icone de pasta + chevron-on-hover, "..." e botao "+".
  *  - Cada projeto: icone de checklist, nome, contagem de tasks a direita.
  *  - Projeto "selecionado" derivado da URL (`/projects/[id]`) — sem store.
- *  - Sub-itens (Issues, Membros) aparecem apenas para o projeto ativo.
+ *  - Sem sub-itens: clicar no projeto navega direto para o board.
  */
 export function ProjectSelectorSidebar() {
   const pathname = usePathname();
@@ -169,39 +155,6 @@ export function ProjectSelectorSidebar() {
                     </span>
                   )}
                 </Link>
-
-                {/* Sub-itens — so para o projeto ativo */}
-                {selected && (
-                  <ul className="ml-2 mt-px space-y-px border-l border-sidebar-border pl-2">
-                    {subItems.map((item) => {
-                      const href = `${projectHref}${item.hrefSuffix}`;
-                      const active = isNavItemActive(
-                        pathname,
-                        href,
-                        item.hrefSuffix === "",
-                      );
-                      const Icon = item.icon;
-                      return (
-                        <li key={href}>
-                          <Link
-                            href={href}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
-                              active
-                                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                                : "text-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
-                            )}
-                          >
-                            <Icon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="flex-1 truncate">
-                              {item.label}
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
               </li>
             );
           })}
