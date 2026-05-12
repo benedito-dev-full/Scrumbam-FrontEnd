@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useState, useCallback } from "react";
+import { Fragment, useState, useCallback, type ReactNode } from "react";
 import {
   Search,
   PenSquare,
@@ -139,11 +139,6 @@ export function AppSidebar() {
 
       {/* Sections */}
       <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
-        {/* Projetos: topo da hierarquia (acima do Workspace).
-            Renderizado separadamente porque depende do backend
-            (/api/v1/projects), nao do array estatico navSections. */}
-        <ProjectSelectorSidebar />
-
         {filteredSections.map((section) => (
           <Fragment key={section.label}>
             <Section
@@ -152,6 +147,11 @@ export function AppSidebar() {
               collapsed={!!collapsed[section.label || ""]}
               onToggle={() => toggle(section.label || "")}
               onOpenCustomize={() => setCustomizeOpen(true)}
+              prepend={
+                section.label === "Workspace" ? (
+                  <ProjectSelectorSidebar />
+                ) : null
+              }
             />
           </Fragment>
         ))}
@@ -244,12 +244,14 @@ function Section({
   collapsed,
   onToggle,
   onOpenCustomize,
+  prepend,
 }: {
   section: NavSection;
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
   onOpenCustomize: () => void;
+  prepend?: ReactNode;
 }) {
   return (
     <div className="mt-3 first:mt-0">
@@ -267,6 +269,8 @@ function Section({
           <span>{section.label}</span>
         </button>
       )}
+
+      {!collapsed && prepend}
 
       {!collapsed && (
         <ul className="space-y-px">
