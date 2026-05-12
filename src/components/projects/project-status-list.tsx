@@ -12,6 +12,7 @@ import {
   CircleDashed,
   CircleDot,
   Flag,
+  GripVertical,
   MessageSquare,
   MoreHorizontal,
   Plus,
@@ -19,6 +20,17 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 
 import {
   Popover,
@@ -146,26 +158,87 @@ export function ProjectStatusList({
   issues: IntentionDocument[];
   onNewTask: () => void;
 }) {
-  return (
-    <div>
-      {STATUS_CONFIG.map((cfg) => (
-        <StatusSection
-          key={cfg.status}
-          config={cfg}
-          projectId={projectId}
-          tasks={issues.filter((i) => i.status === cfg.status)}
-          onAdd={onNewTask}
-        />
-      ))}
+  const { move } = useMoveStatus();
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-      <button
-        type="button"
-        onClick={onNewTask}
-        className="mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        Novo status
-      </button>
+  // distance: 8 evita conflito com clique no Link/dropdown — drag so comeca
+  // depois de 8px de movimento; clique parado abre a rota / dropdown.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  const activeTask =
+    activeId != null ? issues.find((i) => i.id === activeId) ?? null : null;
+  const activeConfig = activeTask
+    ? STATUS_CONFIG.find((c) => c.status === activeTask.status) ?? null
+    : null;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const newStatus = String(over.id) as IntentionStatus;
+    const task = issues.find((i) => i.id === String(active.id));
+    if (!task || task.status === newStatus) return;
+    move(String(active.id), newStatus);
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
+      <div>
+        {STATUS_CONFIG.map((cfg) => (
+          <StatusSection
+            key={cfg.status}
+            config={cfg}
+            projectId={projectId}
+            tasks={issues.filter((i) => i.status === cfg.status)}
+            onAdd={onNewTask}
+            isDraggingActive={activeId !== null}
+          />
+        ))}
+
+        <button
+          type="button"
+          onClick={onNewTask}
+          className="mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Novo status
+        </button>
+      </div>
+
+      <DragOverlay dropAnimation={null}>
+        {activeTask && activeConfig && (
+          <DragPreview task={activeTask} config={activeConfig} />
+        )}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+function DragPreview({
+  task,
+  config,
+}: {
+  task: IntentionDocument;
+  config: StatusConfig;
+}) {
+  const Icon = config.icon;
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-card px-3 py-2 text-[13px] shadow-lg ring-1 ring-primary/20">
+      <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
+      <span className="truncate font-medium text-foreground/95">
+        {task.title}
+      </span>
     </div>
   );
 }
@@ -175,16 +248,26 @@ function StatusSection({
   projectId,
   tasks,
   onAdd,
+  isDraggingActive,
 }: {
   config: StatusConfig;
   projectId: string;
   tasks: IntentionDocument[];
   onAdd: () => void;
+  isDraggingActive: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const { setNodeRef, isOver } = useDroppable({ id: config.status });
 
   return (
-    <section className="pt-2 pb-1">
+    <section
+      ref={setNodeRef}
+      className={cn(
+        "pt-2 pb-1 transition-colors rounded-md",
+        isDraggingActive && "ring-1 ring-transparent",
+        isOver && "bg-primary/[0.06] ring-primary/40",
+      )}
+    >
       {/* Header da secao */}
       <div className="group/section flex items-center gap-2 px-1">
         <button
@@ -296,17 +379,42 @@ function TaskRow({
 }) {
   const Icon = config.icon;
   const href = `/projects/${projectId}/issues/${task.id}`;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: task.id,
+    data: { task },
+  });
 
   return (
-    <div className={cn(ROW_DIVIDER, "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors hover:bg-accent/40")}>
-      {/* Nome — link para detalhe */}
-      <Link
-        href={href}
-        className="flex min-w-0 items-center gap-2 hover:underline"
-      >
-        <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
-        <span className="truncate font-medium text-foreground/95">{task.title}</span>
-      </Link>
+    <div
+      ref={setNodeRef}
+      className={cn(
+        ROW_DIVIDER,
+        "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors hover:bg-accent/40",
+        isDragging && "opacity-40",
+      )}
+    >
+      {/* Nome — link para detalhe (com handle de drag a esquerda) */}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <button
+          type="button"
+          {...listeners}
+          {...attributes}
+          aria-label={`Arrastar ${task.title}`}
+          className="flex h-5 w-4 shrink-0 cursor-grab items-center justify-center text-muted-foreground/0 transition-colors group-hover/row:text-muted-foreground/70 hover:text-foreground active:cursor-grabbing"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+        <Link
+          href={href}
+          onClick={(e) => e.stopPropagation()}
+          className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
+        >
+          <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
+          <span className="truncate font-medium text-foreground/95">
+            {task.title}
+          </span>
+        </Link>
+      </div>
 
       {/* Responsavel */}
       <AssigneeCell task={task} />
