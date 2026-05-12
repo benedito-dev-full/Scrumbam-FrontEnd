@@ -55,8 +55,9 @@ export function IssueDetailHeader({
     | (IntentionDocument & { excluido?: boolean })
     | undefined;
 
-  // Only the standalone page should drive the document title.
-  usePageTitle(variant === "page" ? (i?.title ?? "Issue") : undefined);
+  // Standalone page drives the document title; em modal, deixa o
+  // page-title da lista por trás intacto (passar undefined sobrescrevia).
+  usePageTitle(variant === "page" ? (i?.title ?? "Issue") : null);
 
   const code = `INT-${intentionId}`;
   const isDeleted = i?.excluido === true;
