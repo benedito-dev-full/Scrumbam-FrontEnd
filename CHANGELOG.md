@@ -5,6 +5,22 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 ## [Unreleased]
 
 ### Added
+- **Página de Detalhe da Issue Editável** (Task 18, 12/05/2026, score 8.5/10)
+  - Título inline: clica → input editável → salva on-blur/Enter, valida 3-512 caracteres
+  - Descrição textarea com auto-save debounced 1500ms + flush on-blur; indicadores "Salvando..." / "Salvo"
+  - Status via popover com 9 opções V3 (Backlog/Pronta/Validando/Validada/Em andamento/Concluída/Falhou/Cancelada/Descartada) usando state machine V2
+  - Prioridade, Tipo (Feature/Bug/Melhoria/Review/Explain) e Responsável via popover genérico `EditableProperty`
+  - Responsável popula membros da organização via `useOrgMembers()` + opção "Sem responsável"
+  - Todas as mutations usam `useUpdateIntention()` ou `useMoveStatus()` com toast de erro automático
+  - Re-fetch pós-mutação invalida `["intentions"]` (consistência <200ms com React Query)
+  - Campos read-only mantidos: Projeto (mover entre projetos fora escopo)
+  - Removidos blocos sem backing V2: PropRow Estimativa/Etiquetas, SubscribersPanel, LinkedIssuesPanel, SubIssuesPanel
+  - Removida renderização condicional `DescriptionBody` com campos V3 não-persistidos (problema/contexto/etc.)
+  - Estendido `intentionsApi.update()` para aceitar `description` e `assigneeId`
+  - Estendido tipo `IntentionDocument` com campos opcionais `description` e `assigneeId`
+  - Adapter `task-to-intention` expõe `description` e `assigneeId` corretamente
+  - Build: PASS (zero TypeScript errors), ESLint: clean
+
 - **Projects Delete Dialog com Confirmação GitHub-style** (Task 01, 07/05/2026, score 9.0/10)
   - Novo componente `DeleteProjectDialog`: entrada controlada, botao habilita apenas quando texto == project.name
   - Hook `useDeleteProject`: TanStack Query mutation com invalidacao de queries + toasts contextuais
