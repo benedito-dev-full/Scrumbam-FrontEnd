@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ChevronDown,
+  ChevronRight,
   CircleDot,
   Folder,
   FolderOpen,
@@ -65,8 +67,9 @@ export function ProjectSelectorSidebar() {
 
   return (
     <div className="mt-3">
-      {/* Header — clique no titulo/icone alterna expand/collapse */}
-      <div className="group/header flex items-center gap-1 px-2 py-1">
+      {/* Header — clique no titulo/icone alterna expand/collapse.
+          No hover, o icone de pasta vira chevron (estilo ClickUp). */}
+      <div className="group/header flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-sidebar-accent/70">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -74,11 +77,20 @@ export function ProjectSelectorSidebar() {
           aria-expanded={expanded}
           aria-controls="sidebar-projects-list"
         >
-          {expanded ? (
-            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          ) : (
-            <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          )}
+          <span className="relative inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+            {/* Pasta — visivel por padrao, some no hover */}
+            {expanded ? (
+              <FolderOpen className="absolute h-3.5 w-3.5 text-muted-foreground transition-opacity group-hover/header:opacity-0" />
+            ) : (
+              <Folder className="absolute h-3.5 w-3.5 text-muted-foreground transition-opacity group-hover/header:opacity-0" />
+            )}
+            {/* Chevron — oculto por padrao, aparece no hover */}
+            {expanded ? (
+              <ChevronDown className="absolute h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover/header:opacity-100" />
+            ) : (
+              <ChevronRight className="absolute h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover/header:opacity-100" />
+            )}
+          </span>
           <span className="text-[13px] font-medium">Projetos</span>
         </button>
 
