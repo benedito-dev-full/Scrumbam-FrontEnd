@@ -387,25 +387,25 @@ function TaskRow({
   return (
     <div
       ref={setNodeRef}
+      {...listeners}
+      {...attributes}
       className={cn(
         ROW_DIVIDER,
-        "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors hover:bg-accent/40",
+        "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors select-none cursor-grab active:cursor-grabbing hover:bg-accent/40",
         isDragging && "opacity-40",
       )}
     >
-      {/* Nome — link para detalhe (com handle de drag a esquerda) */}
+      {/* Nome — link para detalhe (handle grip a esquerda, so visual). */}
       <div className="flex min-w-0 items-center gap-1.5">
-        <button
-          type="button"
-          {...listeners}
-          {...attributes}
-          aria-label={`Arrastar ${task.title}`}
-          className="flex h-5 w-4 shrink-0 cursor-grab items-center justify-center text-muted-foreground/0 transition-colors group-hover/row:text-muted-foreground/70 hover:text-foreground active:cursor-grabbing"
+        <span
+          aria-hidden
+          className="flex h-5 w-4 shrink-0 items-center justify-center text-muted-foreground/0 transition-colors group-hover/row:text-muted-foreground/70"
         >
           <GripVertical className="h-3.5 w-3.5" />
-        </button>
+        </span>
         <Link
           href={href}
+          draggable={false}
           onClick={(e) => e.stopPropagation()}
           className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
         >
