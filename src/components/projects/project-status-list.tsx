@@ -249,6 +249,10 @@ function TableHeader() {
   );
 }
 
+/** Wrapper visual de celula "editavel" (estilo ClickUp): borda sutil + padding. */
+const CELL_BOX =
+  "flex h-7 items-center rounded-md border border-border/50 px-2 transition-colors hover:border-border";
+
 function TaskRow({
   task,
   projectId,
@@ -273,20 +277,26 @@ function TaskRow({
       </div>
 
       {/* Responsavel */}
-      <AssigneeCell assigneeId={task.assigneeId} />
+      <div className={CELL_BOX}>
+        <AssigneeCell assigneeId={task.assigneeId} />
+      </div>
 
       {/* Data de vencimento */}
-      <EmptyCell icon={Calendar} />
+      <div className={CELL_BOX}>
+        <EmptyCell icon={Calendar} />
+      </div>
 
       {/* Prioridade */}
-      <PriorityCell priority={task.priority} />
+      <div className={CELL_BOX}>
+        <PriorityCell priority={task.priority} />
+      </div>
 
       {/* Status (replica do header) */}
-      <div>
+      <div className={CELL_BOX}>
         <StatusPill config={config} />
       </div>
 
-      {/* Comentarios */}
+      {/* Comentarios (sem moldura) */}
       <EmptyCell icon={MessageSquare} align="end" />
     </Link>
   );
