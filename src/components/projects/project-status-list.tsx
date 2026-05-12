@@ -116,9 +116,12 @@ const PRIORITY_LABEL: Record<IntentionPriority, string> = Object.fromEntries(
   PRIORITY_OPTIONS.map((o) => [o.key, o.label]),
 ) as Record<IntentionPriority, string>;
 
-/** Wrapper visual de celula "editavel" (estilo ClickUp): borda sutil + padding. */
+/** Wrapper visual de celula "editavel" (estilo ClickUp): sem borda; hover destaca. */
 const CELL_BOX =
-  "flex h-7 w-full items-center rounded-md border border-border/50 px-2 text-left transition-colors hover:border-border";
+  "flex h-7 w-full items-center rounded-md px-1.5 text-left transition-colors hover:bg-accent/60";
+
+/** Linha divisora entre rows — visivel o suficiente para separar tarefas. */
+const ROW_DIVIDER = "border-b border-foreground/[0.08]";
 
 /**
  * Lista de tasks agrupadas por status, no estilo ClickUp "List view".
@@ -144,7 +147,7 @@ export function ProjectStatusList({
   onNewTask: () => void;
 }) {
   return (
-    <div className="divide-y divide-border/70">
+    <div>
       {STATUS_CONFIG.map((cfg) => (
         <StatusSection
           key={cfg.status}
@@ -158,7 +161,7 @@ export function ProjectStatusList({
       <button
         type="button"
         onClick={onNewTask}
-        className="flex w-full items-center gap-2 px-2 py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+        className="flex w-full items-center gap-2 px-2 py-4 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
       >
         <Plus className="h-3.5 w-3.5" />
         Novo status
@@ -181,9 +184,9 @@ function StatusSection({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <section className="py-2">
+    <section className="py-3">
       {/* Header da secao */}
-      <div className="group/section flex items-center gap-2 px-2 py-1">
+      <div className="group/section flex items-center gap-2 px-1 py-1">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -228,10 +231,10 @@ function StatusSection({
       </div>
 
       {expanded && (
-        <div className="mt-1">
+        <div className="mt-2 border-t border-foreground/[0.08]">
           <TableHeader />
           {tasks.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-muted-foreground/70">
+            <div className={cn(ROW_DIVIDER, "px-3 py-3 text-[12px] text-muted-foreground")}>
               Sem tarefas neste status.
             </div>
           ) : (
@@ -248,7 +251,7 @@ function StatusSection({
           <button
             type="button"
             onClick={onAdd}
-            className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2 text-[13px] text-muted-foreground hover:bg-accent/30 hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Adicionar Tarefa
@@ -277,13 +280,13 @@ function StatusPill({ config }: { config: StatusConfig }) {
 
 function TableHeader() {
   return (
-    <div className="grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 border-b border-border/70 px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+    <div className={cn(ROW_DIVIDER, "grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-2 text-[11px] font-medium text-muted-foreground/80")}>
       <div>Nome</div>
       <div>Responsavel</div>
       <div>Data de vencimento</div>
       <div>Prioridade</div>
       <div>Status</div>
-      <div>Coment.</div>
+      <div className="text-right">Coment.</div>
     </div>
   );
 }
@@ -301,14 +304,14 @@ function TaskRow({
   const href = `/projects/${projectId}/issues/${task.id}`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 border-b border-border/70 px-3 py-2 text-[13px] transition-colors hover:bg-accent/30">
+    <div className={cn(ROW_DIVIDER, "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-2.5 text-[13px] transition-colors hover:bg-accent/40")}>
       {/* Nome — link para detalhe */}
       <Link
         href={href}
         className="flex min-w-0 items-center gap-2 hover:underline"
       >
-        <Icon className={cn("h-3.5 w-3.5 shrink-0", config.iconColor)} />
-        <span className="truncate font-medium">{task.title}</span>
+        <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
+        <span className="truncate font-medium text-foreground/95">{task.title}</span>
       </Link>
 
       {/* Responsavel */}
@@ -324,8 +327,8 @@ function TaskRow({
       <StatusCell task={task} config={config} />
 
       {/* Comentarios (sem moldura) */}
-      <div className="flex items-center justify-end text-muted-foreground/50">
-        <MessageSquare className="h-3.5 w-3.5" />
+      <div className="flex items-center justify-end text-muted-foreground">
+        <MessageSquare className="h-4 w-4" />
       </div>
     </div>
   );
@@ -363,8 +366,8 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
               </span>
             </span>
           ) : (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground/70">
-              <UserPlus className="h-3 w-3" />
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-foreground/30 text-muted-foreground">
+              <UserPlus className="h-3.5 w-3.5" />
             </span>
           )}
         </button>
@@ -436,7 +439,7 @@ function DueDateCell({ taskId }: { taskId: string }) {
           {display ? (
             <span className="text-[12px] text-foreground/85">{display}</span>
           ) : (
-            <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <CalendarPlus className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
       </PopoverTrigger>
@@ -486,7 +489,7 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
               </span>
             </span>
           ) : (
-            <Flag className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <Flag className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
       </DropdownMenuTrigger>

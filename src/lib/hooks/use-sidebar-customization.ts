@@ -26,7 +26,7 @@ export interface SidebarCustomization {
   visibility: Record<SidebarItemKey, ItemVisibility>;
 }
 
-const STORAGE_KEY = "scrumban.sidebar.customize.v1";
+const STORAGE_KEY = "scrumban.sidebar.customize.v2";
 
 const DEFAULTS: SidebarCustomization = {
   badgeStyle: "count",
@@ -36,7 +36,7 @@ const DEFAULTS: SidebarCustomization = {
     drafts: "showWhenBadged",
     projects: "always",
     members: "hide",
-    teams: "hide",
+    teams: "always",
   },
 };
 
