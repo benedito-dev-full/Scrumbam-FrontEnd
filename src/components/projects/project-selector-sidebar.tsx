@@ -3,15 +3,27 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, CircleDot, Plus, Settings2, Users } from "lucide-react";
+import {
+  CircleDot,
+  Folder,
+  ListChecks,
+  MoreHorizontal,
+  Plus,
+  Settings2,
+  Users,
+} from "lucide-react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { isNavItemActive } from "@/lib/navigation";
-
-const FALLBACK_COLOR = "#64748b";
 
 type SubItem = {
   hrefSuffix: string;
@@ -27,15 +39,11 @@ const subItems: SubItem[] = [
 /**
  * Seletor de projetos da sidebar — fica no TOPO da hierarquia.
  *
- * Comportamento:
- *  - Lista projetos do workspace via `useProjects()`.
- *  - Projeto "selecionado" e derivado da URL (`/projects/[id]`) — sem store.
- *  - Sub-itens (Issues, Membros) aparecem apenas para o projeto ativo no path.
- *  - Botao "+" e atalho de gestao apontam para `/projects` (cria via dialog la).
- *
- * Substitui semanticamente o antigo `<TeamSelectorSidebar />` no topo da
- * sidebar. Times agora viraram conceito de "cargo/funcao" e ficam dentro
- * da secao Workspace.
+ * Visual segue padrao ClickUp:
+ *  - Header com icone de pasta, label "Projetos", menu "..." e botao "+".
+ *  - Cada projeto: icone de checklist, nome, contagem de tasks a direita.
+ *  - Projeto "selecionado" derivado da URL (`/projects/[id]`) — sem store.
+ *  - Sub-itens (Issues, Membros) aparecem apenas para o projeto ativo.
  */
 export function ProjectSelectorSidebar() {
   const pathname = usePathname();
@@ -48,7 +56,6 @@ export function ProjectSelectorSidebar() {
     [projects],
   );
 
-  // Detecta projeto ativo a partir da URL: /projects/<id> ou /projects/<id>/...
   const activeProjectId = useMemo(() => {
     const match = pathname.match(/^\/projects\/([^\/]+)/);
     return match ? match[1] : null;
@@ -57,18 +64,32 @@ export function ProjectSelectorSidebar() {
   return (
     <div className="mt-3">
       {/* Header */}
-      <div className="flex items-center gap-1 px-2 py-1">
-        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="group/header flex items-center gap-1 px-2 py-1">
+        <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-[13px] font-medium text-foreground/85">
           Projetos
         </span>
-        <Link
-          href="/projects"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-          aria-label="Gerenciar projetos"
-          title="Gerenciar projetos"
-        >
-          <Settings2 className="h-3 w-3" />
-        </Link>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground opacity-0 group-hover/header:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all"
+              aria-label="Acoes de projetos"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem asChild className="text-[13px]">
+              <Link href="/projects">
+                <Settings2 className="mr-2 h-3.5 w-3.5" />
+                Gerenciar projetos
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {isAdmin && (
           <Link
             href="/projects?new=1"
@@ -76,7 +97,7 @@ export function ProjectSelectorSidebar() {
             aria-label="Novo projeto"
             title="Novo projeto"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </Link>
         )}
       </div>
@@ -101,30 +122,28 @@ export function ProjectSelectorSidebar() {
         <ul className="space-y-px px-2">
           {sortedProjects.map((project) => {
             const selected = project.chave === activeProjectId;
-            const initial = project.nome.charAt(0).toUpperCase();
             const projectHref = `/projects/${project.chave}`;
             return (
               <li key={project.chave}>
                 <Link
                   href={projectHref}
                   className={cn(
-                    "group flex items-center gap-2 rounded-md px-2 py-1 transition-colors",
+                    "flex items-center gap-2 rounded-md px-2 py-1 transition-colors",
                     selected
                       ? "bg-sidebar-accent text-sidebar-foreground"
                       : "text-foreground/85 hover:bg-sidebar-accent/70",
                   )}
                   aria-current={selected ? "page" : undefined}
                 >
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white"
-                    style={{ backgroundColor: FALLBACK_COLOR }}
-                    aria-hidden
-                  >
-                    {initial || <Box className="h-3 w-3" />}
-                  </span>
-                  <span className="truncate text-[13px] font-medium">
+                  <ListChecks className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate text-[13px]">
                     {project.nome}
                   </span>
+                  {project.taskCount > 0 && (
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      {project.taskCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Sub-itens — so para o projeto ativo */}
