@@ -7,6 +7,7 @@ import {
   Users,
   Building2,
   Cpu,
+  Bot,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -120,6 +121,7 @@ export const navSections: NavSection[] = [
     label: "Conexoes",
     collapsible: true,
     items: [
+      { href: "/automation", label: "Automacao", icon: Bot },
       { href: "/integrations", label: "MCP", icon: Plug },
       { href: "/vps", label: "VPS", icon: Cpu },
     ],
