@@ -109,107 +109,117 @@ export function WorkspaceSwitcher() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1.5 py-1 hover:bg-sidebar-accent transition-colors"
-          aria-label="Menu do workspace"
-        >
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
-            {orgInitials}
-          </span>
-          <span className="truncate text-[14px] font-medium">{orgShort}</span>
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/70" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-medium">
-              {user?.nome || "Usuario"}
-            </span>
-            <span className="text-[11px] text-muted-foreground truncate">
-              {user?.email || ""}
-            </span>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+    <div className="group/ws flex flex-1 min-w-0 items-center rounded-md hover:bg-sidebar-accent transition-colors">
+      {/* Clique no nome/avatar -> tela de visao geral do workspace. */}
+      <Link
+        href="/workspace"
+        className="flex flex-1 min-w-0 items-center gap-2 rounded-l-md px-1.5 py-1"
+        aria-label={`Abrir visao geral de ${orgShort}`}
+      >
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
+          {orgInitials}
+        </span>
+        <span className="truncate text-[14px] font-medium">{orgShort}</span>
+      </Link>
+      {/* Chevron isolado -> abre dropdown (trocar org / perfil / sair). */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex h-7 shrink-0 items-center justify-center rounded-r-md px-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+            aria-label="Menu do workspace"
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuLabel>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[13px] font-medium">
+                {user?.nome || "Usuario"}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {user?.email || ""}
+              </span>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
 
-        {hasMultiple && (
-          <>
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-muted-foreground/80 font-semibold">
-              Workspaces
-            </DropdownMenuLabel>
-            {orgs.map((org) => {
-              const isCurrent = org.id === user?.orgId;
-              const isLoading = switching === org.id;
-              return (
-                <DropdownMenuItem
-                  key={org.id}
-                  disabled={isCurrent || !!switching}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    if (!isCurrent) void handleSwitch(org.id);
-                  }}
-                  className={cn(
-                    "text-[13px] flex items-center gap-2",
-                    isCurrent && "opacity-100",
-                  )}
-                >
-                  <span className="flex h-4 w-4 items-center justify-center rounded bg-muted text-[9px] font-bold uppercase">
-                    {org.nome.slice(0, 2)}
-                  </span>
-                  <span
-                    className="flex-1 truncate"
-                    title={`${org.nome} (${org.role})`}
+          {hasMultiple && (
+            <>
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                Workspaces
+              </DropdownMenuLabel>
+              {orgs.map((org) => {
+                const isCurrent = org.id === user?.orgId;
+                const isLoading = switching === org.id;
+                return (
+                  <DropdownMenuItem
+                    key={org.id}
+                    disabled={isCurrent || !!switching}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (!isCurrent) void handleSwitch(org.id);
+                    }}
+                    className={cn(
+                      "text-[13px] flex items-center gap-2",
+                      isCurrent && "opacity-100",
+                    )}
                   >
-                    {org.nome}
-                  </span>
-                  {isLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                  ) : isCurrent ? (
-                    <Check className="h-3.5 w-3.5 text-muted-foreground" />
-                  ) : null}
-                </DropdownMenuItem>
-              );
-            })}
-            {error && (
-              <div className="px-2 py-1 text-[11px] text-destructive">
-                {error}
-              </div>
-            )}
-            <DropdownMenuSeparator />
-          </>
-        )}
+                    <span className="flex h-4 w-4 items-center justify-center rounded bg-muted text-[9px] font-bold uppercase">
+                      {org.nome.slice(0, 2)}
+                    </span>
+                    <span
+                      className="flex-1 truncate"
+                      title={`${org.nome} (${org.role})`}
+                    >
+                      {org.nome}
+                    </span>
+                    {isLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    ) : isCurrent ? (
+                      <Check className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </DropdownMenuItem>
+                );
+              })}
+              {error && (
+                <div className="px-2 py-1 text-[11px] text-destructive">
+                  {error}
+                </div>
+              )}
+              <DropdownMenuSeparator />
+            </>
+          )}
 
-        <DropdownMenuItem asChild className="text-[13px]">
-          <Link href="/settings/account/profile">
-            <UserIcon className="mr-2 h-3.5 w-3.5" />
-            Perfil
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="text-[13px]">
-          <Link href="/settings">
-            <Settings className="mr-2 h-3.5 w-3.5" />
-            Configuracoes
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="text-[13px]">
-          <Link href="/settings/workspace/members">
-            <UserPlus className="mr-2 h-3.5 w-3.5" />
-            Convidar e gerenciar membros
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={logout}
-          className="text-[13px] text-destructive focus:text-destructive"
-        >
-          <LogOut className="mr-2 h-3.5 w-3.5" />
-          Sair
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem asChild className="text-[13px]">
+            <Link href="/settings/account/profile">
+              <UserIcon className="mr-2 h-3.5 w-3.5" />
+              Perfil
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="text-[13px]">
+            <Link href="/settings">
+              <Settings className="mr-2 h-3.5 w-3.5" />
+              Configuracoes
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="text-[13px]">
+            <Link href="/settings/workspace/members">
+              <UserPlus className="mr-2 h-3.5 w-3.5" />
+              Convidar e gerenciar membros
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={logout}
+            className="text-[13px] text-destructive focus:text-destructive"
+          >
+            <LogOut className="mr-2 h-3.5 w-3.5" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

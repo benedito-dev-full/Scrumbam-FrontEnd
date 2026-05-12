@@ -7,7 +7,6 @@ import {
   Users,
   Building2,
   Cpu,
-  LayoutDashboard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -83,12 +82,6 @@ export const navSections: NavSection[] = [
     label: "Workspace",
     collapsible: true,
     items: [
-      {
-        href: "/workspace",
-        label: "Visao geral",
-        icon: LayoutDashboard,
-        exact: true,
-      },
       {
         href: "/teams",
         label: "Times",
