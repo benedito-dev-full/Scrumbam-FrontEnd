@@ -45,6 +45,7 @@ import { useProjectActivity } from "@/lib/hooks/use-activity";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
+import { ProjectStatusList } from "@/components/projects/project-status-list";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { cn } from "@/lib/utils";
 import type {
@@ -250,7 +251,6 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 project={project}
                 isLoading={isLoading}
                 issues={issuesList}
-                onSwitchToIssues={() => setActiveTab("issues")}
                 onNewTask={() => setNewIssueOpen(true)}
               />
             )}
@@ -589,7 +589,9 @@ function KanbanColumn({
   );
 }
 
-function KanbanBoard({
+// Mantido como referencia — substituido por <ProjectStatusList /> (lista vertical estilo ClickUp).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _KanbanBoard({
   issues,
   projectId,
   onShowIssues,
@@ -698,7 +700,6 @@ function OverviewTab({
   project,
   isLoading,
   issues,
-  onSwitchToIssues,
   onNewTask,
 }: {
   projectId: string;
@@ -712,7 +713,6 @@ function OverviewTab({
     | undefined;
   isLoading: boolean;
   issues: IntentionDocument[];
-  onSwitchToIssues: () => void;
   onNewTask: () => void;
 }) {
   const totalIssues = issues.length;
@@ -770,15 +770,14 @@ function OverviewTab({
           </div>
         )}
 
-        {/* Kanban */}
+        {/* Lista por status (estilo ClickUp) */}
         <section className="space-y-3">
           <h2 className="text-[13px] font-medium text-muted-foreground">
             Visão do fluxo
           </h2>
-          <KanbanBoard
+          <ProjectStatusList
             issues={issues}
             projectId={projectId}
-            onShowIssues={onSwitchToIssues}
             onNewTask={onNewTask}
           />
         </section>
