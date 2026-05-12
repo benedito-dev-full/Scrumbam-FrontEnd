@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Calendar,
+  CalendarPlus,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -283,7 +283,7 @@ function TaskRow({
 
       {/* Data de vencimento */}
       <div className={CELL_BOX}>
-        <EmptyCell icon={Calendar} />
+        <EmptyCell icon={CalendarPlus} />
       </div>
 
       {/* Prioridade */}
