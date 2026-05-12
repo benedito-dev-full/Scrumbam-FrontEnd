@@ -161,7 +161,7 @@ export function ProjectStatusList({
       <button
         type="button"
         onClick={onNewTask}
-        className="flex w-full items-center gap-2 px-2 py-4 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+        className="mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
       >
         <Plus className="h-3.5 w-3.5" />
         Novo status
@@ -184,9 +184,9 @@ function StatusSection({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <section className="py-3">
+    <section className="pt-2 pb-1">
       {/* Header da secao */}
-      <div className="group/section flex items-center gap-2 px-1 py-1">
+      <div className="group/section flex items-center gap-2 px-1">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -231,27 +231,21 @@ function StatusSection({
       </div>
 
       {expanded && (
-        <div className="mt-2 border-t border-foreground/[0.08]">
+        <div className="mt-1">
           <TableHeader />
-          {tasks.length === 0 ? (
-            <div className={cn(ROW_DIVIDER, "px-3 py-3 text-[12px] text-muted-foreground")}>
-              Sem tarefas neste status.
-            </div>
-          ) : (
-            tasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                projectId={projectId}
-                config={config}
-              />
-            ))
-          )}
+          {tasks.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              projectId={projectId}
+              config={config}
+            />
+          ))}
 
           <button
             type="button"
             onClick={onAdd}
-            className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Adicionar Tarefa
@@ -280,7 +274,7 @@ function StatusPill({ config }: { config: StatusConfig }) {
 
 function TableHeader() {
   return (
-    <div className={cn(ROW_DIVIDER, "grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-2 text-[11px] font-medium text-muted-foreground/80")}>
+    <div className={cn(ROW_DIVIDER, "grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1 text-[11px] font-medium text-muted-foreground/80")}>
       <div>Nome</div>
       <div>Responsavel</div>
       <div>Data de vencimento</div>
@@ -304,7 +298,7 @@ function TaskRow({
   const href = `/projects/${projectId}/issues/${task.id}`;
 
   return (
-    <div className={cn(ROW_DIVIDER, "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-2.5 text-[13px] transition-colors hover:bg-accent/40")}>
+    <div className={cn(ROW_DIVIDER, "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors hover:bg-accent/40")}>
       {/* Nome — link para detalhe */}
       <Link
         href={href}

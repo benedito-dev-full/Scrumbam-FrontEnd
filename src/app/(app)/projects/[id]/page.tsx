@@ -771,8 +771,8 @@ function OverviewTab({
         )}
 
         {/* Lista por status (estilo ClickUp) */}
-        <section className="space-y-3">
-          <h2 className="text-[13px] font-medium text-muted-foreground">
+        <section className="space-y-1.5">
+          <h2 className="text-[12px] font-medium text-muted-foreground">
             Visão do fluxo
           </h2>
           <ProjectStatusList
