@@ -44,8 +44,6 @@ import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { useProjectActivity } from "@/lib/hooks/use-activity";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { ProjectInsights } from "@/components/projects/project-insights";
-import { ProjectReports } from "@/components/projects/project-reports";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { cn } from "@/lib/utils";
@@ -111,14 +109,12 @@ function ProjectIcon({
 // Tabs
 // ============================================================
 
-type TabKey = "overview" | "activity" | "issues" | "insights" | "reports";
+type TabKey = "overview" | "activity" | "issues";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Visao geral" },
   { key: "activity", label: "Atividade" },
   { key: "issues", label: "Issues" },
-  { key: "insights", label: "Metricas" },
-  { key: "reports", label: "Relatorios" },
 ];
 
 interface ProjectPageProps {
@@ -260,12 +256,6 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
             {activeTab === "issues" && <IssuesTab issues={issuesList} />}
-            {activeTab === "insights" && (
-              <ProjectInsights projectId={projectId} />
-            )}
-            {activeTab === "reports" && (
-              <ProjectReports projectId={projectId} />
-            )}
           </div>
 
           {/* Right side panel (Properties) — so em monitor grande (2xl+).
