@@ -31,8 +31,7 @@ import type { Team } from "@/types/team";
 import { TeamFormDialog } from "./team-form-dialog";
 import { DeleteTeamDialog } from "./delete-team-dialog";
 import { TeamMembersDialog } from "./team-members-dialog";
-
-const FALLBACK_COLOR = "#64748b";
+import { TeamBadge } from "./team-badge";
 
 type SubItem = {
   href: string;
@@ -137,8 +136,6 @@ export function TeamSelectorSidebar() {
         <ul className="space-y-px px-2">
           {sortedTeams.map((team) => {
             const selected = team.id === selectedTeamId;
-            const initial = team.name.charAt(0).toUpperCase();
-            const color = team.color || FALLBACK_COLOR;
             return (
               <li key={team.id}>
                 <div
@@ -156,12 +153,12 @@ export function TeamSelectorSidebar() {
                     aria-label={`Selecionar time ${team.name}`}
                     aria-pressed={selected}
                   >
-                    <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white"
-                      style={{ backgroundColor: color }}
-                    >
-                      {initial}
-                    </span>
+                    <TeamBadge
+                      name={team.name}
+                      color={team.color}
+                      icon={team.icon}
+                      size="xs"
+                    />
                     <span className="truncate text-[13px] font-medium">
                       {team.name}
                     </span>

@@ -1,13 +1,11 @@
 import {
   Inbox,
   CircleDot,
-  MoreHorizontal,
   Download,
   UserPlus,
   Plug,
   Users,
   Building2,
-  PenSquare,
   Cpu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -91,22 +89,10 @@ export const navSections: NavSection[] = [
         customizeKey: "teams",
       },
       {
-        href: "/more",
-        label: "Mais",
-        icon: MoreHorizontal,
-        popoverItems: [
-          {
-            href: "/settings/workspace/members",
-            label: "Membros",
-            icon: Users,
-          },
-          {
-            label: "Personalizar sidebar",
-            icon: PenSquare,
-            separator: true,
-            action: "customize-sidebar",
-          },
-        ],
+        href: "/settings/workspace/members",
+        label: "Membros",
+        icon: Users,
+        customizeKey: "members",
       },
     ],
   },

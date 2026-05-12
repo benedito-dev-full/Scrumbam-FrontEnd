@@ -27,10 +27,9 @@ import {
 import { TeamFormDialog } from "@/components/teams/team-form-dialog";
 import { DeleteTeamDialog } from "@/components/teams/delete-team-dialog";
 import { TeamMembersDialog } from "@/components/teams/team-members-dialog";
+import { TeamBadge } from "@/components/teams/team-badge";
 import { cn } from "@/lib/utils";
 import type { Team, TeamMember, TeamMemberRole } from "@/types/team";
-
-const FALLBACK_COLOR = "#64748b";
 
 /**
  * Pagina de gestao de times do workspace.
@@ -83,7 +82,8 @@ export default function TeamsSettingsPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Times</h1>
               <p className="text-[13px] text-muted-foreground mt-1">
-                Times do workspace e seus membros.
+                Times de funcao — agrupe a equipe por especialidade (Dev,
+                Design, Marketing, Copy...).
               </p>
             </div>
             {isAdmin && (
@@ -93,7 +93,7 @@ export default function TeamsSettingsPage() {
                 className="text-[12px] h-8"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Criar time
+                Novo time
               </Button>
             )}
           </div>
@@ -110,9 +110,14 @@ export default function TeamsSettingsPage() {
             {teamsLoading ? (
               <TeamSkeletonRows />
             ) : sortedTeams.length === 0 ? (
-              <div className="px-3 py-12 text-center text-[13px] text-muted-foreground">
-                Voce ainda nao participa de nenhum time.
-                {isAdmin && " Crie o primeiro."}
+              <div className="px-3 py-12 text-center text-[13px] text-muted-foreground space-y-2">
+                <p>Voce ainda nao participa de nenhum time.</p>
+                {isAdmin && (
+                  <p className="text-muted-foreground/80">
+                    Comece criando times como Desenvolvimento, Marketing, Design
+                    ou Copy.
+                  </p>
+                )}
               </div>
             ) : (
               sortedTeams.map((team) => (
@@ -192,8 +197,6 @@ function TeamRow({
   onManageMembers,
   onDelete,
 }: TeamRowProps) {
-  const initial = team.name.charAt(0).toUpperCase();
-  const color = team.color || FALLBACK_COLOR;
   const created = new Date(team.createdAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
@@ -214,16 +217,11 @@ function TeamRow({
         aria-pressed={selected}
         aria-label={`Selecionar time ${team.name}`}
       >
-        <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold text-white"
-          style={{ backgroundColor: color }}
-        >
-          {initial}
-        </span>
+        <TeamBadge name={team.name} color={team.color} icon={team.icon} size="md" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{team.name}</p>
-          <p className="truncate text-[11px] text-muted-foreground">
-            {team.key.toLowerCase()}
+          <p className="truncate text-[11px] text-muted-foreground font-mono uppercase tracking-wide">
+            {team.key}
           </p>
         </div>
       </button>

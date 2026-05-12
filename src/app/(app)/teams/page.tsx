@@ -26,10 +26,9 @@ import {
 import { TeamFormDialog } from "@/components/teams/team-form-dialog";
 import { DeleteTeamDialog } from "@/components/teams/delete-team-dialog";
 import { TeamMembersDialog } from "@/components/teams/team-members-dialog";
+import { TeamBadge } from "@/components/teams/team-badge";
 import { cn } from "@/lib/utils";
 import type { Team, TeamMember } from "@/types/team";
-
-const FALLBACK_COLOR = "#64748b";
 
 const GRID =
   "grid grid-cols-[minmax(0,2fr)_180px_90px_90px_140px_140px_32px] items-center gap-3";
@@ -83,7 +82,7 @@ export default function TeamsPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Times</h1>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                Times do workspace e suas regras de automacao.
+                Times de funcao da equipe — Dev, Design, Marketing, Copy...
               </p>
             </div>
             {isAdmin && (
@@ -93,7 +92,7 @@ export default function TeamsPage() {
                 className="h-9 px-4 text-[13px]"
               >
                 <Plus className="mr-1 h-4 w-4" />
-                Criar time
+                Novo time
               </Button>
             )}
           </div>
@@ -118,9 +117,13 @@ export default function TeamsPage() {
             {teamsLoading ? (
               <TeamSkeletonRows />
             ) : sortedTeams.length === 0 ? (
-              <div className="px-4 py-16 text-center text-[13px] text-muted-foreground">
-                Voce ainda nao participa de nenhum time.
-                {isAdmin && " Crie o primeiro."}
+              <div className="px-4 py-16 text-center text-[13px] text-muted-foreground space-y-2">
+                <p>Voce ainda nao participa de nenhum time.</p>
+                {isAdmin && (
+                  <p className="text-muted-foreground/80">
+                    Crie o primeiro — ex: Desenvolvimento, Marketing, Design, Copy.
+                  </p>
+                )}
               </div>
             ) : (
               sortedTeams.map((team) => (
@@ -181,10 +184,6 @@ function TeamRow({
   onManageMembers,
   onDelete,
 }: TeamRowProps) {
-  const initial = team.name.charAt(0).toUpperCase();
-  const color = team.color || FALLBACK_COLOR;
-  const slug = `${team.key.toLowerCase()}-team`;
-
   return (
     <div
       className={cn(
@@ -194,16 +193,20 @@ function TeamRow({
     >
       {/* Time */}
       <div className="flex min-w-0 items-center gap-3">
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[14px] font-bold text-white"
-          style={{ backgroundColor: color }}
-        >
-          {initial}
-        </span>
+        <TeamBadge
+          name={team.name}
+          color={team.color}
+          icon={team.icon}
+          size="lg"
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-medium">{team.name}</p>
           <p className="truncate text-[12px] text-muted-foreground">
-            workspace.scrumban.io/{slug}
+            <span className="font-mono uppercase tracking-wide">
+              {team.key}
+            </span>
+            <span className="mx-1.5 text-muted-foreground/50">·</span>
+            prefixo das issues
           </p>
         </div>
       </div>
