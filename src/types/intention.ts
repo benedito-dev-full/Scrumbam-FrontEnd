@@ -123,6 +123,15 @@ export interface IntentionDocument {
   type: IntentionType;
   priority: IntentionPriority;
 
+  /** Descricao livre da intencao (V2 persiste em DTask.descricao). */
+  description?: string;
+
+  /**
+   * ID do responsavel (DEntidade.chave). `null` significa sem responsavel.
+   * `undefined` significa "campo nao informado/manter".
+   */
+  assigneeId?: string | null;
+
   // Canal de origem (como a intencao chegou)
   canal: IntentionCanal;
 

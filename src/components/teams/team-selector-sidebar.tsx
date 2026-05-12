@@ -165,6 +165,14 @@ export function TeamSelectorSidebar() {
                     <span className="truncate text-[13px] font-medium">
                       {team.name}
                     </span>
+                    {team.myCargo === "LEAD" && (
+                      <span
+                        className="ml-1 shrink-0 rounded border border-blue-500/30 bg-blue-500/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-blue-300"
+                        title="Voce e LEAD deste time"
+                      >
+                        Lead
+                      </span>
+                    )}
                   </button>
 
                   {(team.canEdit || team.canDelete) && (

@@ -72,6 +72,25 @@ export function AppSidebar() {
       ? user.orgNome.slice(0, 14) + ".."
       : user?.orgNome || "Workspace";
 
+  const userInitials = (user?.nome || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const roleUpper = (user?.role || "").toUpperCase();
+  const roleBadgeClass =
+    roleUpper === "ADMIN"
+      ? "border-blue-500/30 bg-blue-500/15 text-blue-300"
+      : roleUpper === "VIEWER"
+        ? "border-border bg-muted/60 text-muted-foreground"
+        : "border-border bg-muted text-foreground/80";
+  const roleLabel = roleUpper
+    ? roleUpper.charAt(0) + roleUpper.slice(1).toLowerCase()
+    : null;
+
   const toggle = useCallback((label: string) => {
     setCollapsed((s) => ({ ...s, [label]: !s[label] }));
   }, []);
@@ -207,39 +226,72 @@ export function AppSidebar() {
       <NewIssueModal open={newIssueOpen} onOpenChange={setNewIssueOpen} />
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-sidebar-border px-3 py-2">
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-            aria-label="Ajuda"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </button>
+      <div className="border-t border-sidebar-border">
+        {/* User info row: avatar + nome + badge de cargo (link p/ perfil) */}
+        {user && (
           <Link
-            href="/settings"
-            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-            aria-label="Configuracoes"
-            title="Configuracoes"
+            href="/settings/account/profile"
+            className="flex items-center gap-2 px-3 py-2 hover:bg-sidebar-accent transition-colors"
+            aria-label="Ir para perfil"
           >
-            <Settings className="h-4 w-4" />
+            <div
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white"
+              aria-hidden
+            >
+              {userInitials}
+            </div>
+            <span className="flex-1 min-w-0 truncate text-[12px] font-medium">
+              {user.nome}
+            </span>
+            {roleLabel && (
+              <span
+                className={cn(
+                  "shrink-0 rounded border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide",
+                  roleBadgeClass,
+                )}
+                title={`Seu cargo no workspace: ${roleLabel}`}
+              >
+                {roleLabel}
+              </span>
+            )}
           </Link>
+        )}
+
+        {/* Actions row */}
+        <div className="flex items-center justify-between border-t border-sidebar-border/60 px-3 py-2">
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+              aria-label="Ajuda"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+            <Link
+              href="/settings"
+              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+              aria-label="Configuracoes"
+              title="Configuracoes"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
+              aria-label="Sair"
+              title="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
           <button
             type="button"
-            onClick={logout}
-            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
-            aria-label="Sair"
-            title="Sair"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
           >
-            <LogOut className="h-4 w-4" />
+            <span className="text-amber-400">↑</span> Plano gratuito
           </button>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-        >
-          <span className="text-amber-400">↑</span> Plano gratuito
-        </button>
       </div>
     </aside>
   );

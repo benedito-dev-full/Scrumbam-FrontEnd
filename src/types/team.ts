@@ -25,6 +25,11 @@ export interface Team {
   canEdit: boolean;
   /** RBAC: pode deletar este time? (calculado pelo backend) */
   canDelete: boolean;
+  /**
+   * Cargo do usuário autenticado neste time (`LEAD` | `MEMBER`) ou `null`
+   * se ele não é membro (ex: ADMIN da org com visibilidade sem cargo).
+   */
+  myCargo: "LEAD" | "MEMBER" | null;
 }
 
 export interface TeamMember {

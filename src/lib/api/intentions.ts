@@ -162,6 +162,14 @@ export const intentionsApi = {
       const mapped = typeToV2[fields.type];
       if (mapped) payload.taskType = mapped;
     }
+    // Descricao livre — V2 persiste em DTask.descricao (string vazia limpa o campo).
+    if (fields.description !== undefined) {
+      payload.descricao = fields.description;
+    }
+    // Responsavel — V2 aceita null para remover.
+    if ("assigneeId" in fields) {
+      payload.assigneeId = fields.assigneeId ?? null;
+    }
     // Campos V3 (problema/contexto/criteriosAceite/etc.) sao omitidos — V2 rejeita.
 
     const { data } = await api.put<Task>(ENDPOINTS.TASK(id), payload);

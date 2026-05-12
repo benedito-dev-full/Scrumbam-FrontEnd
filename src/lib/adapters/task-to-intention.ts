@@ -493,12 +493,24 @@ export function mapTaskToIntention(task: any): IntentionDocument {
     (dados.failureReason as string | undefined) ??
     undefined;
 
+  // Descricao livre — V2 persiste em DTask.descricao (top-level) ou em dados.descricao.
+  const descriptionRaw =
+    typeof raw.descricao === "string"
+      ? raw.descricao
+      : typeof raw.description === "string"
+        ? raw.description
+        : typeof dados.descricao === "string"
+          ? (dados.descricao as string)
+          : "";
+
   const intention: IntentionDocument = {
     id,
     title,
     status,
     type,
     priority,
+    description: descriptionRaw,
+    assigneeId: _assigneeIdFromRaw,
     canal,
     projectSlug,
     deliverables,

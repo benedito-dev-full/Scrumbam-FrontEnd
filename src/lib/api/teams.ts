@@ -35,6 +35,8 @@ function mapTeam(raw: any): Team {
     ),
     canEdit: Boolean(raw.canEdit ?? false),
     canDelete: Boolean(raw.canDelete ?? false),
+    myCargo:
+      raw.myCargo === "LEAD" || raw.myCargo === "MEMBER" ? raw.myCargo : null,
   };
 }
 
@@ -86,7 +88,8 @@ export const teamsApi = {
 
   /**
    * Cria time. V2: POST /organizations/:orgId/teams.
-   * Mapeia name→nome, key→prefix. color/icon nao existem no V2 (ignorados).
+   * Mapeia name→nome, key→prefix; color/icon trafegam direto (persistidos
+   * em `DEntidade.dados` no backend).
    */
   create: async (
     dto: CreateTeamDto,
@@ -98,18 +101,24 @@ export const teamsApi = {
       nome: dto.name,
       prefix: dto.key,
     };
+    if (dto.color !== undefined) payload.color = dto.color;
+    if (dto.icon !== undefined) payload.icon = dto.icon;
+    // Limpa apenas keys undefined; null e propositalmente preservado
+    // (significa "limpar valor" no backend).
     Object.keys(payload).forEach((k) => {
-      if (payload[k] === undefined || payload[k] === null) delete payload[k];
+      if (payload[k] === undefined) delete payload[k];
     });
     const { data } = await api.post(`/organizations/${orgId}/teams`, payload);
     return mapTeam(data);
   },
 
-  /** Edita time. V2: PATCH /teams/:id. Mapeia name→nome. */
+  /** Edita time. V2: PATCH /teams/:id. Mapeia name→nome; color/icon diretos. */
   update: async (id: string, dto: UpdateTeamDto): Promise<Team> => {
     const payload: Record<string, unknown> = {};
     if (dto.name !== undefined) payload.nome = dto.name;
-    // key/color/icon nao existem no V2 — omitidos
+    if (dto.color !== undefined) payload.color = dto.color;
+    if (dto.icon !== undefined) payload.icon = dto.icon;
+    // key (prefix) ainda nao e editavel no V2 — omitido
     const { data } = await api.patch(ENDPOINTS.TEAM(id), payload);
     return mapTeam(data);
   },

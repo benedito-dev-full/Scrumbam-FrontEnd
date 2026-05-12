@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import {
   ChevronDown,
   Trash2,
   RotateCcw,
-  Plus,
   CircleDashed,
   CheckCircle2,
   Circle,
@@ -23,20 +22,34 @@ import {
   XCircle,
   Ban,
   Send,
+  User as UserIcon,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
-import { useIntention, useDeleteIntention } from "@/lib/hooks/use-intentions";
+import {
+  useIntention,
+  useDeleteIntention,
+  useUpdateIntention,
+  useMoveStatus,
+} from "@/lib/hooks/use-intentions";
 import { useProject } from "@/lib/hooks/use-projects";
+import { useOrgMembers } from "@/lib/hooks/use-organization";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { commentsApi } from "@/lib/api/comments";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type {
   IntentionDocument,
   IntentionPriority,
   IntentionStatus,
+  IntentionType,
   TimelineEvent,
 } from "@/types/intention";
 import type { Comment } from "@/types";
@@ -83,6 +96,9 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
   const router = useRouter();
   const { remove: removeIntention, isPending: isDeleting } =
     useDeleteIntention();
+  const { update: updateIntentionFn } = useUpdateIntention();
+  const { move: moveStatusFn } = useMoveStatus();
+  const orgId = useAuthStore((s) => s.user?.orgId);
 
   const i = intention as
     | (IntentionDocument & {
@@ -95,6 +111,21 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
 
   const code = `INT-${intentionId}`;
   const isDeleted = i?.excluido === true;
+
+  const handleUpdate = useCallback(
+    (fields: Partial<IntentionDocument>) => {
+      updateIntentionFn(intentionId, fields);
+    },
+    [intentionId, updateIntentionFn],
+  );
+
+  const handleMoveStatus = useCallback(
+    (status: IntentionStatus) => {
+      moveStatusFn(intentionId, status);
+      toast.success("Status atualizado");
+    },
+    [intentionId, moveStatusFn],
+  );
 
   async function handleDelete() {
     if (isDeleted || isDeleting) return;
@@ -185,17 +216,17 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
                   </p>
                 ) : (
                   <>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                      {i.title}
-                    </h1>
+                    <EditableTitle
+                      value={i.title}
+                      onSave={(nome) => handleUpdate({ title: nome })}
+                    />
 
-                    {i.problema || i.contexto || i.solucaoProposta ? (
-                      <DescriptionBody intention={i} />
-                    ) : (
-                      <p className="text-[13px] text-muted-foreground/70">
-                        Adicione uma descricao...
-                      </p>
-                    )}
+                    <EditableDescription
+                      value={i.description ?? ""}
+                      onSave={(descricao) =>
+                        handleUpdate({ description: descricao })
+                      }
+                    />
 
                     <ActivitySection
                       timeline={i.timeline ?? []}
@@ -211,10 +242,13 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
 
           {/* Right side panel */}
           <aside className="hidden lg:flex w-[280px] shrink-0 flex-col border-l border-border overflow-auto">
-            <PropertiesPanel intention={i} project={project} />
-            <SubscribersPanel />
-            <LinkedIssuesPanel />
-            <SubIssuesPanel />
+            <PropertiesPanel
+              intention={i}
+              project={project}
+              orgId={orgId}
+              onUpdate={handleUpdate}
+              onMoveStatus={handleMoveStatus}
+            />
           </aside>
         </div>
       </div>
@@ -223,79 +257,149 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
 }
 
 // ============================================================
-// Body sections
+// Inline editors
 // ============================================================
 
-function DeletedBanner() {
+function EditableTitle({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setText(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    setEditing(false);
+    const trimmed = text.trim();
+    if (trimmed === value) return;
+    if (trimmed.length < 3) {
+      toast.error("Titulo precisa ter ao menos 3 caracteres");
+      setText(value);
+      return;
+    }
+    if (trimmed.length > 512) {
+      toast.error("Titulo nao pode passar de 512 caracteres");
+      setText(value);
+      return;
+    }
+    onSave(trimmed);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+          if (e.key === "Escape") {
+            setText(value);
+            setEditing(false);
+          }
+        }}
+        className="w-full bg-transparent text-2xl font-semibold tracking-tight border-none outline-none focus:ring-0 px-0"
+      />
+    );
+  }
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px]">
-      <div className="flex items-center gap-2 text-amber-200 dark:text-amber-300">
-        <Trash2 className="h-3.5 w-3.5 shrink-0" />
-        <span>Issue excluida</span>
+    <h1
+      role="button"
+      tabIndex={0}
+      onClick={() => setEditing(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") setEditing(true);
+      }}
+      className="text-2xl font-semibold tracking-tight cursor-text rounded -mx-1 px-1 hover:bg-muted/40 transition-colors"
+    >
+      {value}
+    </h1>
+  );
+}
+
+function EditableDescription({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const lastSavedRef = useRef(value);
+
+  useEffect(() => {
+    setText(value);
+    lastSavedRef.current = value;
+  }, [value]);
+
+  const triggerSave = useCallback((newVal: string) => {
+    if (newVal === lastSavedRef.current) return;
+    if (newVal.length > 10000) {
+      toast.error("Descricao nao pode passar de 10000 caracteres");
+      return;
+    }
+    setStatus("saving");
+    lastSavedRef.current = newVal;
+    onSaveRef.current(newVal);
+    setTimeout(() => setStatus("saved"), 500);
+    setTimeout(() => setStatus("idle"), 2500);
+  }, []);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-end h-3">
+        {status === "saving" && (
+          <span className="text-[11px] text-muted-foreground animate-pulse">
+            Salvando...
+          </span>
+        )}
+        {status === "saved" && (
+          <span className="text-[11px] text-emerald-500">Salvo</span>
+        )}
       </div>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          disabled
-          title="Restaurar (em breve)"
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
-        >
-          <RotateCcw className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Excluir definitivamente (em breve)"
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DescriptionBody({ intention: i }: { intention: IntentionDocument }) {
-  return (
-    <div className="space-y-3 text-[13px] leading-relaxed">
-      {i.problema && <Block label="Problema" body={i.problema} />}
-      {i.contexto && <Block label="Contexto" body={i.contexto} />}
-      {i.solucaoProposta && (
-        <Block label="Solucao proposta" body={i.solucaoProposta} />
-      )}
-      {i.criteriosAceite?.length > 0 && (
-        <ListBlock label="Criterios de aceite" items={i.criteriosAceite} />
-      )}
-      {i.naoObjetivos?.length > 0 && (
-        <ListBlock label="Nao objetivos" items={i.naoObjetivos} />
-      )}
-      {i.riscos?.length > 0 && <ListBlock label="Riscos" items={i.riscos} />}
-    </div>
-  );
-}
-
-function Block({ label, body }: { label: string; body: string }) {
-  return (
-    <div>
-      <h3 className="text-[12px] font-medium text-muted-foreground mb-1">
-        {label}
-      </h3>
-      <p className="whitespace-pre-wrap">{body}</p>
-    </div>
-  );
-}
-
-function ListBlock({ label, items }: { label: string; items: string[] }) {
-  return (
-    <div>
-      <h3 className="text-[12px] font-medium text-muted-foreground mb-1">
-        {label}
-      </h3>
-      <ul className="list-disc pl-5 space-y-0.5">
-        {items.map((it, idx) => (
-          <li key={idx}>{it}</li>
-        ))}
-      </ul>
+      <textarea
+        value={text}
+        onChange={(e) => {
+          const v = e.target.value;
+          setText(v);
+          setStatus("idle");
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => triggerSave(v), 1500);
+        }}
+        onBlur={() => {
+          if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+          }
+          triggerSave(text);
+        }}
+        placeholder="Adicione uma descricao..."
+        rows={5}
+        className="w-full resize-y rounded-md border border-transparent hover:border-border focus:border-border bg-transparent px-2 py-1.5 text-[13px] leading-relaxed focus:outline-none placeholder:text-muted-foreground/60 transition-colors"
+      />
     </div>
   );
 }
@@ -474,12 +578,147 @@ function CommentForm({ taskId }: { taskId: string }) {
 }
 
 // ============================================================
-// Right panel sections
+// DeletedBanner
 // ============================================================
+
+function DeletedBanner() {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px]">
+      <div className="flex items-center gap-2 text-amber-200 dark:text-amber-300">
+        <Trash2 className="h-3.5 w-3.5 shrink-0" />
+        <span>Issue excluida</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled
+          title="Restaurar (em breve)"
+          className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+        >
+          <RotateCcw className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          disabled
+          title="Excluir definitivamente (em breve)"
+          className="flex items-center gap-1 rounded px-2 py-0.5 text-amber-200 dark:text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// EditableProperty (generic popover-based selector)
+// ============================================================
+
+interface EditableOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+function EditableProperty({
+  label,
+  current,
+  options,
+  icon,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  current: { value: string; label: string } | null;
+  options: EditableOption[];
+  icon: React.ReactNode;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const display = current?.label ?? placeholder ?? "Definir";
+  const isStub = !current;
+
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <dt className="w-16 shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="flex-1 min-w-0">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "flex w-full items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-accent text-left truncate transition-colors",
+                isStub && "text-muted-foreground/60",
+              )}
+            >
+              {icon}
+              <span className="truncate">{display}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-1">
+            <ul className="max-h-72 overflow-auto">
+              {options.map((opt) => (
+                <li key={opt.value}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors text-left",
+                      current?.value === opt.value &&
+                        "bg-accent/50 font-medium",
+                    )}
+                  >
+                    {opt.icon}
+                    <span className="truncate">{opt.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </PopoverContent>
+        </Popover>
+      </dd>
+    </div>
+  );
+}
+
+// ============================================================
+// PropertiesPanel
+// ============================================================
+
+const STATUS_LIST: IntentionStatus[] = [
+  "inbox",
+  "ready",
+  "validating",
+  "validated",
+  "executing",
+  "done",
+  "failed",
+  "cancelled",
+  "discarded",
+];
+
+const PRIORITY_LIST: IntentionPriority[] = ["urgent", "high", "medium", "low"];
+
+const TYPE_LIST: { value: IntentionType; label: string }[] = [
+  { value: "feature", label: "Feature" },
+  { value: "bug", label: "Bug" },
+  { value: "improvement", label: "Melhoria" },
+  { value: "review", label: "Review" },
+  { value: "analysis", label: "Explain" },
+];
+
+const ASSIGNEE_NONE = "__none__";
 
 function PropertiesPanel({
   intention: i,
   project,
+  orgId,
+  onUpdate,
+  onMoveStatus,
 }: {
   intention:
     | (IntentionDocument & {
@@ -487,7 +726,50 @@ function PropertiesPanel({
       })
     | undefined;
   project: { nome: string } | undefined;
+  orgId: string | undefined;
+  onUpdate: (fields: Partial<IntentionDocument>) => void;
+  onMoveStatus: (status: IntentionStatus) => void;
 }) {
+  const { data: members } = useOrgMembers(orgId);
+
+  const statusOptions: EditableOption[] = STATUS_LIST.map((s) => ({
+    value: s,
+    label: statusLabel(s),
+    icon: <StatusIcon status={s} />,
+  }));
+
+  const priorityOptions: EditableOption[] = PRIORITY_LIST.map((p) => ({
+    value: p,
+    label: priorityLabel(p),
+  }));
+
+  const typeOptions: EditableOption[] = TYPE_LIST.map((t) => ({
+    value: t.value,
+    label: t.label,
+  }));
+
+  const assigneeOptions: EditableOption[] = [
+    {
+      value: ASSIGNEE_NONE,
+      label: "Sem responsavel",
+      icon: (
+        <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+      ),
+    },
+    ...(members ?? []).map((m) => ({
+      value: m.id,
+      label: m.name || m.email || "Membro",
+      icon: <UserIcon className="h-3 w-3 shrink-0 text-muted-foreground/60" />,
+    })),
+  ];
+
+  const currentAssigneeId = i?.assigneeId ?? i?.assignee?.chave ?? null;
+  const currentAssigneeLabel =
+    i?.assignee?.nome ||
+    members?.find((m) => m.id === currentAssigneeId)?.name ||
+    members?.find((m) => m.id === currentAssigneeId)?.email ||
+    null;
+
   return (
     <section className="border-b border-border px-4 py-4">
       <div className="flex items-center justify-between mb-3">
@@ -496,117 +778,65 @@ function PropertiesPanel({
         </h3>
       </div>
       <dl className="space-y-2 text-[12px]">
-        <PropRow
+        <EditableProperty
           label="Status"
-          value={i?.status ? statusLabel(i.status) : "—"}
+          current={
+            i?.status ? { value: i.status, label: statusLabel(i.status) } : null
+          }
+          options={statusOptions}
           icon={<StatusIcon status={i?.status ?? "inbox"} />}
+          onChange={(v) => onMoveStatus(v as IntentionStatus)}
+          placeholder="Definir status"
         />
-        <PropRow
+        <EditableProperty
           label="Prioridade"
-          value={i?.priority ? priorityLabel(i.priority) : "Definir prioridade"}
+          current={
+            i?.priority
+              ? { value: i.priority, label: priorityLabel(i.priority) }
+              : null
+          }
+          options={priorityOptions}
           icon={
             <MoreHorizontal className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
-          stub={!i?.priority}
+          onChange={(v) => onUpdate({ priority: v as IntentionPriority })}
+          placeholder="Definir prioridade"
         />
-        <PropRow
+        <EditableProperty
           label="Responsavel"
-          value={i?.assignee?.nome ?? "Atribuir"}
+          current={
+            currentAssigneeId && currentAssigneeLabel
+              ? { value: currentAssigneeId, label: currentAssigneeLabel }
+              : null
+          }
+          options={assigneeOptions}
           icon={
             <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
-          stub={!i?.assignee}
+          onChange={(v) =>
+            onUpdate({ assigneeId: v === ASSIGNEE_NONE ? null : v })
+          }
+          placeholder="Atribuir"
         />
-        <PropRow
-          label="Projeto"
-          value={project?.nome ?? "—"}
-          icon={<Box className="h-3 w-3 shrink-0 text-muted-foreground" />}
-        />
-        <PropRow
-          label="Estimativa"
-          value={i?.apetiteDias ? `${i.apetiteDias}d` : "Estimativa"}
+        <EditableProperty
+          label="Tipo"
+          current={i?.type ? { value: i.type, label: typeLabel(i.type) } : null}
+          options={typeOptions}
           icon={
             <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
           }
-          stub={!i?.apetiteDias}
+          onChange={(v) => onUpdate({ type: v as IntentionType })}
+          placeholder="Definir tipo"
         />
-        <PropRow
-          label="Etiquetas"
-          value="Adicionar etiquetas"
-          icon={
-            <CircleDashed className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-          }
-          stub
-          title="Gap #14 (Project Labels)"
-        />
+        {/* Projeto: read-only — mover task entre projetos fora de escopo */}
+        <div className="flex items-center gap-2 py-0.5">
+          <dt className="w-16 shrink-0 text-muted-foreground">Projeto</dt>
+          <dd className="flex items-center gap-1.5 truncate">
+            <Box className="h-3 w-3 shrink-0 text-muted-foreground" />
+            {project?.nome ?? "—"}
+          </dd>
+        </div>
       </dl>
-    </section>
-  );
-}
-
-function SubscribersPanel() {
-  return (
-    <section className="border-b border-border px-4 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Inscritos
-        </h3>
-        <button
-          type="button"
-          disabled
-          title="Gap #8"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground/70">Em breve.</p>
-    </section>
-  );
-}
-
-function LinkedIssuesPanel() {
-  return (
-    <section className="border-b border-border px-4 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Issues relacionadas
-        </h3>
-        <button
-          type="button"
-          disabled
-          title="Gap #17"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground/70">
-        Bloqueia, relacionada, duplicada.
-      </p>
-    </section>
-  );
-}
-
-function SubIssuesPanel() {
-  return (
-    <section className="px-4 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          Sub-issues
-        </h3>
-        <button
-          type="button"
-          disabled
-          title="Gap #19"
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 cursor-not-allowed"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground/70">
-        Quebrar em sub-tarefas.
-      </p>
     </section>
   );
 }
@@ -614,35 +844,6 @@ function SubIssuesPanel() {
 // ============================================================
 // Helpers
 // ============================================================
-
-function PropRow({
-  label,
-  value,
-  icon,
-  stub,
-  title,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  stub?: boolean;
-  title?: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 py-0.5" title={title}>
-      <dt className="w-16 shrink-0 text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "flex items-center gap-1.5 truncate",
-          stub && "text-muted-foreground/60",
-        )}
-      >
-        {icon}
-        {value}
-      </dd>
-    </div>
-  );
-}
 
 function IconButton({
   children,
@@ -716,6 +917,21 @@ function priorityLabel(p: IntentionPriority): string {
     low: "Baixa",
   };
   return map[p] ?? p;
+}
+
+function typeLabel(t: IntentionType): string {
+  const map: Record<IntentionType, string> = {
+    feature: "Feature",
+    bug: "Bug",
+    improvement: "Melhoria",
+    review: "Review",
+    analysis: "Explain",
+    code: "Code",
+    documentation: "Documentacao",
+    test: "Teste",
+    refactor: "Refactor",
+  };
+  return map[t] ?? t;
 }
 
 function formatRelative(iso: string): string {
