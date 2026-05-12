@@ -250,7 +250,8 @@ const V2_STATUS_TO_STRING: Record<string, IntentionStatus> = {
 };
 
 const V2_PRIORITY_TO_STRING: Record<string, IntentionPriority> = {
-  CRITICAL: "urgent",
+  URGENT: "urgent",
+  CRITICAL: "urgent", // legacy alias — DTabelas antigas podem ainda usar "CRITICAL"
   HIGH: "high",
   MEDIUM: "medium",
   LOW: "low",

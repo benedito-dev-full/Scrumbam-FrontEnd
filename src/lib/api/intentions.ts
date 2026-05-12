@@ -34,7 +34,7 @@ function statusToV2(status: IntentionStatus): string {
 
 // Chaves DTabela (negativas) usadas no frontend → enum priority do V2.
 const PRIORITY_ID_TO_V2: Record<string, string> = {
-  "-424": "CRITICAL", // URGENT
+  "-424": "URGENT",
   "-421": "HIGH",
   "-422": "MEDIUM",
   "-423": "LOW",
@@ -79,7 +79,7 @@ function priorityEnumToV2(p?: IntentionPriority): string | undefined {
   if (!p) return undefined;
   switch (p) {
     case "urgent":
-      return "CRITICAL";
+      return "URGENT";
     case "high":
       return "HIGH";
     case "medium":
