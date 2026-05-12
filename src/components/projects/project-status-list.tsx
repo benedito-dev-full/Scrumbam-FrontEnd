@@ -1,24 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   CalendarPlus,
   Check,
-  CheckCircle2,
   ChevronDown,
-  ChevronRight,
-  Circle,
-  CircleDashed,
-  CircleDot,
+  Columns3,
+  EyeOff,
+  Filter,
   Flag,
+  GitBranch,
   GripVertical,
+  Layers,
   MessageSquare,
   MoreHorizontal,
   Plus,
+  Search,
+  Settings,
+  User,
   UserPlus,
   X,
-  XCircle,
 } from "lucide-react";
 import {
   DndContext,
@@ -44,10 +46,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
-import { useUpdateIntention, useMoveStatus } from "@/lib/hooks/use-intentions";
+import { useMoveStatus, useUpdateIntention } from "@/lib/hooks/use-intentions";
 import { useTaskDueDate } from "@/lib/hooks/use-task-due-dates";
 import type {
   IntentionDocument,
@@ -55,58 +58,18 @@ import type {
   IntentionStatus,
 } from "@/types/intention";
 
-type StatusKey = "inbox" | "ready" | "executing" | "done" | "failed";
-
 interface StatusConfig {
-  status: StatusKey;
+  key: IntentionStatus;
   label: string;
-  pillBg: string;
-  pillText: string;
-  iconColor: string;
-  icon: React.ComponentType<{ className?: string }>;
+  variant: "active" | "muted";
 }
 
 const STATUS_CONFIG: StatusConfig[] = [
-  {
-    status: "inbox",
-    label: "INBOX",
-    pillBg: "bg-zinc-700/70",
-    pillText: "text-zinc-100",
-    iconColor: "text-zinc-300",
-    icon: CircleDashed,
-  },
-  {
-    status: "ready",
-    label: "READY",
-    pillBg: "bg-blue-600",
-    pillText: "text-white",
-    iconColor: "text-blue-200",
-    icon: Circle,
-  },
-  {
-    status: "executing",
-    label: "EM EXECUCAO",
-    pillBg: "bg-violet-600",
-    pillText: "text-white",
-    iconColor: "text-violet-200",
-    icon: CircleDot,
-  },
-  {
-    status: "done",
-    label: "CONCLUIDO",
-    pillBg: "bg-emerald-600",
-    pillText: "text-white",
-    iconColor: "text-emerald-200",
-    icon: CheckCircle2,
-  },
-  {
-    status: "failed",
-    label: "FALHOU",
-    pillBg: "bg-rose-600",
-    pillText: "text-white",
-    iconColor: "text-rose-200",
-    icon: XCircle,
-  },
+  { key: "inbox", label: "INBOX", variant: "muted" },
+  { key: "ready", label: "READY", variant: "muted" },
+  { key: "executing", label: "EM PROGRESSO", variant: "active" },
+  { key: "done", label: "CONCLUÍDO", variant: "muted" },
+  { key: "failed", label: "FALHOU", variant: "muted" },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -116,7 +79,7 @@ const PRIORITY_OPTIONS: {
 }[] = [
   { key: "urgent", label: "Urgente", color: "text-red-500" },
   { key: "high", label: "Alta", color: "text-orange-500" },
-  { key: "medium", label: "Media", color: "text-amber-500" },
+  { key: "medium", label: "Média", color: "text-amber-500" },
   { key: "low", label: "Baixa", color: "text-zinc-400" },
 ];
 
@@ -128,50 +91,45 @@ const PRIORITY_LABEL: Record<IntentionPriority, string> = Object.fromEntries(
   PRIORITY_OPTIONS.map((o) => [o.key, o.label]),
 ) as Record<IntentionPriority, string>;
 
-/** Wrapper visual de celula "editavel" (estilo ClickUp): sem borda; hover destaca. */
+const ROW_GRID =
+  "grid grid-cols-[minmax(420px,1fr)_160px_200px_160px_200px_200px_40px] items-center gap-2 pl-[30px] pr-1.5";
+
 const CELL_BOX =
-  "flex h-7 w-full items-center rounded-md px-1.5 text-left transition-colors hover:bg-accent/60";
+  "flex h-7 w-full items-center rounded-md px-1.5 text-left transition-colors hover:bg-zinc-800/80";
 
-/** Linha divisora entre rows — visivel o suficiente para separar tarefas. */
-const ROW_DIVIDER = "border-b border-foreground/[0.08]";
-
-/**
- * Lista de tasks agrupadas por status, no estilo ClickUp "List view".
- *
- * Cada status vira uma secao expansivel com:
- *  - Header: chevron + pill colorido + count + botao "+" (sempre visivel)
- *  - Tabela: Nome | Responsavel | Data | Prioridade | Status | Comentarios
- *  - Linha "+ Adicionar Tarefa" ao final
- *
- * Celulas com dropdown funcional:
- *  - Responsavel: lista membros da org (useOrgMembers + useUpdateIntention)
- *  - Prioridade: 4 niveis (useUpdateIntention)
- *  - Status:     5 status (useMoveStatus)
- *  - Data:       localStorage (backend V2 ainda nao expoe dueDate)
- */
-export function ProjectStatusList({
-  projectId,
-  issues,
-  onNewTask,
-}: {
-  projectId: string;
+export interface ProjectStatusListProps {
   issues: IntentionDocument[];
+  projectId: string;
   onNewTask: () => void;
-}) {
+}
+
+export function ProjectStatusList({
+  issues,
+  projectId,
+  onNewTask,
+}: ProjectStatusListProps) {
   const { move } = useMoveStatus();
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // distance: 8 evita conflito com clique no Link/dropdown — drag so comeca
-  // depois de 8px de movimento; clique parado abre a rota / dropdown.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
+  const groups = STATUS_CONFIG.map((cfg) => ({
+    ...cfg,
+    tasks: issues.filter((i) => i.status === cfg.key),
+  }));
+
   const activeTask =
     activeId != null ? issues.find((i) => i.id === activeId) ?? null : null;
+
   const activeConfig = activeTask
-    ? STATUS_CONFIG.find((c) => c.status === activeTask.status) ?? null
+    ? STATUS_CONFIG.find((c) => c.key === activeTask.status) ?? null
     : null;
+
+  const toggleCollapsed = (key: string) =>
+    setCollapsed((c) => ({ ...c, [key]: !c[key] }));
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
@@ -179,11 +137,15 @@ export function ProjectStatusList({
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveId(null);
+
     const { active, over } = event;
     if (!over) return;
+
     const newStatus = String(over.id) as IntentionStatus;
     const task = issues.find((i) => i.id === String(active.id));
+
     if (!task || task.status === newStatus) return;
+
     move(String(active.id), newStatus);
   };
 
@@ -194,26 +156,38 @@ export function ProjectStatusList({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div>
-        {STATUS_CONFIG.map((cfg) => (
-          <StatusSection
-            key={cfg.status}
-            config={cfg}
-            projectId={projectId}
-            tasks={issues.filter((i) => i.status === cfg.status)}
-            onAdd={onNewTask}
-            isDraggingActive={activeId !== null}
-          />
-        ))}
+      <div className="rounded-lg border border-border bg-zinc-950/40 text-zinc-100">
+        <Toolbar onNewTask={onNewTask} />
 
-        <button
-          type="button"
-          onClick={onNewTask}
-          className="mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Novo status
-        </button>
+        <div className="pb-2">
+          {issues.length === 0 ? (
+            <p className="px-6 py-10 text-center text-[12px] text-zinc-500">
+              Nenhuma tarefa neste projeto ainda.
+            </p>
+          ) : (
+            groups.map((g) => (
+              <StatusGroup
+                key={g.key}
+                config={g}
+                tasks={g.tasks}
+                projectId={projectId}
+                collapsed={!!collapsed[g.key]}
+                onToggleCollapsed={() => toggleCollapsed(g.key)}
+                onNewTask={onNewTask}
+                isDraggingActive={activeId !== null}
+              />
+            ))
+          )}
+
+          <button
+            type="button"
+            onClick={onNewTask}
+            className="ml-4 mt-2 flex items-center gap-2 px-2 py-2 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Novo status
+          </button>
+        </div>
       </div>
 
       <DragOverlay dropAnimation={null}>
@@ -225,160 +199,230 @@ export function ProjectStatusList({
   );
 }
 
-function DragPreview({
-  task,
-  config,
-}: {
-  task: IntentionDocument;
-  config: StatusConfig;
-}) {
-  const Icon = config.icon;
+function Toolbar({ onNewTask }: { onNewTask: () => void }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-card px-3 py-2 text-[13px] shadow-lg ring-1 ring-primary/20">
-      <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
-      <span className="truncate font-medium text-foreground/95">
-        {task.title}
-      </span>
+    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+      <div className="flex items-center gap-1">
+        <ToolbarPill icon={Layers} label="Grupo: Status" active />
+        <ToolbarPill icon={GitBranch} label="Subtarefas" />
+        <ToolbarPill icon={Columns3} label="Colunas" />
+      </div>
+
+      <div className="flex items-center gap-1">
+        <ToolbarPill icon={Filter} label="Filtro" />
+        <ToolbarPill icon={EyeOff} label="Fechado" />
+        <ToolbarPill icon={User} label="Responsável" />
+
+        <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-300">
+          B
+        </span>
+
+        <button
+          type="button"
+          aria-label="Buscar"
+          className="ml-1 flex h-7 w-7 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </button>
+
+        <ToolbarPill icon={Settings} label="Personalizar" />
+
+        <div className="ml-1 flex items-stretch overflow-hidden rounded-md bg-zinc-800">
+          <button
+            type="button"
+            onClick={onNewTask}
+            className="px-3 py-1.5 text-[12px] font-semibold text-zinc-100 transition-colors hover:bg-zinc-700"
+          >
+            Add Tarefa
+          </button>
+
+          <button
+            type="button"
+            aria-label="Mais opções"
+            className="flex items-center border-l border-zinc-700 px-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-100"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function StatusSection({
+function ToolbarPill({
+  icon: Icon,
+  label,
+  active = false,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
+        active
+          ? "bg-violet-500/25 text-violet-200"
+          : "text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100",
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
+
+function StatusGroup({
   config,
-  projectId,
   tasks,
-  onAdd,
+  projectId,
+  collapsed,
+  onToggleCollapsed,
+  onNewTask,
   isDraggingActive,
 }: {
   config: StatusConfig;
-  projectId: string;
   tasks: IntentionDocument[];
-  onAdd: () => void;
+  projectId: string;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  onNewTask: () => void;
   isDraggingActive: boolean;
 }) {
-  const [expanded, setExpanded] = useState(true);
-  const { setNodeRef, isOver } = useDroppable({ id: config.status });
+  const { setNodeRef, isOver } = useDroppable({ id: config.key });
 
   return (
     <section
       ref={setNodeRef}
       className={cn(
-        "pt-2 pb-1 transition-colors rounded-md",
-        isDraggingActive && "ring-1 ring-transparent",
-        isOver && "bg-primary/[0.06] ring-primary/40",
+        "py-1.5 transition-colors",
+        isDraggingActive && "rounded-md ring-1 ring-transparent",
+        isOver && "rounded-md bg-violet-500/[0.08] ring-violet-500/30",
       )}
     >
-      {/* Header da secao */}
-      <div className="group/section flex items-center gap-2 px-1">
+      <div className="group/section flex items-center gap-2 px-4 py-1.5">
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-          aria-expanded={expanded}
-          aria-label={expanded ? "Recolher secao" : "Expandir secao"}
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expandir" : "Recolher"}
+          className="flex h-4 w-4 items-center justify-center text-zinc-400 transition-transform hover:text-zinc-100"
+          style={{ transform: collapsed ? "rotate(-90deg)" : "none" }}
         >
-          {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
-          )}
+          <ChevronDown className="h-3.5 w-3.5" />
         </button>
 
         <StatusPill config={config} />
 
-        <span className="text-[12px] tabular-nums text-muted-foreground">
-          {tasks.length}
-        </span>
+        <span className="text-[12px] text-zinc-500">{tasks.length}</span>
 
-        {/* "+" sempre visivel ao lado do nome — abre criacao de task. */}
         <button
           type="button"
-          onClick={onAdd}
-          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          aria-label="Adicionar tarefa nesta secao"
+          onClick={onNewTask}
+          className="flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+          aria-label="Adicionar tarefa nesta seção"
           title="Adicionar tarefa"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
 
-        {/* "..." aparece no hover do header da secao (acoes auxiliares). */}
         <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover/section:opacity-100">
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Acoes da secao"
+            className="flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            aria-label="Ações da seção"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {expanded && (
-        <div className="mt-1">
-          <TableHeader />
-          {tasks.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              projectId={projectId}
-              config={config}
-            />
-          ))}
-
-          <button
-            type="button"
-            onClick={onAdd}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Adicionar Tarefa
-          </button>
-        </div>
+      {!collapsed && (
+        <StatusTable
+          tasks={tasks}
+          config={config}
+          projectId={projectId}
+          onNewTask={onNewTask}
+        />
       )}
     </section>
   );
 }
 
-function StatusPill({ config }: { config: StatusConfig }) {
-  const Icon = config.icon;
+function StatusTable({
+  tasks,
+  config,
+  projectId,
+  onNewTask,
+}: {
+  tasks: IntentionDocument[];
+  config: StatusConfig;
+  projectId: string;
+  onNewTask: () => void;
+}) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-        config.pillBg,
-        config.pillText,
-      )}
-    >
-      <Icon className={cn("h-3 w-3", config.iconColor)} />
-      {config.label}
-    </span>
-  );
-}
+    <div className="px-4">
+      <div
+        className={cn(
+          ROW_GRID,
+          "h-8 border-b border-zinc-800 text-[12px] text-zinc-500",
+        )}
+      >
+        <HeaderCell label="Nome" />
+        <HeaderCell label="Responsável" />
+        <HeaderCell label="Data de vencimento" />
+        <HeaderCell label="Prioridade" />
+        <HeaderCell label="Status" />
+        <HeaderCell label="Comentários" />
 
-function TableHeader() {
-  return (
-    <div className={cn(ROW_DIVIDER, "grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1 text-[11px] font-medium text-muted-foreground/80")}>
-      <div>Nome</div>
-      <div>Responsavel</div>
-      <div>Data de vencimento</div>
-      <div>Prioridade</div>
-      <div>Status</div>
-      <div className="text-right">Coment.</div>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            aria-label="Adicionar coluna"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-zinc-100"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+
+      {tasks.map((task) => (
+        <TaskRow
+          key={task.id}
+          task={task}
+          config={config}
+          projectId={projectId}
+        />
+      ))}
+
+      <button
+        type="button"
+        onClick={onNewTask}
+        className="flex items-center gap-2 py-2 pl-[30px] text-[12.5px] text-zinc-500 transition-colors hover:text-zinc-300"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Adicionar Tarefa
+      </button>
     </div>
   );
 }
 
+function HeaderCell({ label }: { label: string }) {
+  return <span className="truncate">{label}</span>;
+}
+
 function TaskRow({
   task,
-  projectId,
   config,
+  projectId,
 }: {
   task: IntentionDocument;
-  projectId: string;
   config: StatusConfig;
+  projectId: string;
 }) {
-  const Icon = config.icon;
   const href = `/projects/${projectId}/issues/${task.id}`;
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
     data: { task },
@@ -390,61 +434,139 @@ function TaskRow({
       {...listeners}
       {...attributes}
       className={cn(
-        ROW_DIVIDER,
-        "group/row grid grid-cols-[minmax(0,3fr)_140px_160px_120px_140px_60px] items-center gap-3 px-3 py-1.5 text-[13px] transition-colors select-none cursor-grab active:cursor-grabbing hover:bg-accent/40",
+        ROW_GRID,
+        "group/row relative h-[38px] select-none border-b border-zinc-800/80 text-[13px] transition-colors hover:bg-zinc-900/60",
+        "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-40",
       )}
     >
-      {/* Nome — link para detalhe (handle grip a esquerda, so visual). */}
       <div className="flex min-w-0 items-center gap-1.5">
         <span
           aria-hidden
-          className="flex h-5 w-4 shrink-0 items-center justify-center text-muted-foreground/0 transition-colors group-hover/row:text-muted-foreground/70"
+          className="flex h-5 w-4 shrink-0 items-center justify-center text-zinc-600/0 transition-colors group-hover/row:text-zinc-600"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </span>
+
         <Link
           href={href}
           draggable={false}
           onClick={(e) => e.stopPropagation()}
-          className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
+          className="flex min-w-0 flex-1 items-center gap-2 font-semibold text-zinc-100 hover:underline"
         >
-          <Icon className={cn("h-4 w-4 shrink-0", config.iconColor)} />
-          <span className="truncate font-medium text-foreground/95">
-            {task.title}
-          </span>
+          <StatusGlyph variant={config.variant} />
+          <span className="truncate">{task.title}</span>
         </Link>
       </div>
 
-      {/* Responsavel */}
       <AssigneeCell task={task} />
 
-      {/* Data de vencimento */}
       <DueDateCell taskId={task.id} />
 
-      {/* Prioridade */}
       <PriorityCell task={task} />
 
-      {/* Status (replica do header) */}
       <StatusCell task={task} config={config} />
 
-      {/* Comentarios (sem moldura) */}
-      <div className="flex items-center justify-end text-muted-foreground">
-        <MessageSquare className="h-4 w-4" />
+      <div className="flex items-center text-zinc-600">
+        <button
+          type="button"
+          aria-label="Comentar"
+          title="Comentar"
+          className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+        </button>
       </div>
+
+      <div />
     </div>
   );
 }
 
-// ============================================================
-// Celulas com dropdowns
-// ============================================================
+function StatusGlyph({
+  variant,
+  filled = false,
+  size = 12,
+}: {
+  variant: "active" | "muted";
+  filled?: boolean;
+  size?: number;
+}) {
+  if (variant === "active") {
+    return (
+      <span
+        aria-hidden
+        className="inline-block shrink-0 rounded-full"
+        style={{
+          width: size,
+          height: size,
+          border: `1.5px solid ${filled ? "#ffffff" : "#7b68ee"}`,
+          background: filled
+            ? "conic-gradient(#ffffff 0 50%, transparent 50% 100%)"
+            : "conic-gradient(#7b68ee 0 50%, transparent 50% 100%)",
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden
+      className="inline-block shrink-0 rounded-full border border-dashed"
+      style={{
+        width: size,
+        height: size,
+        borderColor: filled ? "#ffffff" : "currentColor",
+      }}
+    />
+  );
+}
+
+function StatusPill({ config }: { config: StatusConfig }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-bold tracking-wide",
+        config.variant === "active"
+          ? "bg-violet-500 text-white"
+          : "bg-zinc-800 text-zinc-200",
+      )}
+    >
+      <StatusGlyph
+        variant={config.variant}
+        filled={config.variant === "active"}
+        size={10}
+      />
+      {config.label}
+    </span>
+  );
+}
+
+function DragPreview({
+  task,
+  config,
+}: {
+  task: IntentionDocument;
+  config: StatusConfig;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-violet-500/40 bg-zinc-950 px-3 py-2 text-[13px] text-zinc-100 shadow-lg ring-1 ring-violet-500/20">
+      <StatusGlyph variant={config.variant} />
+      <span className="truncate font-medium">{task.title}</span>
+    </div>
+  );
+}
 
 function AssigneeCell({ task }: { task: IntentionDocument }) {
   const orgId = useAuthStore((s) => s.user?.orgId);
   const { data: members } = useOrgMembers(orgId ?? undefined);
   const { update } = useUpdateIntention();
-  const current = members?.find((m) => m.id === task.assigneeId) ?? null;
+
+  const assigneeId =
+    (task as IntentionDocument & { assigneeId?: string | null }).assigneeId ??
+    null;
+
+  const current = members?.find((m) => m.id === assigneeId) ?? null;
 
   const initials = (current?.name ?? "")
     .split(" ")
@@ -454,50 +576,58 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
     .join("")
     .toUpperCase();
 
+  const updateAssignee = (value: string | null) => {
+    update(task.id, {
+      assigneeId: value,
+    } as Partial<IntentionDocument> & { assigneeId?: string | null });
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className={CELL_BOX}>
           {current ? (
-            <span className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-semibold text-white">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-semibold text-white">
                 {initials || "?"}
               </span>
-              <span className="truncate text-[12px] text-foreground/85">
+              <span className="truncate text-[12px] text-zinc-200">
                 {current.name}
               </span>
             </span>
           ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-foreground/30 text-muted-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-zinc-600 text-zinc-600 transition-colors hover:text-zinc-300">
               <UserPlus className="h-3.5 w-3.5" />
             </span>
           )}
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent className="w-64" align="start">
         {members?.length ? (
           members.map((m) => {
-            const isSel = m.id === task.assigneeId;
-            const mInitials = m.name
+            const isSelected = m.id === assigneeId;
+            const memberInitials = m.name
               .split(" ")
               .map((w) => w[0])
               .filter(Boolean)
               .slice(0, 2)
               .join("")
               .toUpperCase();
+
             return (
               <DropdownMenuItem
                 key={m.id}
-                onSelect={() =>
-                  update(task.id, { assigneeId: isSel ? null : m.id })
-                }
+                onSelect={() => updateAssignee(isSelected ? null : m.id)}
                 className="text-[13px]"
               >
                 <span className="mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white">
-                  {mInitials}
+                  {memberInitials}
                 </span>
+
                 <span className="flex-1 truncate">{m.name}</span>
-                {isSel && (
+
+                {isSelected && (
                   <Check className="ml-2 h-3.5 w-3.5 text-emerald-500" />
                 )}
               </DropdownMenuItem>
@@ -505,18 +635,19 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
           })
         ) : (
           <p className="px-2 py-3 text-[12px] text-muted-foreground">
-            Nenhum membro disponivel.
+            Nenhum membro disponível.
           </p>
         )}
-        {task.assigneeId && (
+
+        {assigneeId && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={() => update(task.id, { assigneeId: null })}
+              onSelect={() => updateAssignee(null)}
               className="text-[12px] text-muted-foreground"
             >
               <X className="mr-2 h-3.5 w-3.5" />
-              Remover responsavel
+              Remover responsável
             </DropdownMenuItem>
           </>
         )}
@@ -527,6 +658,7 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
 
 function DueDateCell({ taskId }: { taskId: string }) {
   const { dueDate, setDueDate } = useTaskDueDate(taskId);
+
   const display = dueDate
     ? new Date(`${dueDate}T00:00:00`).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -539,34 +671,38 @@ function DueDateCell({ taskId }: { taskId: string }) {
       <PopoverTrigger asChild>
         <button type="button" className={CELL_BOX}>
           {display ? (
-            <span className="text-[12px] text-foreground/85">{display}</span>
+            <span className="text-[12px] text-zinc-200">{display}</span>
           ) : (
-            <CalendarPlus className="h-4 w-4 text-muted-foreground" />
+            <CalendarPlus className="h-4 w-4 text-zinc-600" />
           )}
         </button>
       </PopoverTrigger>
+
       <PopoverContent className="w-56 p-3" align="start">
         <label className="block text-[11px] font-medium text-muted-foreground">
           Data de vencimento
         </label>
+
         <input
           type="date"
           value={dueDate ?? ""}
           onChange={(e) => setDueDate(e.target.value || null)}
           className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[13px] focus:outline-none focus:ring-1 focus:ring-ring"
         />
+
         {dueDate && (
           <button
             type="button"
             onClick={() => setDueDate(null)}
-            className="mt-2 flex w-full items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-2 flex w-full items-center gap-2 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
             Limpar data
           </button>
         )}
+
         <p className="mt-2 text-[10px] text-muted-foreground/70">
-          Armazenado localmente. Sera persistido no servidor quando o backend
+          Armazenado localmente. Será persistido no servidor quando o backend
           expuser o campo.
         </p>
       </PopoverContent>
@@ -586,18 +722,20 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
               <Flag
                 className={cn("h-3.5 w-3.5", PRIORITY_COLOR[task.priority])}
               />
-              <span className="text-foreground/85">
+              <span className="text-zinc-200">
                 {PRIORITY_LABEL[task.priority]}
               </span>
             </span>
           ) : (
-            <Flag className="h-4 w-4 text-muted-foreground" />
+            <Flag className="h-4 w-4 text-zinc-600" />
           )}
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent className="w-48" align="start">
         {PRIORITY_OPTIONS.map((opt) => {
-          const isSel = task.priority === opt.key;
+          const isSelected = task.priority === opt.key;
+
           return (
             <DropdownMenuItem
               key={opt.key}
@@ -606,7 +744,10 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
             >
               <Flag className={cn("mr-2 h-3.5 w-3.5", opt.color)} />
               <span className="flex-1">{opt.label}</span>
-              {isSel && <Check className="ml-2 h-3.5 w-3.5 text-emerald-500" />}
+
+              {isSelected && (
+                <Check className="ml-2 h-3.5 w-3.5 text-emerald-500" />
+              )}
             </DropdownMenuItem>
           );
         })}
@@ -631,16 +772,19 @@ function StatusCell({
           <StatusPill config={config} />
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent className="w-56" align="start">
         {STATUS_CONFIG.map((opt) => {
-          const isSel = task.status === opt.status;
+          const isSelected = task.status === opt.key;
+
           return (
             <DropdownMenuItem
-              key={opt.status}
-              onSelect={() => move(task.id, opt.status as IntentionStatus)}
+              key={opt.key}
+              onSelect={() => move(task.id, opt.key)}
             >
               <StatusPill config={opt} />
-              {isSel && (
+
+              {isSelected && (
                 <Check className="ml-auto h-3.5 w-3.5 text-emerald-500" />
               )}
             </DropdownMenuItem>
@@ -650,3 +794,5 @@ function StatusCell({
     </DropdownMenu>
   );
 }
+
+export default ProjectStatusList;
