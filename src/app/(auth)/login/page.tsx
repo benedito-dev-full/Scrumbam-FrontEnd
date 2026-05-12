@@ -1,22 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AxiosError } from "axios";
 
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
-import type { User } from "@/types/auth";
+import type { AuthResponse, User } from "@/types/auth";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff } from "lucide-react";
+
+/**
+ * Monta o objeto User do Zustand a partir do AuthResponseDto do backend.
+ *
+ * Centralizado para login + auto-switch terem o mesmo shape (ADR-V2-030).
+ */
+function buildUser(data: AuthResponse): User {
+  return {
+    id: data.user.id,
+    entidadeId: data.user.entidadeId ?? "",
+    nome: data.user.name,
+    email: data.user.email,
+    role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
+    orgId: data.user.organizationId || "",
+    orgNome: data.user.organizationName || "",
+    availableOrgs: data.user.availableOrgs ?? [],
+  };
+}
 
 export default function LoginPage() {
   usePageTitle("Entrar");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const login = useAuthStore((s) => s.login);
 
   const [email, setEmail] = useState("");
@@ -40,26 +60,40 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const data = await authApi.login({ email, password });
+      let data = await authApi.login({ email, password });
 
       if (!data.user.entidadeId) {
         setError("Conta com dados incompletos. Contate o administrador.");
         return;
       }
 
-      // Salva tokens via login() abaixo — request interceptor le do store.
-      const user: User = {
-        id: data.user.id,
-        entidadeId: data.user.entidadeId,
-        nome: data.user.name,
-        email: data.user.email,
-        role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
-        orgId: data.user.organizationId || "",
-        orgNome: data.user.organizationName || "",
-      };
+      // ADR-V2-030: se houver >1 org disponivel, tenta auto-entrar na ultima
+      // usada (localStorage). Se a ultima ainda esta na lista E e diferente
+      // da default escolhida pelo backend, chama POST /auth/switch-org antes
+      // de redirecionar. Tokens substituidos imediatamente — caches limpos
+      // sao desnecessarios aqui (login eh um state limpo).
+      const orgs = data.user.availableOrgs ?? [];
+      if (orgs.length > 1 && typeof window !== "undefined") {
+        const lastOrg = window.localStorage.getItem(LAST_ORG_LS_KEY);
+        const target = lastOrg && orgs.find((o) => o.id === lastOrg);
+        if (target && target.id !== data.user.organizationId) {
+          try {
+            data = await authApi.switchOrg(target.id);
+          } catch {
+            // Falhou (ex: membership removida entre /me e /switch-org) — usa default.
+          }
+        }
+      }
 
+      const user = buildUser(data);
       login(user, data.accessToken, data.refreshToken);
-      router.replace("/intentions");
+
+      // Persistir last-org para proximo login.
+      if (typeof window !== "undefined" && user.orgId) {
+        window.localStorage.setItem(LAST_ORG_LS_KEY, user.orgId);
+      }
+
+      router.replace(returnTo || "/intentions");
     } catch (err) {
       if (err instanceof AxiosError) {
         if (err.response?.status === 401) {

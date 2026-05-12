@@ -5,6 +5,7 @@ import type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  SwitchOrgResponse,
 } from "@/types/auth";
 import type { MeResponse, UpdateMeDto } from "@/types";
 
@@ -56,6 +57,27 @@ export const authApi = {
   logout: async (): Promise<{ success: boolean }> => {
     const { data } = await api.post<{ success: boolean }>(
       ENDPOINTS.AUTH_LOGOUT,
+    );
+    return data;
+  },
+
+  /**
+   * Troca a organização ativa da sessão (ADR-V2-030 — Multi-tenant identity).
+   *
+   * Backend valida que o usuário tem DVincula ativa na org alvo, emite novo
+   * par de tokens (refresh rotacionado) com `organizationId` apontando para
+   * a org de destino. Tokens antigos ficam INVÁLIDOS imediatamente.
+   *
+   * O caller DEVE:
+   *  - Salvar AMBOS os novos tokens via `useAuthStore.setTokens(...)`.
+   *  - Atualizar `user.organizationId/organizationName/orgRole` no store.
+   *  - Limpar cache de queries (`queryClient.clear()`) para evitar leak.
+   *  - Persistir `localStorage['scrumban-last-org']` = orgId.
+   */
+  switchOrg: async (organizationId: string): Promise<SwitchOrgResponse> => {
+    const { data } = await api.post<SwitchOrgResponse>(
+      ENDPOINTS.AUTH_SWITCH_ORG,
+      { organizationId },
     );
     return data;
   },

@@ -12,7 +12,26 @@ export interface RegisterRequest {
   organizationName?: string;
 }
 
+export interface SwitchOrgRequest {
+  organizationId: string;
+}
+
 // === Response DTOs (o que o backend RETORNA) ===
+
+/**
+ * Resumo de uma organização à qual o usuário tem vínculo ativo
+ * (ADR-V2-030 — Multi-tenant identity).
+ *
+ * Populado em `auth.user.availableOrgs[]` no login, register, refresh,
+ * `/auth/me` e `/auth/switch-org`. O frontend usa para renderizar o
+ * workspace switcher na sidebar e auto-resolver "última org usada" via
+ * `localStorage['scrumban-last-org']`.
+ */
+export interface AvailableOrg {
+  id: string;
+  nome: string;
+  role: "ADMIN" | "MEMBER" | "VIEWER";
+}
 
 export interface UserProfile {
   id: string;
@@ -23,10 +42,13 @@ export interface UserProfile {
   organizationName?: string | null;
   role?: string;
   orgRole?: string;
+  /** Lista de orgs com vínculo ativo do usuário (ADR-V2-030). */
+  availableOrgs?: AvailableOrg[];
 }
 
 /**
- * Backend AuthResponseDto — retornado por /auth/login, /auth/register e /auth/refresh.
+ * Backend AuthResponseDto — retornado por /auth/login, /auth/register,
+ * /auth/refresh e /auth/switch-org.
  */
 export interface AuthResponse {
   accessToken: string;
@@ -38,6 +60,7 @@ export interface AuthResponse {
 
 export type LoginResponse = AuthResponse;
 export type RegisterResponse = AuthResponse;
+export type SwitchOrgResponse = AuthResponse;
 
 // === User (estado local no Zustand, montado a partir dos responses) ===
 
@@ -49,4 +72,11 @@ export interface User {
   role: string; // member.role || 'admin' (register assume admin)
   orgId: string; // organization.chave
   orgNome: string; // organization.nome
+  /**
+   * Lista de orgs disponíveis (ADR-V2-030). Default `[]`.
+   *
+   * Quando length > 1, a sidebar renderiza o workspace switcher.
+   * Quando length <= 1, mostra apenas o nome da org atual (sem dropdown).
+   */
+  availableOrgs: AvailableOrg[];
 }

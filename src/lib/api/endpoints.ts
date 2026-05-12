@@ -7,6 +7,7 @@ export const ENDPOINTS = {
   AUTH_REGISTER: "/auth/register",
   AUTH_LOGOUT: "/auth/logout",
   AUTH_REFRESH: "/auth/refresh",
+  AUTH_SWITCH_ORG: "/auth/switch-org",
 
   // Auth - Me
   AUTH_ME: "/auth/me",

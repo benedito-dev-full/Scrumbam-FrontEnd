@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Server,
-  Trash2,
-  MoreHorizontal,
-  Loader2,
-} from "lucide-react";
+import { Server, Trash2, MoreHorizontal, Loader2 } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -36,7 +31,7 @@ import { Button } from "@/components/ui/button";
  * Visivel apenas para ADMIN.
  */
 export default function AgentsPage() {
-  usePageTitle("Agentes");
+  usePageTitle("VPS");
   const { data: agents, isLoading } = useAgents();
   const deleteMutation = useDeleteAgent();
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -49,14 +44,15 @@ export default function AgentsPage() {
       <div className="flex h-full flex-col">
         {/* Header */}
         <header className="flex h-14 shrink-0 items-center justify-between px-8 pt-2 border-b border-border">
-          <h1 className="text-[13px] font-medium">Agentes</h1>
+          <h1 className="text-[13px] font-medium">VPS</h1>
           <AddAgentDialog />
         </header>
 
         {/* Sub-header com info */}
         <div className="flex h-11 shrink-0 items-center px-8 border-b border-border">
           <p className="text-[12px] text-muted-foreground">
-            Daemons remotos conectados via túnel SSH reverso. Heartbeat a cada 30s — offline após 90s sem ping.
+            Daemons remotos conectados via túnel SSH reverso. Heartbeat a cada
+            30s — offline após 90s sem ping.
           </p>
         </div>
 
@@ -81,9 +77,7 @@ export default function AgentsPage() {
               <AgentRow
                 key={a.id}
                 agent={a}
-                onDelete={() =>
-                  setConfirmDelete({ id: a.id, name: a.nome })
-                }
+                onDelete={() => setConfirmDelete({ id: a.id, name: a.nome })}
               />
             ))
           )}
@@ -97,10 +91,10 @@ export default function AgentsPage() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remover agente?</DialogTitle>
+            <DialogTitle>Remover VPS?</DialogTitle>
             <DialogDescription>
-              <strong>{confirmDelete?.name}</strong> sera desconectado e
-              removido da organizacao. Esta acao nao pode ser desfeita.
+              <strong>{confirmDelete?.name}</strong> sera desconectada e
+              removida da organizacao. Esta acao nao pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -160,7 +154,7 @@ interface AgentRowProps {
 function AgentRow({ agent: a, onDelete }: AgentRowProps) {
   return (
     <Link
-      href={`/agents/${a.id}`}
+      href={`/vps/${a.id}`}
       className="grid grid-cols-[minmax(0,1fr)_150px_minmax(0,1fr)_90px_160px_32px] items-center gap-4 border-b border-border/40 px-8 py-3 text-[13px] hover:bg-accent/30 transition-colors"
     >
       <div className="flex items-center gap-2.5 min-w-0">
@@ -221,10 +215,9 @@ function EmptyState() {
         className="h-10 w-10 text-muted-foreground/30"
         strokeWidth={1.25}
       />
-      <h3 className="mt-3 text-sm font-medium">Nenhum agente ainda</h3>
+      <h3 className="mt-3 text-sm font-medium">Nenhuma VPS ainda</h3>
       <p className="mt-1 max-w-md text-[12px] text-muted-foreground">
-        Adicione um agente remoto para conectar uma VPS ao Scrumban via tunel
-        SSH reverso.
+        Adicione uma VPS remota para conectar ao Scrumban via tunel SSH reverso.
       </p>
     </div>
   );

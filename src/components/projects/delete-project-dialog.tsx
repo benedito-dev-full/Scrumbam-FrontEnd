@@ -75,8 +75,8 @@ export function DeleteProjectDialog({
               Essa acao nao pode ser desfeita. Isso ira excluir permanentemente
               o projeto{" "}
               <strong className="text-foreground">{project.nome}</strong>, suas
-              intencoes, membros, webhooks e notificacoes. O agente vinculado
-              (se existir) sera desvinculado mas nao excluido.
+              intencoes, membros, webhooks e notificacoes. A VPS vinculada (se
+              existir) sera desvinculada mas nao excluida.
             </span>
             <span className="block text-[12px] text-muted-foreground">
               O historico de execucoes (Automation) sera preservado para audit.

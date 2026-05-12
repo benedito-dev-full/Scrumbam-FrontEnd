@@ -7,27 +7,26 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import { invitesApi, type InviteInfo } from "@/lib/api/invites";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { cn } from "@/lib/utils";
-import type { User } from "@/types/auth";
+import type { AuthResponse, User } from "@/types/auth";
 
 /**
- * Pagina publica de aceite de convite por email (ADR-V2-028).
+ * Pagina publica de aceite de convite por email (ADR-V2-028 + ADR-V2-030).
  *
- * Fluxo:
- *  1. Le `?token=...` da URL (search params).
- *  2. GET /invites/:token — exibe info da org + inviter + email + role.
- *     404 → tela de "convite invalido ou expirado".
- *  3. Form de nome + senha + checkbox de termos.
- *  4. POST /invites/:token/accept — backend cria conta + retorna tokens.
- *  5. Salva tokens no auth-store via `useAuthStore.login(user, access, refresh)`
- *     e redireciona para `/intentions`.
+ * Fluxos suportados:
+ *  1. `flow=new_user` (email sem conta): form de nome + senha + termos. Cria
+ *     conta + auto-login.
+ *  2. `flow=existing_user` (email ja tem conta noutra org): tela "fulano te
+ *     adicionou ao workspace X" + botao "Aceitar e entrar". Body vazio.
+ *     - Se o usuario NAO esta logado, oferece link para `/login?returnTo=...`.
  *
- * Rota e publica (esta sob `(auth)` group — sem middleware de auth).
+ * Anti-enumeracao: 404 trata como "convite invalido ou expirado", sem
+ * distinguir motivo (mesmo para token usado).
  */
 export default function InvitePage() {
   return (
@@ -35,6 +34,19 @@ export default function InvitePage() {
       <InviteContent />
     </Suspense>
   );
+}
+
+function buildUserFromAuth(data: AuthResponse): User {
+  return {
+    id: data.user.id,
+    entidadeId: data.user.entidadeId ?? "",
+    nome: data.user.name,
+    email: data.user.email,
+    role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
+    orgId: data.user.organizationId || "",
+    orgNome: data.user.organizationName || "",
+    availableOrgs: data.user.availableOrgs ?? [],
+  };
 }
 
 function InviteContent() {
@@ -64,9 +76,18 @@ function InviteContent() {
     );
   }
 
-  return <AcceptForm token={token} info={inviteQuery.data} router={router} />;
+  const info = inviteQuery.data;
+  const flow = info.flow ?? "new_user";
+
+  if (flow === "existing_user") {
+    return <MergeAcceptForm token={token} info={info} router={router} />;
+  }
+  return <AcceptForm token={token} info={info} router={router} />;
 }
 
+/**
+ * Fluxo `new_user`: cria conta + auto-login.
+ */
 function AcceptForm({
   token,
   info,
@@ -87,16 +108,11 @@ function AcceptForm({
   const acceptMutation = useMutation({
     mutationFn: () => invitesApi.accept(token, { name, password }),
     onSuccess: (data) => {
-      const user: User = {
-        id: data.user.id,
-        entidadeId: data.user.entidadeId ?? "",
-        nome: data.user.name,
-        email: data.user.email,
-        role: data.user.role || "member",
-        orgId: data.user.organizationId || "",
-        orgNome: data.user.organizationName || "",
-      };
+      const user = buildUserFromAuth(data);
       login(user, data.accessToken, data.refreshToken);
+      if (typeof window !== "undefined" && user.orgId) {
+        window.localStorage.setItem(LAST_ORG_LS_KEY, user.orgId);
+      }
       router.replace(data.redirectTo || "/intentions");
     },
     onError: (err) => {
@@ -254,6 +270,175 @@ function AcceptForm({
           className="font-medium text-foreground hover:underline underline-offset-4"
         >
           Fazer login
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Fluxo `existing_user`: usuário já tem conta — só precisa confirmar o merge.
+ *
+ * Se o usuário não está logado, mostra link para login com `returnTo` apontando
+ * para este convite. Pós-accept, o backend já emite tokens para a org recém-
+ * mergeada — o frontend só salva e redireciona.
+ */
+function MergeAcceptForm({
+  token,
+  info,
+  router,
+}: {
+  token: string;
+  info: InviteInfo;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const login = useAuthStore((s) => s.login);
+  const currentUser = useAuthStore((s) => s.user);
+  const [error, setError] = useState("");
+
+  const isLoggedIn = !!currentUser;
+  const sameEmail =
+    currentUser?.email?.toLowerCase() === info.email.toLowerCase();
+
+  const acceptMutation = useMutation({
+    // Backend ignora name/password no flow existing_user — passamos {} explicitamente.
+    mutationFn: () =>
+      invitesApi.accept(token, {} as { name: string; password: string }),
+    onSuccess: (data) => {
+      const user = buildUserFromAuth(data);
+      login(user, data.accessToken, data.refreshToken);
+      if (typeof window !== "undefined" && user.orgId) {
+        window.localStorage.setItem(LAST_ORG_LS_KEY, user.orgId);
+      }
+      // Redireciona para a app: ja estamos na org recem-mergeada (tokens
+      // emitidos pelo backend com preferredOrgId=orgMergeada).
+      router.replace(data.redirectTo || "/intentions");
+    },
+    onError: (err) => {
+      if (err instanceof AxiosError) {
+        const status = err.response?.status;
+        if (status === 404) {
+          setError("Convite invalido ou expirou. Peca um novo ao admin.");
+        } else if (status === 409) {
+          setError("Voce ja faz parte deste workspace.");
+        } else {
+          setError("Erro ao aceitar convite. Tente novamente.");
+        }
+      } else {
+        setError("Erro de conexao. Verifique se o backend esta rodando.");
+      }
+    },
+  });
+
+  // Caso 1: usuario nao logado — pedir login antes.
+  if (!isLoggedIn) {
+    const returnTo = `/invite?token=${encodeURIComponent(token)}`;
+    return (
+      <div className="space-y-7">
+        <div className="space-y-2 text-center">
+          <h1 className="text-[24px] font-semibold tracking-tight">
+            Voce foi adicionado a {info.orgName}
+          </h1>
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {info.inviterName}
+            </span>{" "}
+            adicionou este email ao workspace.
+          </p>
+          <p className="text-[12px] text-muted-foreground/80">
+            Email do convite: <span className="font-mono">{info.email}</span>
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 px-3 py-3 text-[12px] text-muted-foreground">
+          Voce ja tem uma conta no Scrumban. Faca login com este email para
+          aceitar o convite e entrar em <strong>{info.orgName}</strong>.
+        </div>
+        <Link
+          href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+          className={cn(
+            "block w-full text-center h-10 leading-10 rounded-md bg-foreground text-background text-[13px] font-medium",
+            "hover:opacity-90 transition-opacity",
+          )}
+        >
+          Fazer login para aceitar
+        </Link>
+      </div>
+    );
+  }
+
+  // Caso 2: logado, mas com email diferente do convite — alerta.
+  if (!sameEmail) {
+    return (
+      <div className="space-y-6 text-center">
+        <h1 className="text-[22px] font-semibold tracking-tight">
+          Email diferente
+        </h1>
+        <p className="text-[13px] text-muted-foreground">
+          Este convite foi enviado para{" "}
+          <span className="font-mono">{info.email}</span>, mas voce esta logado
+          como <span className="font-mono">{currentUser.email}</span>.
+        </p>
+        <p className="text-[12px] text-muted-foreground/80">
+          Saia da sessao atual e faca login com o email do convite para
+          continuar.
+        </p>
+      </div>
+    );
+  }
+
+  // Caso 3: logado com o email certo — confirmar merge.
+  return (
+    <div className="space-y-7">
+      <div className="space-y-2 text-center">
+        <h1 className="text-[24px] font-semibold tracking-tight">
+          Entrar em {info.orgName}
+        </h1>
+        <p className="text-[13px] text-muted-foreground">
+          <span className="font-medium text-foreground">
+            {info.inviterName}
+          </span>{" "}
+          te adicionou como{" "}
+          <code className="text-[12px] px-1 rounded bg-muted">{info.role}</code>{" "}
+          neste workspace.
+        </p>
+        <p className="text-[12px] text-muted-foreground/80">
+          Voce continuara usando seu perfil atual ({currentUser.email}).
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+          <p className="text-[12px] text-destructive">{error}</p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => acceptMutation.mutate()}
+        disabled={acceptMutation.isPending}
+        className={cn(
+          "w-full h-10 rounded-md bg-foreground text-background text-[13px] font-medium",
+          "hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed",
+          "flex items-center justify-center gap-2",
+        )}
+      >
+        {acceptMutation.isPending ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Entrando no workspace...
+          </>
+        ) : (
+          `Aceitar e entrar em ${info.orgName}`
+        )}
+      </button>
+
+      <p className="text-center text-[13px] text-muted-foreground">
+        Nao reconhece este convite?{" "}
+        <Link
+          href="/intentions"
+          className="font-medium text-foreground hover:underline underline-offset-4"
+        >
+          Voltar ao app
         </Link>
       </p>
     </div>

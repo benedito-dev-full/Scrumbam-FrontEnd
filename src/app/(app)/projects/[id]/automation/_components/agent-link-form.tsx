@@ -123,7 +123,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             <Link2Off className="h-3.5 w-3.5 text-muted-foreground" />
           )}
           <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-            Vinculo Agente
+            Vinculo VPS
           </h2>
         </div>
         {isLinked && (
@@ -143,7 +143,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
         {/* Agente */}
         <div className="space-y-1.5">
           <Label htmlFor="agent" className="text-[12px]">
-            Agente
+            VPS
           </Label>
           <Select
             value={form.idAgent}
@@ -156,8 +156,8 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
                   loadingAgents
                     ? "Carregando..."
                     : agents?.length
-                      ? "Selecione um agente"
-                      : "Nenhum agente cadastrado"
+                      ? "Selecione uma VPS"
+                      : "Nenhuma VPS cadastrada"
                 }
               />
             </SelectTrigger>
@@ -177,7 +177,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
           {!loadingAgents && !agents?.length && (
             <p className="text-[11px] text-amber-500 flex items-center gap-1.5 mt-1">
               <AlertCircle className="h-3 w-3" />
-              Cadastre um agente em /agents antes de vincular.
+              Cadastre uma VPS em /vps antes de vincular.
             </p>
           )}
         </div>
@@ -304,7 +304,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            Tempo maximo de execucao por comando antes do agente cancelar.
+            Tempo maximo de execucao por comando antes da VPS cancelar.
           </p>
         </div>
 
@@ -326,7 +326,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             ) : isLinked ? (
               "Atualizar vinculo"
             ) : (
-              "Vincular agente"
+              "Vincular VPS"
             )}
           </Button>
         </div>
@@ -336,7 +336,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
       <Dialog open={confirmUnlink} onOpenChange={setConfirmUnlink}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Desvincular agente?</DialogTitle>
+            <DialogTitle>Desvincular VPS?</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-2">
                 <p>
@@ -353,7 +353,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
                     automaticamente.
                   </li>
                   <li>
-                    O agente em si continua ativo e pode ser revinculado a outro
+                    A VPS em si continua ativa e pode ser revinculada a outro
                     projeto.
                   </li>
                 </ul>

@@ -9,6 +9,16 @@ export interface InviteInfo {
   email: string;
   role: "MEMBER" | "VIEWER";
   expiresAt: string;
+  /**
+   * Fluxo do aceite (ADR-V2-030 — Multi-tenant identity):
+   *  - `new_user`: email sem conta → form de nome + senha + termos.
+   *  - `existing_user`: email já tem DEntidade -150 noutra org → confirmar
+   *    merge (apenas cria DVincula, sem DUserGroup/DEntidade duplicada).
+   *
+   * Backends antigos (pré-ADR-V2-030) podem não retornar este campo —
+   * front trata `undefined` como `new_user` (back-compat).
+   */
+  flow?: "new_user" | "existing_user";
 }
 
 export interface CreateInviteRequest {

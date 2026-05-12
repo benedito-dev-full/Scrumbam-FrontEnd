@@ -5,8 +5,6 @@ import {
   MoreHorizontal,
   Download,
   UserPlus,
-  Target,
-  Zap,
   Plug,
   Users,
   Building2,
@@ -94,8 +92,8 @@ export const navSections: NavSection[] = [
         customizeKey: "projects",
       },
       {
-        href: "/agents",
-        label: "Agentes",
+        href: "/vps",
+        label: "VPS",
         icon: Cpu,
       },
       {
@@ -136,18 +134,12 @@ export const navSections: NavSection[] = [
         label: "Convidar pessoas",
         icon: UserPlus,
       },
-      { href: "/initiatives", label: "Iniciativas", icon: Target, stub: true },
-      {
-        href: "/settings/integrations/claude",
-        label: "Connect Claude",
-        icon: Zap,
-      },
     ],
   },
   {
-    label: "Configuracoes",
+    label: "Conexoes",
     collapsible: true,
-    items: [{ href: "/integrations", label: "Integracoes", icon: Plug }],
+    items: [{ href: "/integrations", label: "MCP", icon: Plug }],
   },
 ];
 

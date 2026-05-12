@@ -52,7 +52,7 @@ export function AddAgentDialog() {
     <>
       <Button onClick={() => setOpen(true)} className="gap-2">
         <Plus className="h-4 w-4" />
-        Adicionar agente
+        Adicionar VPS
       </Button>
 
       <Dialog
@@ -65,14 +65,14 @@ export function AddAgentDialog() {
           {!created ? (
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>Cadastrar novo agente remoto</DialogTitle>
+                <DialogTitle>Cadastrar nova VPS remota</DialogTitle>
                 <DialogDescription>
                   Após cadastrar, copie o comando one-liner e execute na VPS.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="agent-nome">Nome do agente</Label>
+                  <Label htmlFor="agent-nome">Nome da VPS</Label>
                   <Input
                     id="agent-nome"
                     value={nome}
@@ -99,14 +99,14 @@ export function AddAgentDialog() {
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? "Criando..." : "Criar agente"}
+                  {mutation.isPending ? "Criando..." : "Criar VPS"}
                 </Button>
               </DialogFooter>
             </form>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>Agente criado: {created.nome}</DialogTitle>
+                <DialogTitle>VPS criada: {created.nome}</DialogTitle>
                 <DialogDescription>
                   Copie o comando abaixo e execute na sua VPS como{" "}
                   <span className="font-semibold">root</span>. Token de

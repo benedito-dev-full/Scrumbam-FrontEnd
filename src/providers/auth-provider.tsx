@@ -47,6 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: me.orgRole?.toLowerCase() || me.role || "member",
             orgId: me.organizationId,
             orgNome: me.organizationName,
+            // ADR-V2-030: re-popular availableOrgs do backend a cada
+            // revalidacao (5min). Se admin adicionou/removeu user de outra
+            // org, o switcher reflete na proxima janela de revalidacao.
+            availableOrgs: me.availableOrgs ?? [],
           });
           markValidated();
         })

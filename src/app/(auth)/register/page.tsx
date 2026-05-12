@@ -64,6 +64,7 @@ export default function RegisterPage() {
         role: data.user.orgRole?.toLowerCase() || data.user.role || "admin",
         orgId: data.user.organizationId || "",
         orgNome: data.user.organizationName || "",
+        availableOrgs: data.user.availableOrgs ?? [],
       };
 
       login(user, data.accessToken, data.refreshToken);

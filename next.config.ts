@@ -38,6 +38,17 @@ const nextConfig: NextConfig = {
         destination: "/projects/:projectId/issues/:intentionId",
         permanent: true, // 308
       },
+      // Rename UX: /agents -> /vps (rotas antigas preservadas via 308)
+      {
+        source: "/agents",
+        destination: "/vps",
+        permanent: true,
+      },
+      {
+        source: "/agents/:path*",
+        destination: "/vps/:path*",
+        permanent: true,
+      },
     ];
   },
 };

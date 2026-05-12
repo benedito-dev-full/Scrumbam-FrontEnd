@@ -81,15 +81,15 @@ export default function AutomationPage({ params }: AutomationPageProps) {
                   Automacao do projeto
                 </h1>
                 <p className="text-[13px] text-muted-foreground">
-                  Conecte um agente remoto a este projeto para executar comandos
+                  Conecte uma VPS remota a este projeto para executar comandos
                   Git/Claude Code via tunel SSH reverso. Veja{" "}
                   <Link
-                    href="/agents"
+                    href="/vps"
                     className="text-foreground underline underline-offset-2 hover:text-primary"
                   >
-                    /agents
+                    /vps
                   </Link>{" "}
-                  para cadastrar agentes na sua organizacao.
+                  para cadastrar VPSs na sua organizacao.
                 </p>
                 {!isAdmin && (
                   <p className="text-[12px] text-amber-600 dark:text-amber-400 mt-2">

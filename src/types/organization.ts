@@ -59,6 +59,15 @@ export interface MeResponse {
   organizationId: string;
   organizationName: string;
   createdAt: string;
+  /**
+   * Lista de orgs com vínculo ativo do usuário (ADR-V2-030 — Multi-tenant).
+   * Populada pelo backend em GET /auth/me. Opcional para back-compat.
+   */
+  availableOrgs?: {
+    id: string;
+    nome: string;
+    role: OrgRole;
+  }[];
 }
 
 export interface UpdateMeDto {

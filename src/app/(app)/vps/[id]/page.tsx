@@ -46,7 +46,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
   const regenMutation = useRegenerateInstallToken();
   const deleteMutation = useDeleteAgent();
 
-  usePageTitle(agent?.nome ?? "Agente");
+  usePageTitle(agent?.nome ?? "VPS");
 
   const [regenerated, setRegenerated] =
     useState<RegenerateInstallTokenResponse | null>(null);
@@ -60,7 +60,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
 
   const handleDelete = () => {
     deleteMutation.mutate(id, {
-      onSuccess: () => router.push("/agents"),
+      onSuccess: () => router.push("/vps"),
     });
   };
 
@@ -71,11 +71,11 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
         <header className="flex h-11 shrink-0 items-center px-8 border-b border-border">
           <nav className="flex items-center gap-1.5 text-[13px] min-w-0">
             <Link
-              href="/agents"
+              href="/vps"
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Agentes
+              VPS
             </Link>
             <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
             <Server className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -93,7 +93,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                   <SkeletonBody />
                 ) : !agent ? (
                   <p className="text-[13px] text-muted-foreground">
-                    Agente nao encontrado.
+                    VPS nao encontrada.
                   </p>
                 ) : (
                   <>
@@ -232,7 +232,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                         <div className="flex items-center justify-between gap-6 px-4 py-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-medium">
-                              Remover agente
+                              Remover VPS
                             </p>
                             <p className="text-[12px] text-muted-foreground mt-0.5">
                               Fecha o tunel SSH no Argus e libera a porta. Nao
@@ -265,7 +265,9 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
               <dl className="space-y-2 text-[12px]">
                 <PropRow
                   label="Status"
-                  value={agent ? <AgentStatusBadge status={agent.status} /> : "—"}
+                  value={
+                    agent ? <AgentStatusBadge status={agent.status} /> : "—"
+                  }
                 />
                 <PropRow
                   label="Hostname"
@@ -291,10 +293,13 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                 Como funciona
               </h3>
               <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
-                Cada agente abre um tunel SSH reverso para o Argus. O backend
-                envia comandos via canal e recebe heartbeats a cada 30s. Apos
-                90s sem heartbeat, o agente fica marcado como{" "}
-                <code className="text-[10px] bg-muted px-1 rounded">offline</code>.
+                Cada VPS abre um tunel SSH reverso para o Argus. O backend envia
+                comandos via canal e recebe heartbeats a cada 30s. Apos 90s sem
+                heartbeat, a VPS fica marcada como{" "}
+                <code className="text-[10px] bg-muted px-1 rounded">
+                  offline
+                </code>
+                .
               </p>
             </section>
           </aside>
@@ -305,12 +310,12 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remover agente {agent?.nome}?</DialogTitle>
+            <DialogTitle>Remover VPS {agent?.nome}?</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-2">
                 <p>Esta acao:</p>
                 <ul className="list-disc ml-5 space-y-1 text-[12px]">
-                  <li>Marca o agente como excluido (soft delete).</li>
+                  <li>Marca a VPS como excluida (soft delete).</li>
                   <li>Libera a porta {agent?.tunnelPort ?? "alocada"}.</li>
                   <li>Fecha o tunel SSH no Argus.</li>
                   <li>
@@ -362,13 +367,7 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
 // Sub-components
 // ============================================================
 
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div
       className={cn(
@@ -381,13 +380,7 @@ function InfoRow({
   );
 }
 
-function PropRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function PropRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 py-0.5">
       <dt className="w-16 shrink-0 text-muted-foreground">{label}</dt>

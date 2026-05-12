@@ -146,9 +146,9 @@ export function GitCredentialsPanel({ projectId }: GitCredentialsPanelProps) {
                   Nenhuma deploy key gerada
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  Gere uma chave SSH ed25519 para que o agente possa abrir PRs
-                  no GitHub em nome do projeto. A chave privada fica somente na
-                  VPS — o backend recebe apenas a publica.
+                  Gere uma chave SSH ed25519 para que a VPS possa abrir PRs no
+                  GitHub em nome do projeto. A chave privada fica somente na VPS
+                  — o backend recebe apenas a publica.
                 </p>
               </div>
             </div>
@@ -319,8 +319,8 @@ export function GitCredentialsPanel({ projectId }: GitCredentialsPanelProps) {
                 </p>
                 <ul className="list-disc ml-5 space-y-1 text-[12px]">
                   <li>
-                    O agente nao podera mais autenticar pushes ate uma nova key
-                    ser gerada.
+                    A VPS nao podera mais autenticar pushes ate uma nova key ser
+                    gerada.
                   </li>
                   <li>
                     A entrada no GitHub continua existindo — voce precisa

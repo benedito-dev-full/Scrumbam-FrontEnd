@@ -11,7 +11,6 @@ import {
   HelpCircle,
   LogOut,
   Settings,
-  User as UserIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -19,7 +18,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -36,6 +34,7 @@ import {
   shouldShowSidebarItem,
 } from "@/lib/hooks/use-sidebar-customization";
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
+import { WorkspaceSwitcher } from "@/components/common/workspace-switcher";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { TeamSelectorSidebar } from "@/components/teams/team-selector-sidebar";
 
@@ -60,18 +59,7 @@ export function AppSidebar() {
     items: s.items.filter(visible),
   }));
 
-  const orgInitials = (user?.orgNome || "DT")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  const orgShort =
-    user?.orgNome && user.orgNome.length > 16
-      ? user.orgNome.slice(0, 14) + ".."
-      : user?.orgNome || "Workspace";
-
+  // orgInitials/orgShort agora vivem dentro de WorkspaceSwitcher (ADR-V2-030).
   const userInitials = (user?.nome || "?")
     .split(" ")
     .map((w) => w[0])
@@ -113,56 +101,8 @@ export function AppSidebar() {
     <aside className="hidden md:flex h-screen w-[232px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Workspace switcher + actions */}
       <div className="flex items-center gap-1 px-3 pt-3 pb-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1.5 py-1 hover:bg-sidebar-accent transition-colors"
-              aria-label="Menu do workspace"
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
-                {orgInitials}
-              </span>
-              <span className="truncate text-[14px] font-medium">
-                {orgShort}
-              </span>
-              <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/70" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-60">
-            <DropdownMenuLabel>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[13px] font-medium">
-                  {user?.nome || "Usuario"}
-                </span>
-                <span className="text-[11px] text-muted-foreground truncate">
-                  {user?.email || ""}
-                </span>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="text-[13px]">
-              <Link href="/settings/account/profile">
-                <UserIcon className="mr-2 h-3.5 w-3.5" />
-                Perfil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="text-[13px]">
-              <Link href="/settings">
-                <Settings className="mr-2 h-3.5 w-3.5" />
-                Configuracoes
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={logout}
-              className="text-[13px] text-destructive focus:text-destructive"
-            >
-              <LogOut className="mr-2 h-3.5 w-3.5" />
-              Sair
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* ADR-V2-030: switcher de workspaces com dropdown de orgs disponiveis. */}
+        <WorkspaceSwitcher />
         <button
           type="button"
           onClick={openCommandPalette}

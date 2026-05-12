@@ -4,7 +4,7 @@ import { Activity, RefreshCw, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAgentStatus, useTestConnection } from "@/lib/hooks/use-automation";
-import { AgentStatusBadge } from "../../../../agents/components/agent-status-badge";
+import { AgentStatusBadge } from "../../../../vps/components/agent-status-badge";
 
 interface AgentStatusCardProps {
   projectId: string;
@@ -47,12 +47,11 @@ export function AgentStatusCard({ projectId }: AgentStatusCardProps) {
         <div className="flex items-center gap-2 mb-2">
           <Activity className="h-3.5 w-3.5 text-muted-foreground" />
           <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-            Status do agente
+            Status da VPS
           </h2>
         </div>
         <p className="text-[12px] text-muted-foreground">
-          Nenhum agente vinculado. Use o formulario acima para conectar um
-          agente.
+          Nenhuma VPS vinculada. Use o formulario acima para conectar uma VPS.
         </p>
       </section>
     );
@@ -67,7 +66,7 @@ export function AgentStatusCard({ projectId }: AgentStatusCardProps) {
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="h-3.5 w-3.5 text-muted-foreground" />
           <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-            Status do agente
+            Status da VPS
           </h2>
         </div>
         <Button
@@ -94,7 +93,7 @@ export function AgentStatusCard({ projectId }: AgentStatusCardProps) {
 
       <dl className="text-[13px]">
         <Row
-          label="Agente"
+          label="VPS"
           value={
             <div className="flex items-center gap-2">
               <span className="font-medium truncate">{agent.nome}</span>

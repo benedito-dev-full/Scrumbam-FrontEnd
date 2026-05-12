@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
-import { Box, CircleDot } from "lucide-react";
+import { Box, CircleDot, Star } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IntentionListItem } from "@/components/intentions/intention-list-item";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
+import { usePreference } from "@/lib/hooks/use-preference";
 import { useTeamStore } from "@/lib/stores/team-store";
 import { useTeam, useMyTeams } from "@/lib/hooks/use-teams";
 import { useTeamProjects } from "@/lib/hooks/use-projects";
 import { intentionsApi } from "@/lib/api/intentions";
 import { QUERY_KEYS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { IntentionDocument } from "@/types/intention";
+
+const TEAM_FALLBACK_COLOR = "#64748b";
 
 export default function TeamIssuesPage() {
   usePageTitle("Time — Issues");
@@ -22,6 +26,10 @@ export default function TeamIssuesPage() {
   const { data: team } = useTeam(selectedTeamId);
   const { data: projects, isLoading: projectsLoading } =
     useTeamProjects(selectedTeamId);
+  const [favorited, setFavorited] = usePreference(
+    `favorite.team-issues.${selectedTeamId ?? "none"}`,
+    false,
+  );
 
   // Busca intencoes em paralelo para todos os projetos do time
   const projectIds = (projects ?? []).map((p) => p.chave).filter(Boolean);
@@ -57,11 +65,46 @@ export default function TeamIssuesPage() {
       <div className="flex h-full flex-col">
         <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-8">
           <div className="flex items-center gap-2">
+            {team && (
+              <span
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white"
+                style={{ backgroundColor: team.color || TEAM_FALLBACK_COLOR }}
+                title={team.name}
+              >
+                {team.name.charAt(0).toUpperCase()}
+              </span>
+            )}
             <h1 className="text-[13px] font-medium">Issues</h1>
             {team && (
-              <span className="text-[12px] text-muted-foreground">
-                · {team.name}
-                {totalIntentions > 0 && ` · ${totalIntentions} ativas`}
+              <button
+                type="button"
+                onClick={() => setFavorited(!favorited)}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded transition-colors",
+                  favorited
+                    ? "text-yellow-400 hover:bg-accent"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+                aria-label={
+                  favorited
+                    ? "Remover dos favoritos"
+                    : "Adicionar aos favoritos"
+                }
+                aria-pressed={favorited}
+                title={
+                  favorited
+                    ? "Remover dos favoritos"
+                    : "Adicionar aos favoritos"
+                }
+              >
+                <Star
+                  className={cn("h-3.5 w-3.5", favorited && "fill-yellow-400")}
+                />
+              </button>
+            )}
+            {team && totalIntentions > 0 && (
+              <span className="ml-1 text-[12px] text-muted-foreground">
+                {totalIntentions} ativas
               </span>
             )}
           </div>

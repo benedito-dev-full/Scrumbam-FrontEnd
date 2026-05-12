@@ -46,7 +46,7 @@ function getMcpUrl(): string {
 }
 
 export default function IntegrationsPage() {
-  usePageTitle("Integracoes");
+  usePageTitle("MCP");
 
   const mcpUrl = getMcpUrl();
   const snippet = `claude mcp add scrumban --header "X-MCP-Key: <SUA_MCP_KEY>" ${mcpUrl}`;
@@ -68,7 +68,7 @@ export default function IntegrationsPage() {
       <div className="flex flex-col">
         {/* Page header */}
         <header className="flex h-11 shrink-0 items-center px-6 border-b border-border">
-          <h1 className="text-[13px] font-medium">Integracoes</h1>
+          <h1 className="text-[13px] font-medium">MCP</h1>
         </header>
 
         <div className="px-6 py-6">
@@ -184,12 +184,16 @@ export default function IntegrationsPage() {
                   Automacao headless (sem humano)?
                 </h3>
                 <p className="text-[12px] text-muted-foreground">
-                  Para CI/CD e agentes operacionais que rodam sem usuario,
-                  use a Project API Key — uma por projeto, nao vinculada a
-                  pessoa.
+                  Para CI/CD e agentes operacionais que rodam sem usuario, use a
+                  Project API Key — uma por projeto, nao vinculada a pessoa.
                 </p>
               </div>
-              <Button variant="outline" size="sm" asChild className="text-[12px]">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="text-[12px]"
+              >
                 <Link href="/projects">
                   Ver projetos
                   <ExternalLink className="ml-1.5 h-3 w-3" />
