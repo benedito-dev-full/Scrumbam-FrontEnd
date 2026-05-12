@@ -7,10 +7,7 @@ import {
   Check,
   ChevronDown,
   Columns3,
-  EyeOff,
-  Filter,
   Flag,
-  GitBranch,
   GripVertical,
   Layers,
   MessageSquare,
@@ -18,7 +15,6 @@ import {
   Plus,
   Search,
   Settings,
-  User,
   UserPlus,
   X,
 } from "lucide-react";
@@ -61,15 +57,15 @@ import type {
 interface StatusConfig {
   key: IntentionStatus;
   label: string;
-  variant: "active" | "muted";
+  variant: "active" | "muted" | "ready" | "done" | "failed";
 }
 
 const STATUS_CONFIG: StatusConfig[] = [
   { key: "inbox", label: "INBOX", variant: "muted" },
-  { key: "ready", label: "READY", variant: "muted" },
+  { key: "ready", label: "READY", variant: "ready" },
   { key: "executing", label: "EM PROGRESSO", variant: "active" },
-  { key: "done", label: "CONCLUÍDO", variant: "muted" },
-  { key: "failed", label: "FALHOU", variant: "muted" },
+  { key: "done", label: "CONCLUÍDO", variant: "done" },
+  { key: "failed", label: "FALHOU", variant: "failed" },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -156,7 +152,7 @@ export function ProjectStatusList({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="rounded-lg border border-border bg-zinc-950/40 text-zinc-100">
+      <div className="rounded-lg bg-zinc-950/40 text-zinc-100">
         <Toolbar onNewTask={onNewTask} />
 
         <div className="pb-2">
@@ -204,15 +200,10 @@ function Toolbar({ onNewTask }: { onNewTask: () => void }) {
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
       <div className="flex items-center gap-1">
         <ToolbarPill icon={Layers} label="Grupo: Status" active />
-        <ToolbarPill icon={GitBranch} label="Subtarefas" />
         <ToolbarPill icon={Columns3} label="Colunas" />
       </div>
 
       <div className="flex items-center gap-1">
-        <ToolbarPill icon={Filter} label="Filtro" />
-        <ToolbarPill icon={EyeOff} label="Fechado" />
-        <ToolbarPill icon={User} label="Responsável" />
-
         <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-300">
           B
         </span>
@@ -488,10 +479,59 @@ function StatusGlyph({
   filled = false,
   size = 12,
 }: {
-  variant: "active" | "muted";
+  variant: "active" | "muted" | "ready" | "done" | "failed";
   filled?: boolean;
   size?: number;
 }) {
+  if (variant === "ready") {
+    return (
+      <span
+        aria-hidden
+        className="inline-block shrink-0 rounded-full"
+        style={{
+          width: size,
+          height: size,
+          border: `1.5px solid ${filled ? "#ffffff" : "#2563eb"}`,
+          background: filled ? "#ffffff" : "#2563eb",
+        }}
+      />
+    );
+  }
+
+  if (variant === "done") {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex shrink-0 items-center justify-center rounded-full"
+        style={{
+          width: size,
+          height: size,
+          background: filled ? "#ffffff" : "#16a34a",
+          color: filled ? "#16a34a" : "#ffffff",
+        }}
+      >
+        <Check style={{ width: size * 0.65, height: size * 0.65 }} />
+      </span>
+    );
+  }
+
+  if (variant === "failed") {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex shrink-0 items-center justify-center rounded-full"
+        style={{
+          width: size,
+          height: size,
+          background: filled ? "#ffffff" : "#dc2626",
+          color: filled ? "#dc2626" : "#ffffff",
+        }}
+      >
+        <X style={{ width: size * 0.65, height: size * 0.65 }} />
+      </span>
+    );
+  }
+
   if (variant === "active") {
     return (
       <span
@@ -527,14 +567,16 @@ function StatusPill({ config }: { config: StatusConfig }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-bold tracking-wide",
-        config.variant === "active"
-          ? "bg-violet-500 text-white"
-          : "bg-zinc-800 text-zinc-200",
+        config.variant === "active" && "bg-violet-500 text-white",
+        config.variant === "ready" && "bg-blue-600 text-white",
+        config.variant === "done" && "bg-emerald-600 text-white",
+        config.variant === "failed" && "bg-red-600 text-white",
+        config.variant === "muted" && "bg-zinc-800 text-zinc-200",
       )}
     >
       <StatusGlyph
         variant={config.variant}
-        filled={config.variant === "active"}
+        filled={config.variant !== "muted"}
         size={10}
       />
       {config.label}
