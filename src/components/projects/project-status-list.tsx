@@ -496,7 +496,19 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
           return (
             <DropdownMenuItem
               key={opt.key}
-              onSelect={() => update(task.id, { priority: opt.key })}
+              onSelect={() => {
+                // DEBUG: rastrear cadeia da mutation
+                // eslint-disable-next-line no-console
+                console.log("[priority onSelect]", {
+                  taskId: task.id,
+                  newPriority: opt.key,
+                  currentPriority: task.priority,
+                  updateFn: typeof update,
+                });
+                update(task.id, { priority: opt.key });
+                // eslint-disable-next-line no-console
+                console.log("[priority update called]");
+              }}
               className="text-[13px]"
             >
               <Flag className={cn("mr-2 h-3.5 w-3.5", opt.color)} />

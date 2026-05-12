@@ -172,7 +172,12 @@ export const intentionsApi = {
     }
     // Campos V3 (problema/contexto/criteriosAceite/etc.) sao omitidos — V2 rejeita.
 
+    // DEBUG: rastrear payload enviado ao backend
+    // eslint-disable-next-line no-console
+    console.log("[intentions.update] PUT /tasks/" + id, { fields, payload });
     const { data } = await api.put<Task>(ENDPOINTS.TASK(id), payload);
+    // eslint-disable-next-line no-console
+    console.log("[intentions.update] response", data);
     return mapTaskToIntention(data);
   },
 
