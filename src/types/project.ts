@@ -30,7 +30,13 @@ export interface ProjectDetail {
 export interface CreateProjectDto {
   nome: string;
   descricao?: string;
-  /** ID do time (DEntidade idClasse=-460) ao qual o projeto sera vinculado. */
+  /**
+   * ID do time (DEntidade idClasse=-180) ao qual o projeto sera vinculado.
+   * Backend V2 espera `teamId` (DVincula -182, ADR-V2-029). Campo legacy
+   * `idTeam` aceito por compat e mapeado para `teamId` no API client.
+   */
+  teamId?: string;
+  /** @deprecated usar `teamId`. Mantido apenas para compat. */
   idTeam?: string;
   /** IDs (DEntidade.chave) dos membros iniciais. Caller sempre vira MANAGER. */
   memberIds?: string[];
@@ -41,13 +47,21 @@ export interface CreateProjectDto {
  *
  * Todos os campos sao opcionais. Apenas os enviados serao atualizados.
  *
- * - `idTeam: null` desvincula explicitamente o projeto do time atual.
- * - `idTeam: undefined` (omitido) preserva o vinculo atual.
+ * Convencao do backend V2 (ADR-V2-029):
+ * - `teamId: null` desvincula explicitamente o projeto do time atual.
+ * - `teamId: undefined` (omitido) preserva o vinculo atual.
  * - axios envia `null` no body (vs `undefined`, que omite).
+ *
+ * O campo `idTeam` e LEGACY e foi renomeado para `teamId`. O API client
+ * faz a traducao quando recebe `idTeam` no DTO, mas novo codigo deve usar
+ * `teamId` direto.
  */
 export interface UpdateProjectDto {
   nome?: string;
   descricao?: string;
+  /** Veja `CreateProjectDto.teamId`. `null` desvincula, omitir preserva. */
+  teamId?: string | null;
+  /** @deprecated usar `teamId`. Mantido apenas para compat. */
   idTeam?: string | null;
   startDate?: string;
 }

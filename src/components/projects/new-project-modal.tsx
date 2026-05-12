@@ -57,7 +57,8 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       projectsApi.create({
         nome: name.trim(),
         descricao: description.trim() || undefined,
-        idTeam: selectedTeamId || undefined,
+        // ADR-V2-029: teamId canonico do V2 (DVincula -182).
+        teamId: selectedTeamId || undefined,
         memberIds:
           selectedMemberIds.size > 0
             ? Array.from(selectedMemberIds)

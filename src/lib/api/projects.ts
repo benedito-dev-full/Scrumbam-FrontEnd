@@ -32,13 +32,25 @@ function mapProject(raw: any): Project {
 }
 
 export const projectsApi = {
+  /**
+   * Lista projetos do usuario (V2 — `GET /projects`).
+   *
+   * Quando `teamId` informado, envia como query param para o backend
+   * filtrar por DVincula -182 PROJECT_TEAM_LINK (ADR-V2-029).
+   * Quando omitido, lista todos os projetos do usuario (inclui orfaos).
+   *
+   * @param _organizationId - Reservado (V2 escopa por user do JWT).
+   * @param teamId - Filtra projetos vinculados ao time.
+   */
   list: async (
     _organizationId?: string,
-    _teamId?: string,
+    teamId?: string,
   ): Promise<Project[]> => {
-    // V2 GET /projects: filtra automaticamente por user do JWT.
-    // Aceita apenas cursor/limit. Retorna { items, pagination }.
-    const { data } = await api.get(ENDPOINTS.PROJECTS);
+    const params: Record<string, string> = {};
+    if (teamId) params.teamId = teamId;
+    const { data } = await api.get(ENDPOINTS.PROJECTS, {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
     const items = Array.isArray(data) ? data : (data?.items ?? []);
     return items.map(mapProject);
   },
@@ -52,33 +64,52 @@ export const projectsApi = {
     };
   },
 
+  /**
+   * Cria projeto (V2 — `POST /projects`).
+   *
+   * Aceita `teamId` (canonico V2) ou `idTeam` (legacy — mapeado).
+   * Quando informado, o backend cria DVincula -182 atomicamente na mesma
+   * transacao (ADR-V2-029).
+   */
   create: async (
     dto: CreateProjectDto,
     organizationId?: string,
   ): Promise<Project> => {
-    // V2 CreateProjectDto: { nome, prefix?, description?, orgId?, automationEnabled?, gitRepo? }
-    // idTeam/memberIds nao existem em V2 — usar /projects/:id/members em chamada separada.
     const { useAuthStore } = await import("@/lib/stores/auth-store");
     const orgId = organizationId || useAuthStore.getState().user?.orgId || "";
+    const teamId = dto.teamId ?? dto.idTeam;
     const { data } = await api.post(ENDPOINTS.PROJECTS, {
       nome: dto.nome,
       description: dto.descricao || undefined,
       orgId: orgId || undefined,
+      teamId: teamId || undefined,
     });
     return mapProject(data);
   },
 
   /**
-   * Atualiza projeto via PATCH /projects/:id (V2 — apenas MANAGER no backend).
+   * Atualiza projeto via PATCH /projects/:id (V2 — apenas MANAGER).
    *
-   * V2 UpdateProjectDto aceita: nome, description, prefix, automationEnabled, gitRepo.
-   * NAO aceita idTeam ou startDate (legacy — ignorados aqui).
+   * Convencao para teamId (ADR-V2-029):
+   *  - `teamId === null` desvincula (soft-delete DVincula -182).
+   *  - `teamId === string` reatribui.
+   *  - `teamId` ausente preserva.
+   *
+   * Aceita `teamId` (canonico V2) ou `idTeam` (legacy — mapeado). Usa
+   * `'teamId' in dto || 'idTeam' in dto` para preservar `null` no body
+   * (diferente de `!== undefined`, que perderia esse caso em alguns
+   * serializers).
    */
   update: async (id: string, dto: UpdateProjectDto): Promise<Project> => {
     const payload: Record<string, unknown> = {};
     if (dto.nome !== undefined) payload.nome = dto.nome;
     if (dto.descricao !== undefined) payload.description = dto.descricao;
-    // idTeam e startDate sao legacy — V2 nao aceita
+    // teamId: aceitar null explicito.
+    if (Object.prototype.hasOwnProperty.call(dto, "teamId")) {
+      payload.teamId = dto.teamId;
+    } else if (Object.prototype.hasOwnProperty.call(dto, "idTeam")) {
+      payload.teamId = dto.idTeam;
+    }
     const { data } = await api.patch(ENDPOINTS.PROJECT(id), payload);
     return mapProject(data);
   },

@@ -36,7 +36,7 @@ const NO_TEAM_VALUE = "__none__";
  *
  * Diferencas vs NewProjectModal:
  * - Sem multi-select de membros (decisao de produto: evita conflito com endpoint dedicado)
- * - "Sem time" desvincula explicitamente (envia `idTeam: null` ao backend)
+ * - "Sem time" desvincula explicitamente (envia `teamId: null` ao backend — ADR-V2-029)
  */
 export function EditProjectModal({
   open,
@@ -72,7 +72,7 @@ export function EditProjectModal({
     const dto: {
       nome?: string;
       descricao?: string;
-      idTeam?: string | null;
+      teamId?: string | null;
     } = {};
 
     if (trimmedName !== project.nome) {
@@ -87,9 +87,10 @@ export function EditProjectModal({
 
     const currentTeamId = project.teamId ?? "";
     if (selectedTeamId !== currentTeamId) {
-      // Se usuario escolheu "Sem time", envia null explicito (desvincula)
-      // Se selecionou outro team, envia o id
-      dto.idTeam = selectedTeamId === "" ? null : selectedTeamId;
+      // teamId canonico do V2 (ADR-V2-029):
+      //  - "Sem time" -> null explicito (desvincula).
+      //  - id do time -> reatribui.
+      dto.teamId = selectedTeamId === "" ? null : selectedTeamId;
     }
 
     // Sem alteracoes: simplesmente fecha modal
