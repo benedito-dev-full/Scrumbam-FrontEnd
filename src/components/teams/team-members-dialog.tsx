@@ -103,7 +103,7 @@ export function TeamMembersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Membros — {team.name}</DialogTitle>
           <DialogDescription>
@@ -123,7 +123,7 @@ export function TeamMembersDialog({
                 onValueChange={setSelectedUserId}
                 disabled={availableUsers.length === 0 || addMember.isPending}
               >
-                <SelectTrigger className="flex-1 text-[13px]">
+                <SelectTrigger className="flex-1 min-w-0 text-[13px]">
                   <SelectValue
                     placeholder={
                       availableUsers.length === 0
