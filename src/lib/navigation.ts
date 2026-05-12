@@ -92,7 +92,6 @@ export const navSections: NavSection[] = [
         href: "/settings/workspace/members",
         label: "Membros",
         icon: Users,
-        customizeKey: "members",
       },
     ],
   },
