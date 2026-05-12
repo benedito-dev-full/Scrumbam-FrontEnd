@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   Users,
 } from "lucide-react";
@@ -30,21 +31,17 @@ import { TeamBadge } from "@/components/teams/team-badge";
 import { cn } from "@/lib/utils";
 import type { Team, TeamMember } from "@/types/team";
 
-const GRID =
-  "grid grid-cols-[minmax(0,2fr)_180px_90px_90px_140px_140px_32px] items-center gap-3";
-
 /**
- * Lista de times do workspace — estilo ClickUp.
+ * Lista de times do workspace — estilo Discord roles.
  *
- * Colunas:
- *  - Time (avatar colorido + nome + key).
- *  - Membros (stack de avatares + "+N").
- *  - Projetos (derivado de useProjects filtrado por teamId).
- *  - Agentes / Regras de automação / Atividade recente: backend ainda nao
- *    expoe agregados por time, entao renderiza "—" sem inventar dados.
+ * Cards verticais (nao tabela seca). Cada card tem:
+ *  - Acento lateral com a cor do time (faixa fina a esquerda).
+ *  - Badge grande (icone + cor) puxando o olho pra identidade do time.
+ *  - Nome + sigla + descritivo "X membros, Y projetos".
+ *  - Stack de avatares dos primeiros membros + acoes ao final.
  *
- * As operacoes destrutivas/dialogs reaproveitam os mesmos componentes da
- * pagina de settings (/settings/workspace/teams).
+ * Backend nao expoe Agentes/Regras/Atividade-recente por time, entao essas
+ * dimensoes foram droppadas em vez de virar colunas de "—" decorativas.
  */
 export default function TeamsPage() {
   usePageTitle("Times");
@@ -73,16 +70,19 @@ export default function TeamsPage() {
     return map;
   }, [projects]);
 
+  const teamsWithoutIcon = sortedTeams.filter((t) => !t.icon).length;
+
   return (
     <PageTransition>
       <div className="px-8 py-8">
-        <div className="mx-auto max-w-7xl space-y-6">
+        <div className="mx-auto max-w-5xl space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Times</h1>
               <p className="mt-1 text-[13px] text-muted-foreground">
                 Times de funcao da equipe — Dev, Design, Marketing, Copy...
+                cada time tem sua cor e icone proprios.
               </p>
             </div>
             {isAdmin && (
@@ -97,37 +97,34 @@ export default function TeamsPage() {
             )}
           </div>
 
-          {/* Table card */}
-          <section className="overflow-hidden rounded-xl border border-border bg-card/40">
-            <div
-              className={cn(
-                GRID,
-                "border-b border-border px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
-              )}
-            >
-              <div>Time</div>
-              <div>Membros</div>
-              <div>Projetos</div>
-              <div>Agentes</div>
-              <div>Regras de automacao</div>
-              <div>Atividade recente</div>
-              <div />
-            </div>
-
-            {teamsLoading ? (
-              <TeamSkeletonRows />
-            ) : sortedTeams.length === 0 ? (
-              <div className="px-4 py-16 text-center text-[13px] text-muted-foreground space-y-2">
-                <p>Voce ainda nao participa de nenhum time.</p>
-                {isAdmin && (
-                  <p className="text-muted-foreground/80">
-                    Crie o primeiro — ex: Desenvolvimento, Marketing, Design, Copy.
-                  </p>
-                )}
+          {/* Banner: incentivar a editar times sem icone */}
+          {isAdmin && !teamsLoading && teamsWithoutIcon > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-[13px]">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <div className="flex-1">
+                <p className="font-medium text-amber-200/90">
+                  {teamsWithoutIcon === 1
+                    ? "1 time sem icone"
+                    : `${teamsWithoutIcon} times sem icone`}
+                </p>
+                <p className="mt-0.5 text-[12px] text-amber-200/60">
+                  Adicione um icone (Code, Megaphone, Palette...) pra reforcar
+                  a identidade de funcao de cada time. Edite o time e escolha
+                  na galeria.
+                </p>
               </div>
-            ) : (
-              sortedTeams.map((team) => (
-                <TeamRow
+            </div>
+          )}
+
+          {/* Cards */}
+          {teamsLoading ? (
+            <CardSkeletons />
+          ) : sortedTeams.length === 0 ? (
+            <EmptyState isAdmin={isAdmin} onCreate={() => setCreateOpen(true)} />
+          ) : (
+            <ul className="space-y-2">
+              {sortedTeams.map((team) => (
+                <TeamCard
                   key={team.id}
                   team={team}
                   projectsCount={projectsCountByTeam.get(team.id) ?? 0}
@@ -135,9 +132,9 @@ export default function TeamsPage() {
                   onManageMembers={() => setMembersTeam(team)}
                   onDelete={() => setDeleteTeam(team)}
                 />
-              ))
-            )}
-          </section>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -166,10 +163,56 @@ export default function TeamsPage() {
 }
 
 // ============================================================
-// Team row
+// Empty state
 // ============================================================
 
-interface TeamRowProps {
+const SUGGESTED_TEAMS = ["Desenvolvimento", "Design", "Marketing", "Copy", "Operacoes", "QA"];
+
+function EmptyState({
+  isAdmin,
+  onCreate,
+}: {
+  isAdmin: boolean;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-card/30 px-6 py-12 text-center">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <Users className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <h2 className="mt-4 text-[15px] font-semibold">
+        Voce ainda nao participa de nenhum time
+      </h2>
+      <p className="mt-1 text-[13px] text-muted-foreground">
+        Comece criando times pelas funcoes da sua equipe.
+      </p>
+      {isAdmin && (
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          {SUGGESTED_TEAMS.map((label) => (
+            <span
+              key={label}
+              className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+      {isAdmin && (
+        <Button size="sm" onClick={onCreate} className="mt-5 text-[13px]">
+          <Plus className="mr-1 h-4 w-4" />
+          Criar primeiro time
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Team card
+// ============================================================
+
+interface TeamCardProps {
   team: Team;
   projectsCount: number;
   onEdit: () => void;
@@ -177,63 +220,58 @@ interface TeamRowProps {
   onDelete: () => void;
 }
 
-function TeamRow({
+function TeamCard({
   team,
   projectsCount,
   onEdit,
   onManageMembers,
   onDelete,
-}: TeamRowProps) {
+}: TeamCardProps) {
+  const accent = team.color || "#64748b";
+
   return (
-    <div
-      className={cn(
-        GRID,
-        "border-b border-border/40 px-4 py-3 text-[13px] transition-colors last:border-b-0 hover:bg-accent/20",
-      )}
-    >
-      {/* Time */}
-      <div className="flex min-w-0 items-center gap-3">
+    <li>
+      <div className="group relative flex items-center gap-4 overflow-hidden rounded-lg border border-border bg-card/40 px-4 py-3.5 transition-colors hover:bg-accent/20">
+        {/* Faixa de acento lateral com cor do time */}
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1"
+          style={{ backgroundColor: accent }}
+        />
+
         <TeamBadge
           name={team.name}
           color={team.color}
           icon={team.icon}
           size="lg"
         />
+
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-medium">{team.name}</p>
-          <p className="truncate text-[12px] text-muted-foreground">
-            <span className="font-mono uppercase tracking-wide">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-[14px] font-medium">{team.name}</p>
+            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               {team.key}
             </span>
+          </div>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">
+            <span className="tabular-nums">{team.memberCount}</span>
+            {" "}
+            {team.memberCount === 1 ? "membro" : "membros"}
             <span className="mx-1.5 text-muted-foreground/50">·</span>
-            prefixo das issues
+            <span className="tabular-nums">{projectsCount}</span>
+            {" "}
+            {projectsCount === 1 ? "projeto" : "projetos"}
           </p>
         </div>
-      </div>
 
-      {/* Membros */}
-      <MemberAvatars teamId={team.id} memberCount={team.memberCount} />
+        <MemberAvatars teamId={team.id} memberCount={team.memberCount} />
 
-      {/* Projetos */}
-      <span className="tabular-nums text-foreground/90">{projectsCount}</span>
-
-      {/* Agentes (sem dado agregado no backend) */}
-      <span className="tabular-nums text-muted-foreground/70">—</span>
-
-      {/* Regras de automacao */}
-      <span className="text-muted-foreground/70">—</span>
-
-      {/* Atividade recente */}
-      <span className="text-muted-foreground/70">—</span>
-
-      {/* Acoes */}
-      <div>
         {(team.canEdit || team.canDelete) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
                 aria-label={`Acoes do time ${team.name}`}
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -271,12 +309,12 @@ function TeamRow({
           </DropdownMenu>
         )}
       </div>
-    </div>
+    </li>
   );
 }
 
 // ============================================================
-// Member avatars
+// Member avatars stack
 // ============================================================
 
 const AVATAR_PALETTE = [
@@ -305,28 +343,30 @@ function MemberAvatars({
 }) {
   const { data: members, isLoading } = useTeamMembers(teamId);
 
+  if (memberCount === 0) {
+    return (
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground/50">
+        sem membros
+      </span>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1.5">
-        <div className="flex -space-x-1.5">
-          {[0, 1, 2].map((i) => (
-            <Skeleton
-              key={i}
-              className="h-6 w-6 rounded-full border-2 border-card"
-            />
-          ))}
-        </div>
+      <div className="flex -space-x-1.5">
+        {[0, 1, 2].map((i) => (
+          <Skeleton
+            key={i}
+            className="h-6 w-6 rounded-full border-2 border-card"
+          />
+        ))}
       </div>
     );
   }
 
   const list = members ?? [];
   const visible = list.slice(0, 4);
-  const extra = Math.max(0, (members?.length ?? memberCount) - visible.length);
-
-  if (list.length === 0) {
-    return <span className="text-[12px] text-muted-foreground/70">—</span>;
-  }
+  const extra = Math.max(0, memberCount - visible.length);
 
   return (
     <div className="flex items-center gap-2">
@@ -364,32 +404,22 @@ function MemberCircle({ member }: { member: TeamMember }) {
 // Skeletons
 // ============================================================
 
-function TeamSkeletonRows() {
+function CardSkeletons() {
   return (
-    <>
+    <ul className="space-y-2">
       {[1, 2, 3].map((i) => (
-        <div
+        <li
           key={i}
-          className={cn(
-            GRID,
-            "border-b border-border/40 px-4 py-3 last:border-b-0",
-          )}
+          className="flex items-center gap-4 rounded-lg border border-border bg-card/40 px-4 py-3.5"
         >
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-2.5 w-44" />
-            </div>
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-2.5 w-48" />
           </div>
           <Skeleton className="h-6 w-24 rounded-full" />
-          <Skeleton className="h-3 w-6" />
-          <Skeleton className="h-3 w-6" />
-          <Skeleton className="h-5 w-16 rounded" />
-          <Skeleton className="h-3 w-16" />
-          <div />
-        </div>
+        </li>
       ))}
-    </>
+    </ul>
   );
 }
