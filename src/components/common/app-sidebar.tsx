@@ -270,11 +270,11 @@ function Section({
         </button>
       )}
 
-      {!collapsed && prepend}
-
       {!collapsed && (
-        <ul className="space-y-px">
-          {section.team ? (
+        <div className="ml-3 border-l border-sidebar-border/60 pl-1">
+          {prepend}
+          <ul className="space-y-px">
+            {section.team ? (
             <li>
               <div className="flex items-center gap-2 rounded-md px-2 py-1 text-[14px] font-medium">
                 <section.team.icon
@@ -307,7 +307,8 @@ function Section({
               />
             ))
           )}
-        </ul>
+          </ul>
+        </div>
       )}
     </div>
   );

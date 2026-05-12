@@ -52,7 +52,7 @@ export function ProjectSelectorSidebar() {
   }, [pathname]);
 
   return (
-    <div className="mt-3">
+    <div className="mt-1">
       {/* Header — clique no titulo/icone alterna expand/collapse.
           No hover, o icone de pasta vira chevron (estilo ClickUp). */}
       <div className="group/header flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-sidebar-accent/70">
@@ -129,7 +129,10 @@ export function ProjectSelectorSidebar() {
 
       {/* Lista de projetos */}
       {expanded && !isLoading && sortedProjects.length > 0 && (
-        <ul id="sidebar-projects-list" className="space-y-px px-2">
+        <ul
+          id="sidebar-projects-list"
+          className="ml-3 space-y-px border-l border-sidebar-border/60 pl-1"
+        >
           {sortedProjects.map((project) => {
             const selected = project.chave === activeProjectId;
             const projectHref = `/projects/${project.chave}`;
