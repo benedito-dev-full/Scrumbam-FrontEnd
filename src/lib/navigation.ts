@@ -91,11 +91,6 @@ export const navSections: NavSection[] = [
         customizeKey: "teams",
       },
       {
-        href: "/vps",
-        label: "VPS",
-        icon: Cpu,
-      },
-      {
         href: "/more",
         label: "Mais",
         icon: MoreHorizontal,
@@ -133,7 +128,10 @@ export const navSections: NavSection[] = [
   {
     label: "Conexoes",
     collapsible: true,
-    items: [{ href: "/integrations", label: "MCP", icon: Plug }],
+    items: [
+      { href: "/integrations", label: "MCP", icon: Plug },
+      { href: "/vps", label: "VPS", icon: Cpu },
+    ],
   },
 ];
 

@@ -59,6 +59,19 @@ export function AppSidebar() {
     items: s.items.filter(visible),
   }));
 
+  const orgInitial = (user?.orgNome || "W")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+  const workspaceBadge = (
+    <span
+      className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[9px] font-bold text-black"
+      aria-hidden
+    >
+      {orgInitial}
+    </span>
+  );
+
   // orgInitials/orgShort agora vivem dentro de WorkspaceSwitcher (ADR-V2-030).
   const userInitials = (user?.nome || "?")
     .split(" ")
@@ -151,6 +164,9 @@ export function AppSidebar() {
                 section.label === "Workspace" ? (
                   <ProjectSelectorSidebar />
                 ) : null
+              }
+              labelBadge={
+                section.label === "Workspace" ? workspaceBadge : null
               }
             />
           </Fragment>
@@ -245,6 +261,7 @@ function Section({
   onToggle,
   onOpenCustomize,
   prepend,
+  labelBadge,
 }: {
   section: NavSection;
   pathname: string;
@@ -252,6 +269,7 @@ function Section({
   onToggle: () => void;
   onOpenCustomize: () => void;
   prepend?: ReactNode;
+  labelBadge?: ReactNode;
 }) {
   return (
     <div className="mt-3 first:mt-0">
@@ -259,8 +277,9 @@ function Section({
         <button
           type="button"
           onClick={onToggle}
-          className="group flex w-full items-center gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+          className="group flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
         >
+          {labelBadge}
           {collapsed ? (
             <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
           ) : (
