@@ -25,6 +25,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
@@ -343,8 +350,8 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
     .toUpperCase();
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button type="button" className={CELL_BOX}>
           {current ? (
             <span className="flex items-center gap-2">
@@ -361,57 +368,55 @@ function AssigneeCell({ task }: { task: IntentionDocument }) {
             </span>
           )}
         </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-1" align="start">
-        <div className="max-h-60 overflow-y-auto">
-          {members?.length ? (
-            members.map((m) => {
-              const isSel = m.id === task.assigneeId;
-              const mInitials = m.name
-                .split(" ")
-                .map((w) => w[0])
-                .filter(Boolean)
-                .slice(0, 2)
-                .join("")
-                .toUpperCase();
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() =>
-                    update(task.id, { assigneeId: isSel ? null : m.id })
-                  }
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] transition-colors",
-                    isSel ? "bg-accent" : "hover:bg-accent/60",
-                  )}
-                >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white">
-                    {mInitials}
-                  </span>
-                  <span className="flex-1 truncate">{m.name}</span>
-                  {isSel && <Check className="h-3.5 w-3.5 text-emerald-500" />}
-                </button>
-              );
-            })
-          ) : (
-            <p className="px-2 py-3 text-[12px] text-muted-foreground">
-              Nenhum membro disponivel.
-            </p>
-          )}
-        </div>
-        {task.assigneeId && (
-          <button
-            type="button"
-            onClick={() => update(task.id, { assigneeId: null })}
-            className="mt-1 flex w-full items-center gap-2 border-t border-border/60 px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-            Remover responsavel
-          </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-64" align="start">
+        {members?.length ? (
+          members.map((m) => {
+            const isSel = m.id === task.assigneeId;
+            const mInitials = m.name
+              .split(" ")
+              .map((w) => w[0])
+              .filter(Boolean)
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
+            return (
+              <DropdownMenuItem
+                key={m.id}
+                onSelect={() =>
+                  update(task.id, { assigneeId: isSel ? null : m.id })
+                }
+                className="text-[13px]"
+              >
+                <span className="mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white">
+                  {mInitials}
+                </span>
+                <span className="flex-1 truncate">{m.name}</span>
+                {isSel && (
+                  <Check className="ml-2 h-3.5 w-3.5 text-emerald-500" />
+                )}
+              </DropdownMenuItem>
+            );
+          })
+        ) : (
+          <p className="px-2 py-3 text-[12px] text-muted-foreground">
+            Nenhum membro disponivel.
+          </p>
         )}
-      </PopoverContent>
-    </Popover>
+        {task.assigneeId && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => update(task.id, { assigneeId: null })}
+              className="text-[12px] text-muted-foreground"
+            >
+              <X className="mr-2 h-3.5 w-3.5" />
+              Remover responsavel
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -468,8 +473,8 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
   const { update } = useUpdateIntention();
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button type="button" className={CELL_BOX}>
           {task.priority ? (
             <span className="flex items-center gap-1.5 text-[12px]">
@@ -484,28 +489,24 @@ function PriorityCell({ task }: { task: IntentionDocument }) {
             <Flag className="h-3.5 w-3.5 text-muted-foreground/60" />
           )}
         </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-1" align="start">
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48" align="start">
         {PRIORITY_OPTIONS.map((opt) => {
           const isSel = task.priority === opt.key;
           return (
-            <button
+            <DropdownMenuItem
               key={opt.key}
-              type="button"
-              onClick={() => update(task.id, { priority: opt.key })}
-              className={cn(
-                "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] transition-colors",
-                isSel ? "bg-accent" : "hover:bg-accent/60",
-              )}
+              onSelect={() => update(task.id, { priority: opt.key })}
+              className="text-[13px]"
             >
-              <Flag className={cn("h-3.5 w-3.5", opt.color)} />
+              <Flag className={cn("mr-2 h-3.5 w-3.5", opt.color)} />
               <span className="flex-1">{opt.label}</span>
-              {isSel && <Check className="h-3.5 w-3.5 text-emerald-500" />}
-            </button>
+              {isSel && <Check className="ml-2 h-3.5 w-3.5 text-emerald-500" />}
+            </DropdownMenuItem>
           );
         })}
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -519,33 +520,28 @@ function StatusCell({
   const { move } = useMoveStatus();
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button type="button" className={CELL_BOX}>
           <StatusPill config={config} />
         </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-56 p-1" align="start">
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="start">
         {STATUS_CONFIG.map((opt) => {
           const isSel = task.status === opt.status;
           return (
-            <button
+            <DropdownMenuItem
               key={opt.status}
-              type="button"
-              onClick={() => move(task.id, opt.status as IntentionStatus)}
-              className={cn(
-                "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors",
-                isSel ? "bg-accent" : "hover:bg-accent/60",
-              )}
+              onSelect={() => move(task.id, opt.status as IntentionStatus)}
             >
               <StatusPill config={opt} />
               {isSel && (
                 <Check className="ml-auto h-3.5 w-3.5 text-emerald-500" />
               )}
-            </button>
+            </DropdownMenuItem>
           );
         })}
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
