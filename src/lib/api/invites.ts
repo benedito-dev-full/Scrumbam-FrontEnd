@@ -33,6 +33,14 @@ export interface CreateInviteResponse {
   expiresAt: string;
 }
 
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: "MEMBER" | "VIEWER";
+  createdAt: string;
+  expiresAt: string;
+}
+
 export interface AcceptInviteRequest {
   name: string;
   password: string;
@@ -67,6 +75,18 @@ export const invitesApi = {
       payload,
     );
     return data;
+  },
+
+  /**
+   * Lista convites pendentes da organizacao (ADMIN).
+   * Backend retorna `{ invites: [...] }`.
+   */
+  listPending: async (orgId: string): Promise<PendingInvite[]> => {
+    const { data } = await api.get<{ invites: PendingInvite[] } | PendingInvite[]>(
+      `/organizations/${orgId}/invites`,
+    );
+    if (Array.isArray(data)) return data;
+    return data?.invites ?? [];
   },
 
   /**

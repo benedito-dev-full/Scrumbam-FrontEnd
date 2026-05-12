@@ -138,6 +138,9 @@ export function isNavItemActive(
   href: string,
   exact = false,
 ): boolean {
+  // Items sem href (action puro) ou href vazio NUNCA sao "active".
+  // Evita match espurio: `pathname.startsWith("" + "/")` seria sempre true.
+  if (!href) return false;
   if (pathname === href) return true;
   if (exact) return false;
   if (href === "/") return false;
