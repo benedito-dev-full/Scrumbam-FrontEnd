@@ -7,10 +7,7 @@ import {
   Check,
   ChevronDown,
   Columns3,
-  EyeOff,
-  Filter,
   Flag,
-  GitBranch,
   GripVertical,
   Layers,
   MessageSquare,
@@ -18,7 +15,6 @@ import {
   Plus,
   Search,
   Settings,
-  User,
   UserPlus,
   X,
 } from "lucide-react";
@@ -68,11 +64,46 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIG: StatusConfig[] = [
-  { key: "inbox",     label: "INBOX",        variant: "muted",  color: "#71717a", pillBg: "bg-zinc-800",      glyphIcon: "dot" },
-  { key: "ready",     label: "READY",        variant: "muted",  color: "#3b82f6", pillBg: "bg-blue-500/20",   glyphIcon: "dot" },
-  { key: "executing", label: "EM PROGRESSO", variant: "active", color: "#ffffff", pillBg: "bg-violet-500",    glyphIcon: "half" },
-  { key: "done",      label: "CONCLUÍDO",    variant: "muted",  color: "#22c55e", pillBg: "bg-emerald-500/20",glyphIcon: "check" },
-  { key: "failed",    label: "FALHOU",       variant: "muted",  color: "#ef4444", pillBg: "bg-red-500/20",    glyphIcon: "x" },
+  {
+    key: "inbox",
+    label: "INBOX",
+    variant: "muted",
+    color: "#71717a",
+    pillBg: "bg-zinc-800",
+    glyphIcon: "dot",
+  },
+  {
+    key: "ready",
+    label: "READY",
+    variant: "muted",
+    color: "#3b82f6",
+    pillBg: "bg-blue-500/20",
+    glyphIcon: "dot",
+  },
+  {
+    key: "executing",
+    label: "EM PROGRESSO",
+    variant: "active",
+    color: "#ffffff",
+    pillBg: "bg-violet-500",
+    glyphIcon: "half",
+  },
+  {
+    key: "done",
+    label: "CONCLUÍDO",
+    variant: "muted",
+    color: "#22c55e",
+    pillBg: "bg-emerald-500/20",
+    glyphIcon: "check",
+  },
+  {
+    key: "failed",
+    label: "FALHOU",
+    variant: "muted",
+    color: "#ef4444",
+    pillBg: "bg-red-500/20",
+    glyphIcon: "x",
+  },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -106,6 +137,8 @@ export interface ProjectStatusListProps {
   onNewTask: () => void;
 }
 
+type ViewMode = "list" | "kanban";
+
 export function ProjectStatusList({
   issues,
   projectId,
@@ -114,6 +147,7 @@ export function ProjectStatusList({
   const { move } = useMoveStatus();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [view, setView] = useState<ViewMode>("list");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -125,10 +159,10 @@ export function ProjectStatusList({
   }));
 
   const activeTask =
-    activeId != null ? issues.find((i) => i.id === activeId) ?? null : null;
+    activeId != null ? (issues.find((i) => i.id === activeId) ?? null) : null;
 
   const activeConfig = activeTask
-    ? STATUS_CONFIG.find((c) => c.key === activeTask.status) ?? null
+    ? (STATUS_CONFIG.find((c) => c.key === activeTask.status) ?? null)
     : null;
 
   const toggleCollapsed = (key: string) =>
@@ -160,37 +194,46 @@ export function ProjectStatusList({
       onDragCancel={() => setActiveId(null)}
     >
       <div className="rounded-lg border border-border bg-zinc-950/40 text-zinc-100">
-        <Toolbar onNewTask={onNewTask} />
+        <Toolbar onNewTask={onNewTask} view={view} onChangeView={setView} />
 
-        <div className="pb-2">
-          {issues.length === 0 ? (
-            <p className="px-6 py-10 text-center text-[12px] text-zinc-500">
-              Nenhuma tarefa neste projeto ainda.
-            </p>
-          ) : (
-            groups.map((g) => (
-              <StatusGroup
-                key={g.key}
-                config={g}
-                tasks={g.tasks}
-                projectId={projectId}
-                collapsed={!!collapsed[g.key]}
-                onToggleCollapsed={() => toggleCollapsed(g.key)}
-                onNewTask={onNewTask}
-                isDraggingActive={activeId !== null}
-              />
-            ))
-          )}
+        {view === "list" ? (
+          <div className="pb-2">
+            {issues.length === 0 ? (
+              <p className="px-6 py-10 text-center text-[12px] text-zinc-500">
+                Nenhuma tarefa neste projeto ainda.
+              </p>
+            ) : (
+              groups.map((g) => (
+                <StatusGroup
+                  key={g.key}
+                  config={g}
+                  tasks={g.tasks}
+                  projectId={projectId}
+                  collapsed={!!collapsed[g.key]}
+                  onToggleCollapsed={() => toggleCollapsed(g.key)}
+                  onNewTask={onNewTask}
+                  isDraggingActive={activeId !== null}
+                />
+              ))
+            )}
 
-          <button
-            type="button"
-            onClick={onNewTask}
-            className="ml-4 mt-2 flex items-center gap-2 px-2 py-2 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Novo status
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onNewTask}
+              className="ml-4 mt-2 flex items-center gap-2 px-2 py-2 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Novo status
+            </button>
+          </div>
+        ) : (
+          <KanbanView
+            groups={groups}
+            projectId={projectId}
+            onNewTask={onNewTask}
+            activeId={activeId}
+          />
+        )}
       </div>
 
       <DragOverlay dropAnimation={null}>
@@ -202,12 +245,30 @@ export function ProjectStatusList({
   );
 }
 
-function Toolbar({ onNewTask }: { onNewTask: () => void }) {
+function Toolbar({
+  onNewTask,
+  view,
+  onChangeView,
+}: {
+  onNewTask: () => void;
+  view: ViewMode;
+  onChangeView: (v: ViewMode) => void;
+}) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
       <div className="flex items-center gap-1">
-        <ToolbarPill icon={Layers} label="Grupo: Status" active />
-        <ToolbarPill icon={Columns3} label="Colunas" />
+        <ToolbarPill
+          icon={Layers}
+          label="Grupo: Status"
+          active={view === "list"}
+          onClick={() => onChangeView("list")}
+        />
+        <ToolbarPill
+          icon={Columns3}
+          label="Colunas"
+          active={view === "kanban"}
+          onClick={() => onChangeView("kanban")}
+        />
       </div>
 
       <div className="flex items-center gap-1">
@@ -251,14 +312,17 @@ function ToolbarPill({
   icon: Icon,
   label,
   active = false,
+  onClick,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
         active
@@ -515,7 +579,13 @@ function StatusGlyph({
         style={{ width: s, height: s, background: color }}
       >
         <svg width={s * 0.65} height={s * 0.65} viewBox="0 0 10 10" fill="none">
-          <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline
+            points="1.5,5 4,7.5 8.5,2.5"
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </span>
     );
@@ -529,8 +599,24 @@ function StatusGlyph({
         style={{ width: s, height: s, background: color }}
       >
         <svg width={s * 0.55} height={s * 0.55} viewBox="0 0 10 10" fill="none">
-          <line x1="2" y1="2" x2="8" y2="8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-          <line x1="8" y1="2" x2="2" y2="8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          <line
+            x1="2"
+            y1="2"
+            x2="8"
+            y2="8"
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <line
+            x1="8"
+            y1="2"
+            x2="2"
+            y2="8"
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       </span>
     );
@@ -812,6 +898,197 @@ function StatusCell({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// ============================================================
+// Kanban view (toggled via "Colunas" no toolbar)
+// ============================================================
+
+function KanbanView({
+  groups,
+  projectId,
+  onNewTask,
+  activeId,
+}: {
+  groups: (StatusConfig & { tasks: IntentionDocument[] })[];
+  projectId: string;
+  onNewTask: () => void;
+  activeId: string | null;
+}) {
+  return (
+    <div className="flex items-start gap-3 overflow-x-auto px-3 pb-4 pt-2">
+      {groups.map((g) => (
+        <KanbanColumn
+          key={g.key}
+          config={g}
+          tasks={g.tasks}
+          projectId={projectId}
+          onNewTask={onNewTask}
+          activeId={activeId}
+        />
+      ))}
+    </div>
+  );
+}
+
+function KanbanColumn({
+  config,
+  tasks,
+  projectId,
+  onNewTask,
+  activeId,
+}: {
+  config: StatusConfig;
+  tasks: IntentionDocument[];
+  projectId: string;
+  onNewTask: () => void;
+  activeId: string | null;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: config.key });
+
+  return (
+    <div
+      className={cn(
+        "flex h-full w-[280px] shrink-0 flex-col rounded-lg border border-zinc-800 bg-zinc-900/40 transition-colors",
+        isOver && "border-violet-500/40 bg-violet-500/[0.06]",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <StatusPill config={config} />
+          <span className="text-[12px] text-zinc-500 tabular-nums">
+            {tasks.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onNewTask}
+          aria-label="Adicionar tarefa nesta coluna"
+          title="Adicionar tarefa"
+          className="flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div
+        ref={setNodeRef}
+        className="flex min-h-[60px] flex-col gap-2 px-2 pb-2"
+      >
+        {tasks.length === 0 ? (
+          <p className="px-2 py-6 text-center text-[11px] text-zinc-600">
+            Sem tarefas
+          </p>
+        ) : (
+          tasks.map((task) => (
+            <KanbanCard
+              key={task.id}
+              task={task}
+              projectId={projectId}
+              isDragging={activeId === task.id}
+            />
+          ))
+        )}
+
+        <button
+          type="button"
+          onClick={onNewTask}
+          className="mt-1 flex items-center gap-1.5 rounded-md border border-dashed border-zinc-800 px-2 py-1.5 text-[12px] text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Adicionar tarefa
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function KanbanCard({
+  task,
+  projectId,
+  isDragging,
+}: {
+  task: IntentionDocument;
+  projectId: string;
+  isDragging: boolean;
+}) {
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id: task.id,
+    data: { task },
+  });
+
+  const { dueDate } = useTaskDueDate(task.id);
+  const dueLabel = dueDate
+    ? new Date(`${dueDate}T00:00:00`).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+      })
+    : null;
+
+  const orgId = useAuthStore((s) => s.user?.orgId);
+  const { data: members } = useOrgMembers(orgId ?? undefined);
+  const assigneeId =
+    (task as IntentionDocument & { assigneeId?: string | null }).assigneeId ??
+    null;
+  const assignee = members?.find((m) => m.id === assigneeId) ?? null;
+  const initials = (assignee?.name ?? "")
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "select-none rounded-md border border-zinc-800 bg-zinc-950/80 p-2.5 transition-colors",
+        "cursor-grab active:cursor-grabbing hover:border-zinc-700 hover:bg-zinc-900",
+        isDragging && "opacity-40",
+      )}
+    >
+      <Link
+        href={`/projects/${projectId}/issues/${task.id}`}
+        draggable={false}
+        onClick={(e) => e.stopPropagation()}
+        className="block"
+      >
+        <p className="line-clamp-3 text-[13px] font-medium leading-snug text-zinc-100">
+          {task.title}
+        </p>
+
+        <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+          <div className="flex items-center gap-2 text-zinc-500">
+            {task.priority && (
+              <span
+                className="flex items-center gap-1"
+                title={PRIORITY_LABEL[task.priority]}
+              >
+                <Flag
+                  className={cn("h-3 w-3", PRIORITY_COLOR[task.priority])}
+                />
+              </span>
+            )}
+            {dueLabel && (
+              <span className="tabular-nums text-zinc-400">{dueLabel}</span>
+            )}
+          </div>
+
+          {assignee && (
+            <span
+              title={assignee.name}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-semibold text-white"
+            >
+              {initials || "?"}
+            </span>
+          )}
+        </div>
+      </Link>
+    </div>
   );
 }
 
