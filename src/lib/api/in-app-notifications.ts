@@ -5,6 +5,48 @@ import type {
   UnreadCountResponse,
   MarkReadResponse,
 } from "@/types";
+import type { InAppNotificationType } from "@/types/in-app-notification";
+
+/**
+ * Shape cru que o backend V2 retorna em `/notifications` (formato derivado
+ * de `formatNotificationResponse` em `notifications/helpers`).
+ *
+ * Tem nomes diferentes do contrato consumido pelo frontend (camelCase
+ * ingles vs portugues), por isso o adapter abaixo.
+ */
+interface RawNotification {
+  id: string;
+  idClasse?: string;
+  recipientId?: string | null;
+  eventType?: string | null;
+  title: string;
+  message: string;
+  read?: boolean;
+  taskId?: string | null;
+  projectId?: string | null;
+  executionId?: string | null;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+/**
+ * Converte o shape cru do backend para o contrato `InAppNotification`
+ * consumido pelos componentes (createdAt→criadoEm, read→isRead,
+ * metadata→dados, eventType→type).
+ */
+function adaptNotification(raw: RawNotification): InAppNotification {
+  return {
+    id: raw.id,
+    type: (raw.eventType ?? "status_changed") as InAppNotificationType,
+    title: raw.title,
+    message: raw.message,
+    isRead: raw.read === true,
+    dados: (raw.metadata as InAppNotification["dados"]) ?? null,
+    criadoEm: raw.createdAt,
+    projectId: raw.projectId ?? null,
+    taskId: raw.taskId ?? null,
+  };
+}
 
 export const inAppNotificationsApi = {
   list: async (params?: {
@@ -23,8 +65,10 @@ export const inAppNotificationsApi = {
 
     // V2 retorna { items, pagination } — legacy retornava array
     const { data } = await api.get(url);
-    if (Array.isArray(data)) return data as InAppNotification[];
-    return (data?.items ?? []) as InAppNotification[];
+    const items: RawNotification[] = Array.isArray(data)
+      ? data
+      : (data?.items ?? []);
+    return items.map(adaptNotification);
   },
 
   getUnreadCount: async (): Promise<UnreadCountResponse> => {
