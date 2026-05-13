@@ -61,6 +61,36 @@ export function usePendingInvites(orgId: string | undefined) {
   });
 }
 
+export function useCancelInvite(orgId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) => invitesApi.cancel(orgId!, inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["org-invites", orgId ?? ""],
+      });
+      toast.success("Convite cancelado");
+    },
+    onError: (error: {
+      response?: { status?: number; data?: { message?: string } };
+    }) => {
+      const status = error.response?.status;
+      if (status === 403) {
+        toast.error("Sem permissao para cancelar convites");
+      } else if (status === 404) {
+        toast.error("Convite nao encontrado");
+      } else if (status === 409) {
+        toast.error("Convite ja foi aceito e nao pode ser cancelado");
+      } else {
+        toast.error(
+          error.response?.data?.message ?? "Erro ao cancelar convite",
+        );
+      }
+    },
+  });
+}
+
 export function useAddOrgMember(orgId: string | undefined) {
   const queryClient = useQueryClient();
 

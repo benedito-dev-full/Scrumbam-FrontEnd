@@ -41,6 +41,11 @@ export interface PendingInvite {
   expiresAt: string;
 }
 
+export interface CancelInviteResponse {
+  id: string;
+  revokedAt: string;
+}
+
 export interface AcceptInviteRequest {
   name: string;
   password: string;
@@ -82,9 +87,9 @@ export const invitesApi = {
    * Backend retorna `{ invites: [...] }`.
    */
   listPending: async (orgId: string): Promise<PendingInvite[]> => {
-    const { data } = await api.get<{ invites: PendingInvite[] } | PendingInvite[]>(
-      `/organizations/${orgId}/invites`,
-    );
+    const { data } = await api.get<
+      { invites: PendingInvite[] } | PendingInvite[]
+    >(`/organizations/${orgId}/invites`);
     if (Array.isArray(data)) return data;
     return data?.invites ?? [];
   },
@@ -109,6 +114,28 @@ export const invitesApi = {
     const { data } = await api.post<AcceptInviteResponse>(
       `/invites/${encodeURIComponent(token)}/accept`,
       payload,
+    );
+    return data;
+  },
+
+  /**
+   * Cancela convite pendente (hard delete + audit DEvento -502).
+   *
+   * Requer ADMIN da org (mesma regra do createInvite/listPending).
+   * Backend emite `invite.revoked` ANTES do hard delete.
+   *
+   * Codigos HTTP:
+   *  - 200 OK: convite cancelado, retorna { id, revokedAt }
+   *  - 403: nao e ADMIN
+   *  - 404: org/convite inexistente OU convite de outra org
+   *  - 409: convite ja foi ACCEPTED (estado terminal)
+   */
+  cancel: async (
+    orgId: string,
+    inviteId: string,
+  ): Promise<CancelInviteResponse> => {
+    const { data } = await api.delete<CancelInviteResponse>(
+      `/organizations/${orgId}/invites/${inviteId}`,
     );
     return data;
   },

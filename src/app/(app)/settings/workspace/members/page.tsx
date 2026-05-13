@@ -8,6 +8,7 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
+  useCancelInvite,
   useOrgMembers,
   usePendingInvites,
   useRemoveOrgMember,
@@ -58,7 +59,9 @@ export default function MembersPage() {
   const isAdmin = user?.role?.toUpperCase() === "ADMIN";
 
   const { data: members, isLoading } = useOrgMembers(orgId);
-  const { data: pendingInvites } = usePendingInvites(isAdmin ? orgId : undefined);
+  const { data: pendingInvites } = usePendingInvites(
+    isAdmin ? orgId : undefined,
+  );
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -70,8 +73,7 @@ export default function MembersPage() {
       if (filter !== "all" && m.role !== filter) return false;
       if (q) {
         return (
-          m.name.toLowerCase().includes(q) ||
-          m.email.toLowerCase().includes(q)
+          m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
         );
       }
       return true;
@@ -198,15 +200,12 @@ export default function MembersPage() {
 
           {/* Convites pendentes (apenas ADMIN) */}
           {isAdmin && pendingInvites && pendingInvites.length > 0 && (
-            <InvitesSection invites={pendingInvites} />
+            <InvitesSection invites={pendingInvites} orgId={orgId} />
           )}
         </div>
       </div>
 
-      <InviteWorkspaceModal
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-      />
+      <InviteWorkspaceModal open={inviteOpen} onOpenChange={setInviteOpen} />
     </PageTransition>
   );
 }
@@ -353,8 +352,8 @@ function MemberRow({
           <DialogHeader>
             <DialogTitle>Remover do workspace?</DialogTitle>
             <DialogDescription>
-              <strong>{m.name}</strong> perdera acesso ao workspace e a todos
-              os projetos.
+              <strong>{m.name}</strong> perdera acesso ao workspace e a todos os
+              projetos.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -453,28 +452,45 @@ function SkeletonRows() {
 // Convites pendentes (apenas ADMIN)
 // ============================================================
 
-function InvitesSection({ invites }: { invites: PendingInvite[] }) {
+function InvitesSection({
+  invites,
+  orgId,
+}: {
+  invites: PendingInvite[];
+  orgId: string | undefined;
+}) {
   return (
     <div className="mt-8">
-      <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
         <div>Email</div>
         <div>Cargo</div>
         <div>Convidado em</div>
         <div>Expira em</div>
+        <div></div>
       </div>
 
       <div className="bg-muted/20 border-b border-border px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Convites pendentes <span className="ml-1 text-muted-foreground/70">{invites.length}</span>
+        Convites pendentes{" "}
+        <span className="ml-1 text-muted-foreground/70">{invites.length}</span>
       </div>
 
       {invites.map((inv) => (
-        <InviteRow key={inv.id} invite={inv} />
+        <InviteRow key={inv.id} invite={inv} orgId={orgId} />
       ))}
     </div>
   );
 }
 
-function InviteRow({ invite }: { invite: PendingInvite }) {
+function InviteRow({
+  invite,
+  orgId,
+}: {
+  invite: PendingInvite;
+  orgId: string | undefined;
+}) {
+  const cancelInvite = useCancelInvite(orgId);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
   const createdAt = invite.createdAt ? new Date(invite.createdAt) : null;
   const expiresAt = invite.expiresAt ? new Date(invite.expiresAt) : null;
   const createdLabel =
@@ -492,21 +508,86 @@ function InviteRow({ invite }: { invite: PendingInvite }) {
       : "border-border bg-muted text-foreground/80";
 
   return (
-    <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px] items-center gap-3 border-b border-border/40 px-3 py-2.5 text-[13px] transition-colors hover:bg-accent/20">
-      <div className="min-w-0 truncate">{invite.email}</div>
-      <div>
-        <span
-          className={cn(
-            "inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
-            roleBadgeClass,
-          )}
-        >
-          {invite.role === "VIEWER" ? "Viewer" : "Member"}
-        </span>
+    <>
+      <div className="grid grid-cols-[minmax(0,2fr)_120px_120px_120px_28px] items-center gap-3 border-b border-border/40 px-3 py-2.5 text-[13px] transition-colors hover:bg-accent/20">
+        <div className="min-w-0 truncate">{invite.email}</div>
+        <div>
+          <span
+            className={cn(
+              "inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
+              roleBadgeClass,
+            )}
+          >
+            {invite.role === "VIEWER" ? "Viewer" : "Member"}
+          </span>
+        </div>
+        <div className="text-[12px] text-muted-foreground">{createdLabel}</div>
+        <div className="text-[12px] text-muted-foreground">{expiresLabel}</div>
+        <div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                aria-label="Acoes do convite"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem
+                className="text-[12px] text-destructive focus:text-destructive"
+                onClick={() => setConfirmCancel(true)}
+              >
+                Cancelar convite
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="text-[12px] text-muted-foreground">{createdLabel}</div>
-      <div className="text-[12px] text-muted-foreground">{expiresLabel}</div>
-    </div>
+
+      <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancelar convite?</DialogTitle>
+            <DialogDescription>
+              O convite enviado para <strong>{invite.email}</strong> sera
+              cancelado e o link de aceite deixara de funcionar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmCancel(false)}
+              className="text-[12px]"
+            >
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() =>
+                cancelInvite.mutate(invite.id, {
+                  onSuccess: () => setConfirmCancel(false),
+                })
+              }
+              disabled={cancelInvite.isPending}
+              className="text-[12px]"
+            >
+              {cancelInvite.isPending ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                "Sim, cancelar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -529,4 +610,3 @@ function formatRelative(date: Date): string {
   if (h < 24) return `em ${h}h`;
   return `em ${d} ${d === 1 ? "dia" : "dias"}`;
 }
-
