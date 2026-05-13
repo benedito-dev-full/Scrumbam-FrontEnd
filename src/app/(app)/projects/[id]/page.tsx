@@ -244,7 +244,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         {/* Content + side panel */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Main content */}
-          <div className="flex-1 min-w-0 overflow-auto">
+          <div className="flex-1 min-w-0 overflow-auto scrollbar-none">
             {activeTab === "overview" && (
               <OverviewTab
                 projectId={projectId}

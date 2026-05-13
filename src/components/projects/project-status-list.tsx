@@ -156,7 +156,7 @@ export function ProjectStatusList({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="rounded-lg bg-zinc-950/40 text-zinc-100">
+      <div className="rounded-lg border border-border bg-zinc-950/40 text-zinc-100">
         <Toolbar onNewTask={onNewTask} />
 
         <div className="pb-2">

@@ -222,3 +222,10 @@
 body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
