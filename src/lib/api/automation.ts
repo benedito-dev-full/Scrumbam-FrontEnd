@@ -272,17 +272,54 @@ export const automationApi = {
   },
 
   /**
-   * POST /projects/:id/execute — V2 exige command estruturado.
-   * Stub: o contrato legado de "dispatch por intentionId" nao mapeia 1:1
-   * para o V2. Lanca erro descritivo para a UI tratar.
+   * POST /projects/:id/execute — dispara `claude -p "<titulo da task>"` na VPS.
+   *
+   * Conector V3 Intention → comando estruturado V2:
+   *  1. Busca a task pelo id (`GET /tasks/:id`) para extrair `nome`/`titulo`.
+   *  2. Constrói comando estruturado `{ executable: "claude", args: ["-p", titulo] }`.
+   *  3. POST /projects/:id/execute com `taskId` original (vínculo
+   *     execution → task para o ExecutionHistory mostrar).
+   *
+   * O backend (`ExecutionAccessGuard` + `CommandValidatorService`) valida
+   * que o usuário tem permissão no projeto e que o executable está na
+   * allowlist. O Risk Gate (F13) classifica o risco automaticamente.
+   * Se HIGH, fica em `awaiting_approval` na fila — senão dispara já.
    */
   dispatchExecution: async (
-    _projectId: string,
-    _body: { intentionId: string },
+    projectId: string,
+    body: { intentionId: string },
   ): Promise<{ executionId: string }> => {
-    throw new Error(
-      "Dispatch por intentionId ainda nao suportado no V2 — V2 exige command estruturado.",
+    // 1. Buscar task para obter o título (intenção em linguagem natural)
+    const { data: task } = await api.get<{
+      chave?: string | number;
+      nome?: string;
+      titulo?: string;
+    }>(`/tasks/${body.intentionId}`);
+    const prompt = task?.nome ?? task?.titulo;
+    if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+      throw new Error(
+        `Task ${body.intentionId} não tem título — impossível dispatchar Claude Code.`,
+      );
+    }
+
+    // 2. Montar comando estruturado aceito pelo backend.
+    //    `claude -p "<prompt>"` roda non-interactive (sem TUI), retornando
+    //    saída em texto e finalizando. timeoutMs 30min cobre tasks médias.
+    const payload = {
+      command: {
+        executable: "claude",
+        args: ["-p", prompt],
+        timeoutMs: 1_800_000,
+      },
+      taskId: body.intentionId,
+    };
+
+    // 3. Dispatch — backend retorna a execution recém-criada
+    const { data } = await api.post<{ id?: string; executionId?: string }>(
+      `/projects/${projectId}/execute`,
+      payload,
     );
+    return { executionId: data?.id ?? data?.executionId ?? "" };
   },
 
   approveExecution: async (executionId: string): Promise<void> => {
