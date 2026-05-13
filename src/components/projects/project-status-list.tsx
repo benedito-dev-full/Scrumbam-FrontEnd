@@ -917,7 +917,7 @@ function KanbanView({
   activeId: string | null;
 }) {
   return (
-    <div className="flex items-start gap-3 overflow-x-auto px-3 pb-4 pt-2">
+    <div className="flex items-start gap-2 px-3 pb-4 pt-2">
       {groups.map((g) => (
         <KanbanColumn
           key={g.key}
@@ -950,7 +950,7 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex h-full w-[280px] shrink-0 flex-col rounded-lg border border-zinc-800 bg-zinc-900/40 transition-colors",
+        "flex h-full min-w-0 flex-1 basis-0 flex-col rounded-lg border border-zinc-800 bg-zinc-900/40 transition-colors",
         isOver && "border-violet-500/40 bg-violet-500/[0.06]",
       )}
     >

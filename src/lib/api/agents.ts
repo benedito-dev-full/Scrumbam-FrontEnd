@@ -39,18 +39,18 @@ export interface CreateAgentInput {
   projectId?: string;
 }
 
-// === API Client (adaptado ao V2) ===
+// === API Client (adaptado ao V2 — multi-projeto) ===
 //
-// V2 NAO TEM CRUD standalone de agents. O fluxo do V2 e:
-// 1. Owner do projeto: POST /agents/install-token { projectId } -> token one-shot
+// Fluxo V2:
+// 1. Admin: POST /agents/install-token { projectId? } -> token one-shot
+//    (projectId opcional: ausente = agente standalone, vincula projetos depois)
 // 2. VPS executa one-liner que chama POST /agents/install { installToken, hostname, ... }
 //    -> retorna agentId
 // 3. Agent emite POST /agents/:id/heartbeat com auth proprio
-// 4. Owner do projeto: POST /projects/:id/agent { agentId, tipo } para vincular
+// 4. Vincular/desvincular projetos: POST/DELETE /agents/:id/projects
 //
-// Como o frontend legado tinha "lista global de agents", "cria agent
-// sem projeto", etc., a maioria desses metodos vira stub. Para fluxo
-// real, use src/lib/api/automation.ts (link/unlink/status).
+// V2 ainda nao expoe GET/DELETE global de agents — list/get/remove
+// permanecem stubs. Para detalhes por projeto use automationApi.
 
 export const agentsApi = {
   /**
@@ -72,20 +72,18 @@ export const agentsApi = {
   },
 
   /**
-   * Cria install-token V2. Exige projectId (V2 vincula token ao projeto).
-   * Retorna o token + one-liner formatado para a UI exibir.
+   * Cria install-token V2. `projectId` é opcional — quando ausente, o
+   * agente é criado standalone e pode ser vinculado a múltiplos projetos
+   * depois via `POST /agents/:id/projects`.
    */
   create: async (input: CreateAgentInput): Promise<CreateAgentResponse> => {
-    if (!input.projectId) {
-      throw new Error(
-        "V2 exige projectId em create — passe input.projectId (use a tela de automacao do projeto).",
-      );
-    }
+    const body: { projectId?: string } = {};
+    if (input.projectId) body.projectId = input.projectId;
     const { data } = await api.post<{
       token: string;
       installTokenId: string;
       expiresAt: string;
-    }>("/agents/install-token", { projectId: input.projectId });
+    }>("/agents/install-token", body);
 
     const oneLineInstall = `curl -fsSL ${typeof window !== "undefined" ? window.location.origin : ""}/agent-dist/install.sh | INSTALL_TOKEN=${data.token} bash`;
 
