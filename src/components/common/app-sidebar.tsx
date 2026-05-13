@@ -207,13 +207,13 @@ export function AppSidebar() {
             >
               {userInitials}
             </div>
-            <span className="flex-1 min-w-0 truncate text-[18px] font-medium">
+            <span className="flex-1 min-w-0 truncate text-[12px] font-medium">
               {user.nome}
             </span>
             {roleLabel && (
               <span
                 className={cn(
-                  "shrink-0 rounded border px-1.5 py-px text-[15px] font-medium uppercase tracking-wide",
+                  "shrink-0 rounded border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide",
                   roleBadgeClass,
                 )}
                 title={`Seu cargo no workspace: ${roleLabel}`}
@@ -254,7 +254,7 @@ export function AppSidebar() {
           </div>
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[16.5px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
           >
             <span className="text-amber-400">↑</span> Plano gratuito
           </button>
@@ -288,7 +288,7 @@ function Section({
   return (
     <div className="mt-5 first:mt-1">
       {section.label && (
-        <div className="group flex w-full items-center gap-1.5 px-2 pb-1 pt-1 text-[16px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+        <div className="group flex w-full items-center gap-1.5 px-2 pb-1 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
           <button
             type="button"
             onClick={onToggle}
@@ -398,7 +398,7 @@ function SidebarLink({
   }
 
   const baseClass = cn(
-    "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[20px] transition-all duration-150 text-left",
+    "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13.5px] transition-all duration-150 text-left",
     active
       ? "bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm"
       : "text-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
@@ -463,7 +463,7 @@ function PopoverLink({
           <button
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[21px] transition-colors",
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors",
               active
                 ? "bg-sidebar-accent text-sidebar-foreground font-medium"
                 : "text-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
@@ -517,7 +517,7 @@ function PopoverItemRow({
             e.preventDefault();
             onOpenCustomize?.();
           }}
-          className="text-[21px] py-2"
+          className="text-[14px] py-2"
         >
           {content}
         </DropdownMenuItem>
@@ -525,12 +525,12 @@ function PopoverItemRow({
         <DropdownMenuItem
           disabled
           title={item.hint}
-          className="text-[21px] py-2 cursor-not-allowed"
+          className="text-[14px] py-2 cursor-not-allowed"
         >
           {content}
         </DropdownMenuItem>
       ) : (
-        <DropdownMenuItem asChild className="text-[21px] py-2">
+        <DropdownMenuItem asChild className="text-[14px] py-2">
           <Link href={item.href}>{content}</Link>
         </DropdownMenuItem>
       )}
