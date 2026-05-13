@@ -5,6 +5,7 @@ import {
   projectMembersApi,
   type AddProjectMemberRequest,
   type ProjectMember,
+  type UpdateProjectMemberRequest,
 } from "@/lib/api/project-members";
 
 function projectMembersKey(projectId: string | undefined) {
@@ -44,6 +45,66 @@ export function useAddProjectMember(projectId: string | undefined) {
         toast.error(
           error.response?.data?.message ?? "Erro ao adicionar membro",
         );
+      }
+    },
+  });
+}
+
+export function useUpdateProjectMember(projectId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: string;
+      payload: UpdateProjectMemberRequest;
+    }) => projectMembersApi.update(projectId!, userId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectMembersKey(projectId) });
+      toast.success("Membro atualizado");
+    },
+    onError: (error: {
+      response?: { status?: number; data?: { message?: string } };
+    }) => {
+      const status = error.response?.status;
+      if (status === 403) {
+        toast.error("Sem permissao para alterar este membro");
+      } else if (status === 404) {
+        toast.error("Membro nao encontrado");
+      } else {
+        toast.error(
+          error.response?.data?.message ?? "Erro ao atualizar membro",
+        );
+      }
+    },
+  });
+}
+
+export function useRemoveProjectMember(projectId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      projectMembersApi.remove(projectId!, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectMembersKey(projectId) });
+      toast.success("Membro removido do projeto");
+    },
+    onError: (error: {
+      response?: { status?: number; data?: { message?: string } };
+    }) => {
+      const status = error.response?.status;
+      if (status === 403) {
+        toast.error(
+          error.response?.data?.message ??
+            "Sem permissao (ou seria o ultimo Manager)",
+        );
+      } else if (status === 404) {
+        toast.error("Membro nao encontrado");
+      } else {
+        toast.error(error.response?.data?.message ?? "Erro ao remover membro");
       }
     },
   });

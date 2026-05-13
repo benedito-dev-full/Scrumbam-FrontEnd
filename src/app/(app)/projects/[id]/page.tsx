@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Link2,
   Bell,
+  ChevronDown,
   ChevronRight,
   CircleDashed,
   CheckCircle2,
@@ -44,11 +45,32 @@ import { useProject } from "@/lib/hooks/use-projects";
 import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { useProjectActivity } from "@/lib/hooks/use-activity";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
+import {
+  useProjectMembers,
+  useRemoveProjectMember,
+  useUpdateProjectMember,
+} from "@/lib/hooks/use-project-members";
+import type { ProjectMember, ProjectRole } from "@/lib/api/project-members";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { ProjectStatusList } from "@/components/projects/project-status-list";
 import { AddProjectMemberModal } from "@/components/projects/add-project-member-modal";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
   IntentionDocument,
@@ -112,12 +134,13 @@ function ProjectIcon({
 // Tabs
 // ============================================================
 
-type TabKey = "overview" | "activity" | "issues";
+type TabKey = "overview" | "activity" | "issues" | "members";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Visao geral" },
   { key: "activity", label: "Atividade" },
   { key: "issues", label: "Issues" },
+  { key: "members", label: "Membros" },
 ];
 
 interface ProjectPageProps {
@@ -263,6 +286,13 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
             {activeTab === "issues" && <IssuesTab issues={issuesList} />}
+            {activeTab === "members" && (
+              <MembersTab
+                projectId={projectId}
+                canManage={isAdmin}
+                onAddMembers={() => setAddMemberOpen(true)}
+              />
+            )}
           </div>
 
           {/* Right side panel (Properties) — so em monitor grande (2xl+).
@@ -1035,6 +1065,285 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+// ============================================================
+// Members tab — gerencia membros do projeto (DVincula -171/-172/-173)
+// ============================================================
+
+const PROJECT_ROLE_BADGE: Record<ProjectRole, string> = {
+  MANAGER: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  MEMBER: "bg-muted text-foreground/80 border-border",
+  VIEWER: "bg-muted/60 text-muted-foreground border-border",
+};
+
+const PROJECT_ROLE_LABEL: Record<ProjectRole, string> = {
+  MANAGER: "Manager",
+  MEMBER: "Member",
+  VIEWER: "Viewer",
+};
+
+const PROJECT_ROLE_OPTIONS: ProjectRole[] = ["MANAGER", "MEMBER", "VIEWER"];
+
+function MembersTab({
+  projectId,
+  canManage,
+  onAddMembers,
+}: {
+  projectId: string;
+  canManage: boolean;
+  onAddMembers: () => void;
+}) {
+  const { data: members, isLoading } = useProjectMembers(projectId);
+  const updateMember = useUpdateProjectMember(projectId);
+  const removeMember = useRemoveProjectMember(projectId);
+
+  const list = members ?? [];
+  const managerCount = list.filter((m) => m.role === "MANAGER").length;
+
+  return (
+    <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 2xl:px-10">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Membros do projeto
+            <span className="ml-2 text-[13px] font-normal text-muted-foreground tabular-nums">
+              {list.length}
+            </span>
+          </h2>
+          {canManage && (
+            <button
+              type="button"
+              onClick={onAddMembers}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Adicionar membros
+            </button>
+          )}
+        </div>
+
+        <div>
+          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
+            <div>Nome</div>
+            <div>Email</div>
+            <div>Cargo</div>
+            <div>Função</div>
+            <div></div>
+          </div>
+
+          {isLoading ? (
+            <div className="px-3 py-10 text-center text-[13px] text-muted-foreground">
+              Carregando...
+            </div>
+          ) : list.length === 0 ? (
+            <div className="px-3 py-10 text-center text-[13px] text-muted-foreground">
+              Nenhum membro neste projeto ainda.
+            </div>
+          ) : (
+            list.map((m) => (
+              <ProjectMemberRow
+                key={m.userId}
+                member={m}
+                canManage={canManage}
+                isLastManager={m.role === "MANAGER" && managerCount === 1}
+                isUpdating={updateMember.isPending}
+                isRemoving={removeMember.isPending}
+                onChangeRole={(role) =>
+                  updateMember.mutate({
+                    userId: m.userId,
+                    payload: { role, ...(m.cargo ? { cargo: m.cargo } : {}) },
+                  })
+                }
+                onRemove={() => removeMember.mutate(m.userId)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectMemberRow({
+  member,
+  canManage,
+  isLastManager,
+  isUpdating,
+  isRemoving,
+  onChangeRole,
+  onRemove,
+}: {
+  member: ProjectMember;
+  canManage: boolean;
+  isLastManager: boolean;
+  isUpdating: boolean;
+  isRemoving: boolean;
+  onChangeRole: (role: ProjectRole) => void;
+  onRemove: () => void;
+}) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const initials = (member.nome ?? "")
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <>
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border/40 px-3 py-2 text-[13px] hover:bg-accent/20 transition-colors">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-medium text-white">
+            {initials || "?"}
+          </span>
+          <span className="truncate font-medium">{member.nome}</span>
+        </div>
+
+        <span className="truncate text-[12px] text-muted-foreground">
+          {member.email ?? "—"}
+        </span>
+
+        <ProjectRoleCell
+          role={member.role}
+          canEdit={canManage && !isLastManager}
+          isPending={isUpdating}
+          onChange={onChangeRole}
+        />
+
+        <span className="truncate text-[12px] text-muted-foreground">
+          {member.cargo ?? "—"}
+        </span>
+
+        <div>
+          {canManage ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  aria-label="Mais opcoes"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  className="text-[12px] text-destructive focus:text-destructive"
+                  disabled={isLastManager}
+                  onClick={() => setConfirmRemove(true)}
+                >
+                  {isLastManager
+                    ? "Ultimo Manager (nao pode sair)"
+                    : "Remover do projeto"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </div>
+      </div>
+
+      <Dialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover do projeto?</DialogTitle>
+            <DialogDescription>
+              <strong>{member.nome}</strong> perdera acesso a este projeto. A
+              conta no workspace continua intacta.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmRemove(false)}
+              className="text-[12px]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                onRemove();
+                setConfirmRemove(false);
+              }}
+              disabled={isRemoving}
+              className="text-[12px]"
+            >
+              {isRemoving ? "Removendo..." : "Sim, remover"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ProjectRoleCell({
+  role,
+  canEdit,
+  isPending,
+  onChange,
+}: {
+  role: ProjectRole;
+  canEdit: boolean;
+  isPending: boolean;
+  onChange: (next: ProjectRole) => void;
+}) {
+  const badge = (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium w-fit",
+        PROJECT_ROLE_BADGE[role],
+      )}
+    >
+      {PROJECT_ROLE_LABEL[role]}
+      {canEdit && <ChevronDown className="h-3 w-3 opacity-70" />}
+    </span>
+  );
+
+  if (!canEdit) return badge;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Alterar funcao"
+          disabled={isPending}
+          className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {badge}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-44">
+        {PROJECT_ROLE_OPTIONS.map((opt) => (
+          <DropdownMenuItem
+            key={opt}
+            className="text-[12px]"
+            disabled={opt === role || isPending}
+            onClick={() => onChange(opt)}
+          >
+            <span
+              className={cn(
+                "mr-2 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
+                PROJECT_ROLE_BADGE[opt],
+              )}
+            >
+              {PROJECT_ROLE_LABEL[opt]}
+            </span>
+            {opt === role && (
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                atual
+              </span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

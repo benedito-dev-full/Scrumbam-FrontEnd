@@ -7,6 +7,7 @@ import {
   Loader2,
   MoreHorizontal,
   Search,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,7 +43,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InviteWorkspaceModal } from "@/components/settings/invite-workspace-modal";
@@ -310,50 +310,18 @@ function MemberRow({
           —
         </span>
 
-        {/* Actions */}
+        {/* Actions — remover do workspace */}
         <div>
           {isAdmin && !isSelf ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                  aria-label="Mais opcoes"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  className="text-[12px]"
-                  disabled={m.role === "ADMIN" || updateRole.isPending}
-                  onClick={() => handleRoleChange("ADMIN")}
-                >
-                  Tornar Admin
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-[12px]"
-                  disabled={m.role === "MEMBER" || updateRole.isPending}
-                  onClick={() => handleRoleChange("MEMBER")}
-                >
-                  Tornar Member
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-[12px]"
-                  disabled={m.role === "VIEWER" || updateRole.isPending}
-                  onClick={() => handleRoleChange("VIEWER")}
-                >
-                  Tornar Viewer
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-[12px] text-destructive focus:text-destructive"
-                  onClick={() => setConfirmRemove(true)}
-                >
-                  Remover do workspace
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              type="button"
+              onClick={() => setConfirmRemove(true)}
+              aria-label="Remover do workspace"
+              title="Remover do workspace"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           ) : null}
         </div>
       </div>

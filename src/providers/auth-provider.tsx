@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
 
@@ -10,6 +11,7 @@ const PUBLIC_PATHS = ["/login", "/register", "/invite"];
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const logout = useAuthStore((s) => s.logout);
@@ -57,8 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .catch((err) => {
           // 429 = rate limit, nao e erro de auth — ignorar
           if (err?.response?.status === 429) return;
-          // Cookie expirado ou invalido — limpar state e redirect
+          // Cookie expirado ou invalido — limpar state + cache e redirect.
+          // queryClient.clear() evita que dados da conta anterior (projetos,
+          // membros, intentions, etc.) vazem para o proximo login.
           logout();
+          queryClient.clear();
           router.replace("/login");
         })
         .finally(() => setIsValidating(false));
