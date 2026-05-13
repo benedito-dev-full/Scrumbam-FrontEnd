@@ -156,7 +156,7 @@ export function ProjectStatusList({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="rounded-lg border border-border bg-zinc-950/40 text-zinc-100">
+      <div className="rounded-lg bg-zinc-950/40 text-zinc-100">
         <Toolbar onNewTask={onNewTask} />
 
         <div className="pb-2">
@@ -204,15 +204,10 @@ function Toolbar({ onNewTask }: { onNewTask: () => void }) {
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
       <div className="flex items-center gap-1">
         <ToolbarPill icon={Layers} label="Grupo: Status" active />
-        <ToolbarPill icon={GitBranch} label="Subtarefas" />
         <ToolbarPill icon={Columns3} label="Colunas" />
       </div>
 
       <div className="flex items-center gap-1">
-        <ToolbarPill icon={Filter} label="Filtro" />
-        <ToolbarPill icon={EyeOff} label="Fechado" />
-        <ToolbarPill icon={User} label="Responsável" />
-
         <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-300">
           B
         </span>
