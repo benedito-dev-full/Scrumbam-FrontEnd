@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  Loader2,
+  MoreHorizontal,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageTransition } from "@/components/common/page-transition";
@@ -169,7 +175,7 @@ export default function MembersPage() {
             <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_100px_80px_90px_90px_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
               <div>Nome</div>
               <div>Email</div>
-              <div>Status</div>
+              <div>Cargo</div>
               <div>Times</div>
               <div>Entrou em</div>
               <div>Visto por ultimo</div>
@@ -277,8 +283,13 @@ function MemberRow({
           {m.email}
         </span>
 
-        {/* Role badge */}
-        <RoleBadge role={m.role} />
+        {/* Role (editavel se ADMIN e nao-self) */}
+        <RoleCell
+          role={m.role}
+          canEdit={isAdmin && !isSelf}
+          isPending={updateRole.isPending}
+          onChange={handleRoleChange}
+        />
 
         {/* Teams */}
         <span
@@ -392,22 +403,82 @@ function MemberRow({
   );
 }
 
-function RoleBadge({ role }: { role: OrgRole }) {
-  const config: Record<OrgRole, string> = {
-    ADMIN: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-    MEMBER: "bg-muted text-foreground/80 border-border",
-    VIEWER: "bg-muted/60 text-muted-foreground border-border",
-  };
-  const label = role.charAt(0) + role.slice(1).toLowerCase();
-  return (
+const ROLE_BADGE_CLASS: Record<OrgRole, string> = {
+  ADMIN: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  MEMBER: "bg-muted text-foreground/80 border-border",
+  VIEWER: "bg-muted/60 text-muted-foreground border-border",
+};
+
+const ROLE_LABEL: Record<OrgRole, string> = {
+  ADMIN: "Admin",
+  MEMBER: "Member",
+  VIEWER: "Viewer",
+};
+
+const ROLE_OPTIONS: OrgRole[] = ["ADMIN", "MEMBER", "VIEWER"];
+
+function RoleCell({
+  role,
+  canEdit,
+  isPending,
+  onChange,
+}: {
+  role: OrgRole;
+  canEdit: boolean;
+  isPending: boolean;
+  onChange: (next: OrgRole) => void;
+}) {
+  const badge = (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium w-fit",
-        config[role],
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium w-fit",
+        ROLE_BADGE_CLASS[role],
       )}
     >
-      {label}
+      {ROLE_LABEL[role]}
+      {canEdit && <ChevronDown className="h-3 w-3 opacity-70" />}
     </span>
+  );
+
+  if (!canEdit) return badge;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Alterar cargo"
+          disabled={isPending}
+          className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {badge}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-40">
+        {ROLE_OPTIONS.map((opt) => (
+          <DropdownMenuItem
+            key={opt}
+            className="text-[12px]"
+            disabled={opt === role || isPending}
+            onClick={() => onChange(opt)}
+          >
+            <span
+              className={cn(
+                "mr-2 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
+                ROLE_BADGE_CLASS[opt],
+              )}
+            >
+              {ROLE_LABEL[opt]}
+            </span>
+            {opt === role && (
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                atual
+              </span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

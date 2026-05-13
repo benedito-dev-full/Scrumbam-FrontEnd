@@ -23,6 +23,7 @@ import {
   HelpCircle,
   CheckCheck,
   SlidersHorizontal,
+  UserPlus,
 } from "lucide-react";
 
 import {
@@ -46,6 +47,7 @@ import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { ProjectStatusList } from "@/components/projects/project-status-list";
+import { AddProjectMemberModal } from "@/components/projects/add-project-member-modal";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import { cn } from "@/lib/utils";
 import type {
@@ -126,6 +128,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const { id: projectId } = use(params);
   const { data: project, isLoading } = useProject(projectId);
   const { data: intentions } = useIntentions({ projectSlug: projectId });
+  const role = useAuthStore((s) => s.user?.role);
+  const isAdmin = (role ?? "").toUpperCase() === "ADMIN";
 
   usePageTitle(project?.nome ?? "Project");
 
@@ -133,6 +137,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const [favorited, setFavorited] = useState(false);
   const [newIssueOpen, setNewIssueOpen] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
 
   const issuesList = (intentions ?? []) as IntentionDocument[];
 
@@ -252,6 +257,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 isLoading={isLoading}
                 issues={issuesList}
                 onNewTask={() => setNewIssueOpen(true)}
+                canAddMembers={isAdmin}
+                onAddMembers={() => setAddMemberOpen(true)}
               />
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
@@ -280,6 +287,13 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         open={propertiesOpen}
         onOpenChange={setPropertiesOpen}
         project={project}
+      />
+
+      {/* Add member modal — ADMIN-only */}
+      <AddProjectMemberModal
+        projectId={projectId}
+        open={addMemberOpen}
+        onOpenChange={setAddMemberOpen}
       />
     </PageTransition>
   );
@@ -701,6 +715,8 @@ function OverviewTab({
   isLoading,
   issues,
   onNewTask,
+  canAddMembers,
+  onAddMembers,
 }: {
   projectId: string;
   project:
@@ -714,6 +730,8 @@ function OverviewTab({
   isLoading: boolean;
   issues: IntentionDocument[];
   onNewTask: () => void;
+  canAddMembers: boolean;
+  onAddMembers: () => void;
 }) {
   const totalIssues = issues.length;
   const executingCount = issues.filter((i) => i.status === "executing").length;
@@ -725,9 +743,21 @@ function OverviewTab({
         {/* Project header */}
         <div className="space-y-3">
           <ProjectIcon nome={project?.nome} size="lg" />
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {isLoading ? "..." : (project?.nome ?? "Projeto")}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {isLoading ? "..." : (project?.nome ?? "Projeto")}
+            </h1>
+            {canAddMembers && (
+              <button
+                type="button"
+                onClick={onAddMembers}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Adicionar membros
+              </button>
+            )}
+          </div>
           {project?.descricao && (
             <p className="text-[13px] text-muted-foreground">
               {project.descricao}
