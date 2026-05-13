@@ -65,13 +65,25 @@ export const agentsApi = {
   },
 
   /**
-   * Stub — V2 nao tem GET /agents/:id direto.
-   * Para informacoes do agent vinculado a um projeto, use automationApi.getLink(projectId).
+   * V2 não expõe `GET /agents/:id` standalone. Como fallback, baixa a
+   * lista completa (`GET /agents`) e filtra localmente. A lista é pequena
+   * (agents da org do usuário) e já vem cacheada pelo `useAgents()`, então
+   * o custo é aceitável.
+   *
+   * Lança NotFoundException client-side se o id não aparecer na lista —
+   * isso reflete corretamente o caso "agent não existe ou usuário sem
+   * acesso", e permite o `useAgent` cair em `data=undefined` sem precisar
+   * de tratamento especial de exceção.
    */
-  get: async (_id: string): Promise<Agent> => {
-    throw new Error(
-      "agentsApi.get nao suportado no V2. Use automationApi.getLink(projectId).",
-    );
+  get: async (id: string): Promise<Agent> => {
+    const all = await agentsApi.list();
+    const found = all.find((a) => a.id === id);
+    if (!found) {
+      throw Object.assign(new Error(`Agent ${id} não encontrado`), {
+        response: { status: 404 },
+      });
+    }
+    return found;
   },
 
   /**
