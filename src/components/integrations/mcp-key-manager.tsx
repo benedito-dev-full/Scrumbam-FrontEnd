@@ -18,8 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-
 interface McpKeyManagerProps {
   /** Callback chamado quando o plaintext eh fechado, para o pai recarregar o snippet */
   onPlaintextDismissed?: () => void;
@@ -32,15 +30,21 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
 
   const [plaintext, setPlaintext] = useState<string | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedCommand, setCopiedCommand] = useState(false);
 
   const hasKey = info?.hasKey === true;
+
+  const command = plaintext
+    ? `claude mcp add scrumban --header "X-MCP-Key: ${plaintext}" https://api.scrumban.com.br/mcp`
+    : "";
 
   const handleGenerate = () => {
     generate.mutate(undefined, {
       onSuccess: (data) => {
         setPlaintext(data.key);
-        setCopied(false);
+        setCopiedKey(false);
+        setCopiedCommand(false);
       },
     });
   };
@@ -51,12 +55,23 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
     });
   };
 
-  const handleCopy = async () => {
+  const handleCopyKey = async () => {
     if (!plaintext) return;
     try {
       await navigator.clipboard.writeText(plaintext);
-      setCopied(true);
+      setCopiedKey(true);
       toast.success("Key copiada");
+    } catch {
+      toast.error("Falha ao copiar");
+    }
+  };
+
+  const handleCopyCommand = async () => {
+    if (!command) return;
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopiedCommand(true);
+      toast.success("Comando copiado — cole no seu terminal");
     } catch {
       toast.error("Falha ao copiar");
     }
@@ -89,8 +104,8 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
           <div className="flex-1 min-w-0">
             <h3 className="text-[13px] font-medium">MCP Key</h3>
             <p className="text-[12px] text-muted-foreground mt-0.5">
-              Autentica clientes Claude Code, Cursor e Claude Desktop como
-              voce. Uma key por usuario.
+              Autentica clientes Claude Code, Cursor e Claude Desktop como voce.
+              Uma key por usuario.
             </p>
           </div>
         </div>
@@ -102,9 +117,7 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
                 <dt className="text-muted-foreground">Prefix</dt>
                 <dd className="font-mono mt-0.5 truncate">
                   {info?.prefix ?? "—"}
-                  <span className="text-muted-foreground">
-                    {"········"}
-                  </span>
+                  <span className="text-muted-foreground">{"········"}</span>
                 </dd>
               </div>
               <div>
@@ -187,33 +200,65 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
             <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-[12px] text-amber-200 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>
-                Salve em local seguro. Se perder, voce precisa gerar uma nova
-                (a anterior e invalidada).
+                Salve em local seguro. Se perder, voce precisa gerar uma nova (a
+                anterior e invalidada).
               </span>
             </div>
 
-            <div className="rounded-md border border-border bg-background p-3 font-mono text-[12px] break-all">
-              {plaintext}
+            <div>
+              <p className="text-[12px] font-medium mb-1.5">
+                Comando pronto — cole no seu terminal
+              </p>
+              <div className="rounded-md border border-border bg-background p-3 font-mono text-[11px] break-all leading-relaxed">
+                {command}
+              </div>
+              <Button
+                onClick={handleCopyCommand}
+                size="sm"
+                className="w-full text-[12px] mt-2"
+              >
+                {copiedCommand ? (
+                  <>
+                    <Check className="mr-1.5 h-3 w-3" />
+                    Comando copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1.5 h-3 w-3" />
+                    Copiar comando
+                  </>
+                )}
+              </Button>
             </div>
 
-            <Button
-              onClick={handleCopy}
-              variant="outline"
-              size="sm"
-              className="w-full text-[12px]"
-            >
-              {copied ? (
-                <>
-                  <Check className="mr-1.5 h-3 w-3" />
-                  Copiada
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-1.5 h-3 w-3" />
-                  Copiar key
-                </>
-              )}
-            </Button>
+            <details className="text-[12px]">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                Ou copiar somente a key
+              </summary>
+              <div className="mt-2 space-y-2">
+                <div className="rounded-md border border-border bg-background p-3 font-mono text-[12px] break-all">
+                  {plaintext}
+                </div>
+                <Button
+                  onClick={handleCopyKey}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-[12px]"
+                >
+                  {copiedKey ? (
+                    <>
+                      <Check className="mr-1.5 h-3 w-3" />
+                      Copiada
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1.5 h-3 w-3" />
+                      Copiar key
+                    </>
+                  )}
+                </Button>
+              </div>
+            </details>
           </div>
 
           <DialogFooter>

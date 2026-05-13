@@ -1,2 +1,4 @@
 - [useProject returns ProjectDetail](project_useproject_returns_projectdetail.md) — tipo retornado por useProject(id) omite taskCount/teamId embora estejam em runtime
 - [ESLint hook bloqueia Edits intermediarios](feedback_eslint_hook_blocks_intermediate_edits.md) — PostToolUse:Edit roda eslint max-warnings 0; agrupar import+uso na mesma Edit
+- [Estender dispatcher do agent](agent_dispatcher_extension.md) — como adicionar novos `type`s ao pipe `POST /v1/execute` sem quebrar `RUN_CLAUDE_CODE` em produção
+- [macOS realpath em /tmp](macos_realpath_tmp.md) — specs em /tmp precisam canonicalizar baseDir antes de prefix-check (symlink /tmp→/private/tmp)
