@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
 
-const PUBLIC_PATHS = ["/login", "/register"];
+const PUBLIC_PATHS = ["/login", "/register", "/invite"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -69,8 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
 
-    // Se tem user e esta em rota publica, redirect para app
-    if (user && isPublicPath) {
+    // Se tem user e esta em rota publica, redirect para app.
+    // Excecao: /invite — usuario logado pode chegar aqui via flow=existing_user
+    // (ja tem conta noutra org, esta sendo adicionado a esta). Deixa renderizar
+    // a tela de merge em vez de expulsar para /intentions.
+    if (user && isPublicPath && !pathname.startsWith("/invite")) {
       router.replace("/intentions");
     }
   }, [user, pathname, router, isHydrated]);
