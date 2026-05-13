@@ -10,9 +10,9 @@ import { useProject } from "@/lib/hooks/use-projects";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { AgentLinkForm } from "./_components/agent-link-form";
 import { AgentStatusCard } from "./_components/agent-status-card";
-import { GitCredentialsPanel } from "./_components/git-credentials-panel";
+import { DeployKeyPanel } from "./_components/deploy-key-panel";
+import { ProjectSlugCard } from "./_components/project-slug-card";
 import { ExecutionHistory } from "./_components/execution-history";
-import { ClaudeCredentialCard } from "./_components/claude-credential-card";
 import { ApprovalQueuePanel } from "./_components/approval-queue-panel";
 import { ExecuteIntentionPanel } from "./_components/execute-intention-panel";
 
@@ -23,11 +23,13 @@ interface AutomationPageProps {
 /**
  * Pagina /projects/[id]/automation — gestao de automacao do projeto.
  *
- * Componentes:
- * 1. AgentStatusCard — status do agente vinculado + botao "Testar conexao"
+ * Componentes (refatoração Fase 6 — plan-2026-05-13):
+ * 1. AgentStatusCard — status do agente vinculado + botão "Testar conexão"
  * 2. AgentLinkForm — vincular/atualizar/desvincular agente do projeto
- * 3. GitCredentialsPanel — gerar/revogar deploy key SSH + aplicar .gitconfig
- * 4. ExecutionHistory — historico de DExecution (cursor pagination)
+ *    (sem `remotePath`/gitBot — moveram para `/vps/:id`)
+ * 3. ProjectSlugCard — slug auto-derivado + snippet pro CLAUDE.md da VPS
+ * 4. DeployKeyPanel — gera/lista/revoga deploy key SSH per-projeto
+ * 5. ApprovalQueuePanel + ExecuteIntentionPanel + ExecutionHistory
  *
  * Acesso:
  * - Visivel para todos os roles (MEMBER/VIEWER veem readonly via guards backend).
@@ -103,22 +105,24 @@ export default function AutomationPage({ params }: AutomationPageProps) {
               {/* 1. Status do agente */}
               <AgentStatusCard projectId={id} />
 
-              {/* 2. Credencial Claude (Fase 3) */}
-              <ClaudeCredentialCard projectId={id} />
-
-              {/* 3. Vinculo agente<->projeto */}
+              {/* 2. Vínculo agente↔projeto */}
               <AgentLinkForm projectId={id} />
 
-              {/* 4. Git Credentials */}
-              <GitCredentialsPanel projectId={id} />
+              {/* 3. Project slug + snippet pro CLAUDE.md da VPS */}
+              <ProjectSlugCard projectId={id} />
 
-              {/* 5. Aprovacoes pendentes — so renderiza se houver (Fase 3) */}
+              {/* 4. Deploy key SSH per-projeto-VPS (substitui o antigo
+                  GitCredentialsPanel; credenciais env e bot Git agora vivem
+                  em /vps/:id) */}
+              <DeployKeyPanel projectId={id} />
+
+              {/* 5. Aprovações pendentes — só renderiza se houver */}
               <ApprovalQueuePanel projectId={id} />
 
-              {/* 6. Disparar execucao (Fase 3) */}
+              {/* 6. Disparar execução */}
               <ExecuteIntentionPanel projectId={id} />
 
-              {/* 7. Historico de execucoes */}
+              {/* 7. Histórico de execuções */}
               <ExecutionHistory projectId={id} />
             </div>
           </div>

@@ -56,21 +56,26 @@ export interface ProjectAgentLink {
     tunnelPort: number | null;
     lastHeartbeat: string | null;
   } | null;
-  remotePath: string | null;
+  /**
+   * Slug canônico do projeto (auto-derivado de `project.nome` no backend).
+   * Usado para nomear a deploy key SSH e para o operador identificar o
+   * projeto no `~/.claude/CLAUDE.md` da VPS.
+   */
+  projectSlug: string | null;
   remoteBranch: string | null;
   remoteRepoUrl: string | null;
-  gitBotEmail: string;
-  gitBotName: string;
   executionTimeoutMs: number;
 }
 
+/**
+ * Input do vínculo agente-projeto. V2 só aceita `agentId` + `tipo` no body
+ * (o `projectSlug` é auto-gerado no backend a partir de `project.nome`).
+ * Os demais campos são mantidos no input para futura expansão (V2 ignora hoje).
+ */
 export interface LinkAgentInput {
   idAgent: string;
-  remotePath: string;
   remoteBranch?: string;
   remoteRepoUrl?: string;
-  gitBotEmail?: string;
-  gitBotName?: string;
   executionTimeoutMs?: number;
 }
 
@@ -151,11 +156,10 @@ function mapStatusToLink(projectId: string, raw: any): ProjectAgentLink {
           lastHeartbeat: primary.lastSeen ?? null,
         }
       : null,
-    remotePath: null,
+    projectSlug:
+      typeof primary?.projectSlug === "string" ? primary.projectSlug : null,
     remoteBranch: null,
     remoteRepoUrl: null,
-    gitBotEmail: "",
-    gitBotName: "",
     executionTimeoutMs: 600000,
   };
 }

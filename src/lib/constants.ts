@@ -282,6 +282,12 @@ export const QUERY_KEYS = {
   search: (query: string) => ["search", query] as const,
   agents: (status?: string) => ["agents", status ?? "all"] as const,
   agent: (id: string) => ["agent", id] as const,
+  agentEnvStatus: (agentId: string) =>
+    ["agent", agentId, "env-status"] as const,
+  agentLinkedProjects: (agentId: string) =>
+    ["agent", agentId, "linked-projects"] as const,
+  deployKey: (projectId: string, agentId: string) =>
+    ["project", projectId, "agent", agentId, "deploy-key"] as const,
   teams: {
     mine: ["teams", "mine"] as const,
     list: (orgId: string) => ["teams", "list", orgId] as const,

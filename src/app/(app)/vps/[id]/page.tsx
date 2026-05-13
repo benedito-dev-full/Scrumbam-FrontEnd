@@ -31,6 +31,9 @@ import {
 } from "@/lib/hooks/use-agents";
 import { AgentStatusBadge } from "../components/agent-status-badge";
 import { InstallSnippet } from "../components/install-snippet";
+import { EnvCredentialsPanel } from "./_components/env-credentials-panel";
+import { GitBotPanel } from "./_components/git-bot-panel";
+import { LinkedProjectsPanel } from "./_components/linked-projects-panel";
 import { cn } from "@/lib/utils";
 import type { RegenerateInstallTokenResponse } from "@/lib/api/agents";
 
@@ -222,6 +225,15 @@ export default function AgentDetailPage({ params }: AgentDetailPageProps) {
                         )}
                       </dl>
                     </section>
+
+                    {/* Configuração da VPS (env credentials + git bot + linked projects) */}
+                    {agent.status !== "pending_install" && (
+                      <>
+                        <EnvCredentialsPanel agentId={id} />
+                        <GitBotPanel agentId={id} />
+                        <LinkedProjectsPanel agentId={id} />
+                      </>
+                    )}
 
                     {/* Danger zone */}
                     <section className="space-y-2">

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Link2, Link2Off, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Link2, Link2Off, AlertCircle, KeyRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,19 +42,19 @@ const TIMEOUT_PRESETS = [
 ] as const;
 
 /**
- * Form que vincula um DAgent a um DProject.
+ * Form que vincula uma VPS ao projeto.
  *
- * Lista agentes da org via `useAgents()`, permite escolher remotePath,
- * branch, repoUrl, gitBotEmail/Name e executionTimeoutMs.
+ * Mudanças Fase 6.1 (plan-2026-05-13):
+ *  - Removido `remotePath` (backend resolve via projectSlug + CLAUDE.md global
+ *    da VPS — ADR-V2-030 e ADR-V2-035).
+ *  - Removido `gitBotEmail` / `gitBotName` (moveram para `/vps/:id` — bot Git
+ *    é per-VPS, não per-projeto).
+ *  - Mantidos: dropdown VPS, repo URL, branch padrão, timeout.
+ *  - `projectSlug` é auto-gerado pelo backend a partir de `project.nome` —
+ *    o frontend não envia (é exibido no `ProjectSlugCard` separado).
  *
- * - Se ja existe vinculo, mostra dados atuais + botao "Desvincular" e
- *   permite editar campos.
- * - Validacoes basicas inline; backend faz validacao final (path
- *   absoluto, owner do agente etc).
- *
- * ADMIN only — controller backend ja barra MEMBER/VIEWER com
- * RolesGuard. Front nao precisa duplicar (mas oculta CTA destrutivo se
- * nao for admin).
+ * Credenciais (PAT/Anthropic) e bot Git ficam em `/vps/:id`. Deploy key SSH
+ * fica no `DeployKeyPanel` separado nesta mesma página.
  */
 export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
   const { data: agents, isLoading: loadingAgents } = useAgents();
@@ -64,24 +65,18 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
   const [confirmUnlink, setConfirmUnlink] = useState(false);
   const [form, setForm] = useState<LinkAgentInput>({
     idAgent: "",
-    remotePath: "",
     remoteBranch: "main",
     remoteRepoUrl: "",
-    gitBotEmail: "bot@scrumban.app",
-    gitBotName: "Scrumban Bot",
     executionTimeoutMs: 1_800_000,
   });
 
-  // Sincroniza form com vinculo existente (se houver)
+  // Sincroniza form com vinculo existente
   useEffect(() => {
     if (link) {
       setForm({
         idAgent: link.agent?.id ?? "",
-        remotePath: link.remotePath ?? "",
         remoteBranch: link.remoteBranch ?? "main",
         remoteRepoUrl: link.remoteRepoUrl ?? "",
-        gitBotEmail: link.gitBotEmail,
-        gitBotName: link.gitBotName,
         executionTimeoutMs: link.executionTimeoutMs,
       });
     }
@@ -91,7 +86,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.idAgent || !form.remotePath) return;
+    if (!form.idAgent) return;
     linkMutation.mutate(form);
   };
 
@@ -177,38 +172,23 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
           {!loadingAgents && !agents?.length && (
             <p className="text-[11px] text-amber-500 flex items-center gap-1.5 mt-1">
               <AlertCircle className="h-3 w-3" />
-              Cadastre uma VPS em /vps antes de vincular.
+              Cadastre uma VPS em{" "}
+              <Link
+                href="/vps"
+                className="underline underline-offset-2 hover:text-amber-400"
+              >
+                /vps
+              </Link>{" "}
+              antes de vincular.
             </p>
           )}
-        </div>
-
-        {/* Remote Path */}
-        <div className="space-y-1.5">
-          <Label htmlFor="remotePath" className="text-[12px]">
-            Caminho remoto na VPS
-          </Label>
-          <Input
-            id="remotePath"
-            type="text"
-            value={form.remotePath}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, remotePath: e.target.value }))
-            }
-            placeholder="/home/scrumban-agent/projects/dinpayz"
-            className="text-[13px] font-mono"
-            required
-            disabled={linkMutation.isPending}
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Path absoluto onde o repositorio esta clonado no host.
-          </p>
         </div>
 
         {/* Branch + Repo URL */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="remoteBranch" className="text-[12px]">
-              Branch padrao
+              Branch padrão
             </Label>
             <Input
               id="remoteBranch"
@@ -225,7 +205,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="remoteRepoUrl" className="text-[12px]">
-              URL do repositorio
+              URL do repositório
             </Label>
             <Input
               id="remoteRepoUrl"
@@ -243,47 +223,10 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
           </div>
         </div>
 
-        {/* Git Bot */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="gitBotEmail" className="text-[12px]">
-              Email do bot Git
-            </Label>
-            <Input
-              id="gitBotEmail"
-              type="email"
-              value={form.gitBotEmail ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, gitBotEmail: e.target.value }))
-              }
-              placeholder="bot@scrumban.app"
-              className="text-[13px]"
-              disabled={linkMutation.isPending}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="gitBotName" className="text-[12px]">
-              Nome do bot
-            </Label>
-            <Input
-              id="gitBotName"
-              type="text"
-              value={form.gitBotName ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, gitBotName: e.target.value }))
-              }
-              placeholder="Scrumban Bot"
-              className="text-[13px]"
-              disabled={linkMutation.isPending}
-            />
-          </div>
-        </div>
-
         {/* Timeout */}
         <div className="space-y-1.5">
           <Label htmlFor="timeout" className="text-[12px]">
-            Timeout de execucao
+            Timeout de execução
           </Label>
           <Select
             value={String(form.executionTimeoutMs ?? 1_800_000)}
@@ -304,8 +247,18 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            Tempo maximo de execucao por comando antes da VPS cancelar.
+            Tempo máximo de execução por comando antes da VPS cancelar.
           </p>
+        </div>
+
+        {/* Aviso sobre credenciais/bot Git movidos */}
+        <div className="rounded-sm border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed flex items-start gap-2">
+          <KeyRound className="h-3 w-3 mt-0.5 shrink-0" />
+          <span>
+            Credenciais (PAT GitHub, ANTHROPIC_API_KEY) e o bot Git (name/email)
+            agora ficam em <code className="text-[10px]">/vps/:id</code> — são
+            per-VPS, compartilhados entre todos os projetos da mesma VPS.
+          </span>
         </div>
 
         {/* Submit */}
@@ -313,9 +266,7 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
           <Button
             type="submit"
             size="sm"
-            disabled={
-              !form.idAgent || !form.remotePath || linkMutation.isPending
-            }
+            disabled={!form.idAgent || linkMutation.isPending}
             className="text-[12px]"
           >
             {linkMutation.isPending ? (
@@ -340,16 +291,16 @@ export function AgentLinkForm({ projectId }: AgentLinkFormProps) {
             <DialogDescription asChild>
               <div className="space-y-2">
                 <p>
-                  Esta acao removera o vinculo entre o projeto e{" "}
+                  Esta ação removerá o vínculo entre o projeto e{" "}
                   <strong>{link?.agent?.nome}</strong>.
                 </p>
                 <ul className="list-disc ml-5 space-y-1 text-[12px]">
                   <li>
-                    Comandos de automacao deste projeto deixarao de ser
+                    Comandos de automação deste projeto deixarão de ser
                     executados.
                   </li>
                   <li>
-                    Deploy keys e .gitconfig na VPS NAO sao removidos
+                    Deploy keys e .gitconfig na VPS NÃO são removidos
                     automaticamente.
                   </li>
                   <li>
