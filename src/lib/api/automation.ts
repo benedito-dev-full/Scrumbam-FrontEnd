@@ -282,8 +282,25 @@ export const automationApi = {
   },
 
   getExecution: async (executionId: string): Promise<ExecutionV3> => {
-    const { data } = await api.get<ExecutionV3>(`/executions/${executionId}`);
-    return data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await api.get<any>(`/executions/${executionId}`);
+    // mapeia formato V2 do backend para o que o modal espera
+    return {
+      ...data,
+      intent: data.intent ?? data.command?.text ?? null,
+      status: data.status ?? data.approval?.status ?? "queued",
+      riskLevel: data.riskLevel ?? null,
+      durationMs: data.durationMs ?? data.claude?.durationMs ?? null,
+      commitHash: data.commitHash ?? data.git?.headAfter ?? null,
+      pullRequestUrl: data.pullRequestUrl ?? data.pullRequest?.url ?? null,
+      rollbackRef: data.rollbackRef ?? data.pullRequest?.rollbackRef ?? null,
+      claudeRuntimeData: data.claudeRuntimeData ?? (data.claude ? {
+        stdout: data.claude.stdout,
+        stderr: data.claude.stderr,
+        exitCode: data.claude.exitCode,
+        filesAffected: data.git?.filesChanged ? undefined : undefined,
+      } : undefined),
+    } as ExecutionV3;
   },
 
   /**
