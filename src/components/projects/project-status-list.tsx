@@ -62,14 +62,17 @@ interface StatusConfig {
   key: IntentionStatus;
   label: string;
   variant: "active" | "muted";
+  color: string;
+  pillBg: string;
+  glyphIcon?: "check" | "x" | "half" | "dot";
 }
 
 const STATUS_CONFIG: StatusConfig[] = [
-  { key: "inbox", label: "INBOX", variant: "muted" },
-  { key: "ready", label: "READY", variant: "muted" },
-  { key: "executing", label: "EM PROGRESSO", variant: "active" },
-  { key: "done", label: "CONCLUÍDO", variant: "muted" },
-  { key: "failed", label: "FALHOU", variant: "muted" },
+  { key: "inbox",     label: "INBOX",        variant: "muted",  color: "#71717a", pillBg: "bg-zinc-800",      glyphIcon: "dot" },
+  { key: "ready",     label: "READY",        variant: "muted",  color: "#3b82f6", pillBg: "bg-blue-500/20",   glyphIcon: "dot" },
+  { key: "executing", label: "EM PROGRESSO", variant: "active", color: "#7b68ee", pillBg: "bg-violet-500",    glyphIcon: "half" },
+  { key: "done",      label: "CONCLUÍDO",    variant: "muted",  color: "#22c55e", pillBg: "bg-emerald-500/20",glyphIcon: "check" },
+  { key: "failed",    label: "FALHOU",       variant: "muted",  color: "#ef4444", pillBg: "bg-red-500/20",    glyphIcon: "x" },
 ];
 
 const PRIORITY_OPTIONS: {
@@ -449,7 +452,7 @@ function TaskRow({
           onClick={(e) => e.stopPropagation()}
           className="flex min-w-0 flex-1 items-center gap-2 font-semibold text-zinc-100 hover:underline"
         >
-          <StatusGlyph variant={config.variant} />
+          <StatusGlyph config={config} />
           <span className="truncate">{task.title}</span>
         </Link>
       </div>
@@ -479,59 +482,81 @@ function TaskRow({
 }
 
 function StatusGlyph({
-  variant,
-  filled = false,
+  config,
   size = 12,
 }: {
-  variant: "active" | "muted";
-  filled?: boolean;
+  config: StatusConfig;
   size?: number;
 }) {
-  if (variant === "active") {
+  const { glyphIcon, color } = config;
+  const s = size;
+  const strokeW = size <= 10 ? 2 : 1.5;
+
+  if (glyphIcon === "half") {
     return (
       <span
         aria-hidden
         className="inline-block shrink-0 rounded-full"
         style={{
-          width: size,
-          height: size,
-          border: `1.5px solid ${filled ? "#ffffff" : "#7b68ee"}`,
-          background: filled
-            ? "conic-gradient(#ffffff 0 50%, transparent 50% 100%)"
-            : "conic-gradient(#7b68ee 0 50%, transparent 50% 100%)",
+          width: s,
+          height: s,
+          border: `${strokeW}px solid ${color}`,
+          background: `conic-gradient(${color} 0 50%, transparent 50% 100%)`,
         }}
       />
     );
   }
 
+  if (glyphIcon === "check") {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex shrink-0 items-center justify-center rounded-full"
+        style={{ width: s, height: s, background: color }}
+      >
+        <svg width={s * 0.65} height={s * 0.65} viewBox="0 0 10 10" fill="none">
+          <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (glyphIcon === "x") {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex shrink-0 items-center justify-center rounded-full"
+        style={{ width: s, height: s, background: color }}
+      >
+        <svg width={s * 0.55} height={s * 0.55} viewBox="0 0 10 10" fill="none">
+          <line x1="2" y1="2" x2="8" y2="8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          <line x1="8" y1="2" x2="2" y2="8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  // dot (inbox, ready)
   return (
     <span
       aria-hidden
-      className="inline-block shrink-0 rounded-full border border-dashed"
-      style={{
-        width: size,
-        height: size,
-        borderColor: filled ? "#ffffff" : "currentColor",
-      }}
+      className="inline-block shrink-0 rounded-full border"
+      style={{ width: s, height: s, borderColor: color }}
     />
   );
 }
 
 function StatusPill({ config }: { config: StatusConfig }) {
+  const isActive = config.variant === "active";
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-bold tracking-wide",
-        config.variant === "active"
-          ? "bg-violet-500 text-white"
-          : "bg-zinc-800 text-zinc-200",
+        config.pillBg,
+        isActive ? "text-white" : "text-zinc-200",
       )}
     >
-      <StatusGlyph
-        variant={config.variant}
-        filled={config.variant === "active"}
-        size={10}
-      />
+      <StatusGlyph config={config} size={10} />
       {config.label}
     </span>
   );
@@ -546,7 +571,7 @@ function DragPreview({
 }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-violet-500/40 bg-zinc-950 px-3 py-2 text-[13px] text-zinc-100 shadow-lg ring-1 ring-violet-500/20">
-      <StatusGlyph variant={config.variant} />
+      <StatusGlyph config={config} />
       <span className="truncate font-medium">{task.title}</span>
     </div>
   );
