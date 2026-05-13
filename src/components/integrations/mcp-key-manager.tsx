@@ -36,7 +36,7 @@ export function McpKeyManager({ onPlaintextDismissed }: McpKeyManagerProps) {
   const hasKey = info?.hasKey === true;
 
   const command = plaintext
-    ? `claude mcp add scrumban --header "X-MCP-Key: ${plaintext}" https://api.scrumban.com.br/mcp`
+    ? `claude mcp add --transport http scrumban https://api.scrumban.com.br/mcp --header "X-MCP-Key: ${plaintext}"`
     : "";
 
   const handleGenerate = () => {
