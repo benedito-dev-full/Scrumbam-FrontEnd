@@ -258,7 +258,22 @@ export const automationApi = {
     if (query?.cursor) params.cursor = query.cursor;
     if (query?.limit !== undefined) params.limit = query.limit;
     const { data } = await api.get("/executions", { params });
-    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawItems: any[] = Array.isArray(data) ? data : (data?.items ?? []);
+    const items: Execution[] = rawItems.map((item) => ({
+      ...item,
+      // backend V2 envia command.text; frontend espera intent
+      intent: item.intent ?? item.command?.text ?? null,
+      idProject: item.idProject ?? item.projectId ?? projectId,
+      idAgent: item.idAgent ?? null,
+      status: item.status ?? item.approval?.status ?? "queued",
+      startedAt: item.startedAt ?? item.claude?.startedAt ?? null,
+      finishedAt: item.finishedAt ?? item.claude?.finishedAt ?? null,
+      durationMs: item.durationMs ?? item.claude?.durationMs ?? null,
+      riskLevel: item.riskLevel ?? null,
+      exitCode: item.exitCode ?? item.claude?.exitCode ?? null,
+      logs: item.logs ?? item.claude?.stdout ?? null,
+    }));
     return {
       items,
       nextCursor: data?.pagination?.nextCursor ?? data?.nextCursor ?? null,
