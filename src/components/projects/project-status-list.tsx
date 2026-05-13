@@ -70,7 +70,7 @@ interface StatusConfig {
 const STATUS_CONFIG: StatusConfig[] = [
   { key: "inbox",     label: "INBOX",        variant: "muted",  color: "#71717a", pillBg: "bg-zinc-800",      glyphIcon: "dot" },
   { key: "ready",     label: "READY",        variant: "muted",  color: "#3b82f6", pillBg: "bg-blue-500/20",   glyphIcon: "dot" },
-  { key: "executing", label: "EM PROGRESSO", variant: "active", color: "#7b68ee", pillBg: "bg-violet-500",    glyphIcon: "half" },
+  { key: "executing", label: "EM PROGRESSO", variant: "active", color: "#ffffff", pillBg: "bg-violet-500",    glyphIcon: "half" },
   { key: "done",      label: "CONCLUÍDO",    variant: "muted",  color: "#22c55e", pillBg: "bg-emerald-500/20",glyphIcon: "check" },
   { key: "failed",    label: "FALHOU",       variant: "muted",  color: "#ef4444", pillBg: "bg-red-500/20",    glyphIcon: "x" },
 ];
@@ -397,7 +397,7 @@ function StatusTable({
       <button
         type="button"
         onClick={onNewTask}
-        className="flex items-center gap-2 py-2 pl-[30px] text-[12.5px] text-zinc-500 transition-colors hover:text-zinc-300"
+        className="flex items-center gap-2 py-2 pl-[30px] text-[12.5px] text-zinc-500 transition-colors hover:text-zinc-300 cursor-pointer"
       >
         <Plus className="h-3.5 w-3.5" />
         Adicionar Tarefa
