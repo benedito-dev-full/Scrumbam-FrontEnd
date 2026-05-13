@@ -54,11 +54,14 @@ export interface CreateAgentInput {
 
 export const agentsApi = {
   /**
-   * Stub — V2 nao tem endpoint global de listagem de agents.
-   * Para listar agents de um projeto, use automationApi.getStatus(projectId).
+   * Lista todos os agents (DEntidade -156) acessíveis ao usuário autenticado.
+   * Status é calculado em runtime pelo backend (janela 90s para `online`).
    */
-  list: async (_status?: AgentStatus): Promise<Agent[]> => {
-    return [];
+  list: async (status?: AgentStatus): Promise<Agent[]> => {
+    const { data } = await api.get<Agent[]>("/agents", {
+      params: status ? { status } : undefined,
+    });
+    return data;
   },
 
   /**
