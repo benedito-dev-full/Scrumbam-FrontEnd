@@ -97,8 +97,15 @@ export function useAddOrgMember(orgId: string | undefined) {
   return useMutation({
     mutationFn: (dto: AddOrgMemberDto) => organizationsApi.addUser(orgId!, dto),
     onSuccess: () => {
+      // ADR-V2-028: addUser delega para invitesApi.createInvite — o resultado
+      // é um convite pendente, não um membro ativo. Precisamos invalidar
+      // AMBAS as listas para refletir o convite recém-criado na UI
+      // (seção "Convites pendentes" em /settings/workspace/members).
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.orgMembers(orgId ?? ""),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["org-invites", orgId ?? ""],
       });
       toast.success("Membro adicionado com sucesso");
     },
