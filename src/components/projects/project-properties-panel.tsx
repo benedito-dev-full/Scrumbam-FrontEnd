@@ -14,11 +14,14 @@ import {
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useMyTeams } from "@/lib/hooks/use-teams";
 import { useUpdateProject } from "@/lib/hooks/use-projects";
+import { useProjectMembers } from "@/lib/hooks/use-project-members";
+import type { ProjectMember } from "@/lib/api/project-members";
 import { cn } from "@/lib/utils";
 import type { Project, ProjectDetail } from "@/types";
 import type { Team } from "@/types/team";
 
 const NO_TEAM_VALUE = "__none__";
+const NO_OWNER_VALUE = "__none__";
 
 /**
  * Shape minimo aceito pelo painel. `useProject` retorna `ProjectDetail`
@@ -41,8 +44,8 @@ interface ProjectPropertiesPanelProps {
  * Aberto via botao "Propriedades" no header da pagina /projects/[id].
  * Edicao inline com hover-to-reveal lapis (apenas ADMIN).
  *
- * Editaveis: nome, descricao, time, dataInicio.
- * Read-only: chave (id), responsavel.nome, criadoEm (pt-BR), taskCount.
+ * Editaveis: nome, descricao, time, responsavel, dataInicio.
+ * Read-only: chave (id), criadoEm (pt-BR), taskCount.
  *
  * Reusa `useUpdateProject` (PATCH /projects/:id). Toasts de sucesso/erro
  * sao disparados pelo hook. Cada save aguarda resposta (nao otimista) e
@@ -57,6 +60,7 @@ export function ProjectPropertiesPanel({
   const isAdmin = userRole?.toUpperCase() === "ADMIN";
 
   const { data: teams } = useMyTeams();
+  const { data: projectMembers } = useProjectMembers(project?.chave);
   const updateMutation = useUpdateProject();
 
   // Track qual campo esta sofrendo save (para spinner localizado)
@@ -123,9 +127,21 @@ export function ProjectPropertiesPanel({
     saveField("startDate", { startDate: newDate });
   };
 
+  const saveResponsavel = (newOwnerId: string) => {
+    const current = project.responsavel?.chave ?? "";
+    if (newOwnerId === current) return;
+    // "" representa "Sem responsavel" → backend recebe null
+    saveField("ownerId", { ownerId: newOwnerId === "" ? null : newOwnerId });
+  };
+
   const teamName = project.teamId
     ? (teams?.find((t: Team) => t.id === project.teamId)?.name ?? "—")
     : "Sem time";
+
+  const currentOwnerId = project.responsavel?.chave ?? "";
+  const responsavelName = project.responsavel?.nome
+    ? project.responsavel.nome
+    : "Sem responsavel";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -172,6 +188,16 @@ export function ProjectPropertiesPanel({
               onSave={(v) => saveTeam(v ?? "")}
             />
             <EditableField
+              label="Responsavel"
+              value={currentOwnerId}
+              displayValue={responsavelName}
+              type="member-select"
+              members={projectMembers ?? []}
+              disabled={!isAdmin}
+              isSaving={savingField === "ownerId"}
+              onSave={(v) => saveResponsavel(v ?? "")}
+            />
+            <EditableField
               label="Data de inicio"
               value={project.dataInicio ? project.dataInicio.slice(0, 10) : ""}
               displayValue={
@@ -189,10 +215,6 @@ export function ProjectPropertiesPanel({
           {/* Secao: Metadados (read-only) */}
           <Section title="Metadados">
             <ReadonlyField label="ID" value={project.chave} copyable mono />
-            <ReadonlyField
-              label="Responsavel"
-              value={project.responsavel?.nome ?? "—"}
-            />
             <ReadonlyField
               label="Criado em"
               value={new Date(project.criadoEm).toLocaleDateString("pt-BR")}
@@ -262,8 +284,9 @@ interface EditableFieldProps {
   displayValue?: string;
   onSave: (newValue: string | null) => void;
   disabled?: boolean;
-  type: "text" | "textarea" | "date" | "team-select";
+  type: "text" | "textarea" | "date" | "team-select" | "member-select";
   teams?: Team[];
+  members?: ProjectMember[];
   isSaving?: boolean;
   placeholder?: string;
 }
@@ -276,6 +299,7 @@ function EditableField({
   disabled = false,
   type,
   teams = [],
+  members = [],
   isSaving = false,
   placeholder,
 }: EditableFieldProps) {
@@ -396,6 +420,43 @@ function EditableField({
               {teams.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldRow>
+      );
+    }
+
+    if (type === "member-select") {
+      return (
+        <FieldRow label={label} isSaving={isSaving}>
+          <Select
+            value={draft || NO_OWNER_VALUE}
+            onValueChange={(v) => {
+              const newDraft = v === NO_OWNER_VALUE ? "" : v;
+              setDraft(newDraft);
+              // Para Select, salvamos imediatamente ao escolher
+              onSave(newDraft === "" ? "" : newDraft);
+              setEditing(false);
+            }}
+            open
+            onOpenChange={(o) => {
+              if (!o) {
+                // fechado sem selecao: cancela
+                setEditing(false);
+                setDraft(value);
+              }
+            }}
+          >
+            <SelectTrigger className="h-8 text-[13px] bg-muted/40 border border-border">
+              <SelectValue placeholder="Sem responsavel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_OWNER_VALUE}>Sem responsavel</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.userId} value={m.userId}>
+                  {m.nome}
                 </SelectItem>
               ))}
             </SelectContent>

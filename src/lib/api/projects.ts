@@ -110,6 +110,10 @@ export const projectsApi = {
     } else if (Object.prototype.hasOwnProperty.call(dto, "idTeam")) {
       payload.teamId = dto.idTeam;
     }
+    // ownerId (responsavel do projeto): aceitar null explicito.
+    if (Object.prototype.hasOwnProperty.call(dto, "ownerId")) {
+      payload.ownerId = dto.ownerId;
+    }
     const { data } = await api.patch(ENDPOINTS.PROJECT(id), payload);
     return mapProject(data);
   },
