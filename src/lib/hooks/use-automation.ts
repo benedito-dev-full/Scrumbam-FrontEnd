@@ -287,7 +287,9 @@ export function useDispatchExecution(projectId: string) {
       queryClient.invalidateQueries({
         queryKey: automationKeys.executions(projectId, undefined),
       });
-      // Move a task para EXECUTING no board imediatamente
+      // Move a task para EXECUTING otimisticamente — NÃO invalida o cache
+      // imediatamente (servidor ainda pode ter 'ready'). O polling de 3s
+      // em use-intentions sincroniza quando o backend confirmar.
       queryClient.setQueriesData<{ id: string; status: string }[]>(
         { queryKey: ["intentions"] },
         (old) => {
@@ -297,7 +299,6 @@ export function useDispatchExecution(projectId: string) {
           );
         },
       );
-      queryClient.invalidateQueries({ queryKey: ["intentions"] });
     },
     onError: (err) => {
       const msg =
