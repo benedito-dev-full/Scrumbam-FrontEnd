@@ -25,6 +25,20 @@ import {
   SlidersHorizontal,
   Trash2,
   UserPlus,
+  Settings,
+  Users,
+  Bell,
+  Shield,
+  Tag,
+  GitBranch,
+  Hash,
+  FileText,
+  Layers,
+  Globe,
+  Lock,
+  Activity,
+  Copy,
+  Check,
 } from "lucide-react";
 
 import {
@@ -135,13 +149,14 @@ function ProjectIcon({
 // Tabs
 // ============================================================
 
-type TabKey = "overview" | "activity" | "issues" | "members";
+type TabKey = "overview" | "activity" | "issues" | "members" | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Visao geral" },
   { key: "activity", label: "Atividade" },
   { key: "issues", label: "Issues" },
   { key: "members", label: "Membros" },
+  { key: "settings", label: "Configuracoes" },
 ];
 
 interface ProjectPageProps {
@@ -275,6 +290,16 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 projectId={projectId}
                 canManage={isAdmin}
                 onAddMembers={() => setAddMemberOpen(true)}
+              />
+            )}
+            {activeTab === "settings" && (
+              <SettingsTab
+                project={project}
+                isLoading={isLoading}
+                issues={issuesList}
+                canManage={isAdmin}
+                onOpenProperties={() => setPropertiesOpen(true)}
+                onDeleteProject={() => setDeleteOpen(true)}
               />
             )}
           </div>
@@ -1357,6 +1382,655 @@ function ProjectRoleCell({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// ============================================================
+// Settings tab — tela estatica de configuracoes do projeto.
+// Renderiza apenas dados reais que o backend expoe hoje (chave, nome,
+// descricao, dataInicio, dataFim, criadoEm, taskCount, responsavel, teamId).
+// Componentes interativos (switches, selects, botoes) sao visuais/estaticos:
+// servem como placeholder visual para futuras configuracoes sem chamar API.
+// ============================================================
+
+function SettingsTab({
+  project,
+  isLoading,
+  issues,
+  canManage,
+  onOpenProperties,
+  onDeleteProject,
+}: {
+  project:
+    | {
+        chave?: string;
+        nome: string;
+        descricao?: string | null;
+        dataInicio?: string | null;
+        dataFim?: string | null;
+        criadoEm?: string;
+        taskCount?: number;
+        responsavel?: { chave: string; nome: string } | null;
+        teamId?: string | null;
+      }
+    | undefined;
+  isLoading: boolean;
+  issues: IntentionDocument[];
+  canManage: boolean;
+  onOpenProperties: () => void;
+  onDeleteProject: () => void;
+}) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copy = async (value: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 1500);
+    } catch {
+      // ignora falha de clipboard (HTTP sem secure context)
+    }
+  };
+
+  if (isLoading || !project) {
+    return (
+      <div className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16 flex flex-col items-center justify-center text-center">
+        <Settings className="h-8 w-8 text-muted-foreground/30 mb-3 animate-pulse" />
+        <p className="text-[13px] text-muted-foreground">
+          Carregando configuracoes...
+        </p>
+      </div>
+    );
+  }
+
+  const totalIssues = issues.length;
+  const doneCount = issues.filter((i) => i.status === "done").length;
+  const conclusao =
+    totalIssues > 0 ? Math.round((doneCount / totalIssues) * 100) : 0;
+  const hasDataInicio = !!project.dataInicio;
+  const hasDataFim = !!project.dataFim;
+
+  return (
+    <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 2xl:px-10">
+      <div className="mx-auto max-w-5xl space-y-8">
+        {/* Header da tela */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-muted-foreground" />
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Configuracoes do projeto
+            </h1>
+          </div>
+          <p className="text-[13px] text-muted-foreground">
+            Visao geral das configuracoes deste projeto. Edicoes detalhadas
+            ficam no painel de propriedades.
+          </p>
+        </div>
+
+        {/* Resumo em cards */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <SettingsStatCard
+            icon={Hash}
+            label="Tasks"
+            value={String(project.taskCount ?? totalIssues)}
+            iconBg="bg-blue-500/15"
+            iconColor="text-blue-500"
+          />
+          <SettingsStatCard
+            icon={Activity}
+            label="Conclusao"
+            value={`${conclusao}%`}
+            iconBg="bg-emerald-500/15"
+            iconColor="text-emerald-500"
+          />
+          <SettingsStatCard
+            icon={Users}
+            label="Time"
+            value={project.teamId ? "Vinculado" : "Sem time"}
+            iconBg="bg-violet-500/15"
+            iconColor="text-violet-500"
+          />
+          <SettingsStatCard
+            icon={Shield}
+            label="Visibilidade"
+            value="Privado"
+            iconBg="bg-amber-500/15"
+            iconColor="text-amber-500"
+          />
+        </div>
+
+        {/* Identidade */}
+        <SettingsSection
+          icon={FileText}
+          title="Identidade"
+          description="Informacoes basicas que identificam o projeto na plataforma."
+        >
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            <SettingsField label="Nome">
+              <div className="flex items-center gap-2">
+                <ProjectIcon nome={project.nome} />
+                <span className="text-[13px] font-medium">{project.nome}</span>
+              </div>
+            </SettingsField>
+
+            <SettingsField label="Identificador">
+              <button
+                type="button"
+                onClick={() => copy(project.chave ?? "", "chave")}
+                className="group flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted"
+                title="Copiar identificador"
+              >
+                <Hash className="h-3 w-3 text-muted-foreground" />
+                <span className="font-mono text-[12px] text-foreground">
+                  {project.chave ?? "—"}
+                </span>
+                {copiedKey === "chave" ? (
+                  <Check className="h-3 w-3 text-emerald-500" />
+                ) : (
+                  <Copy className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                )}
+              </button>
+            </SettingsField>
+
+            <div className="sm:col-span-2">
+              <SettingsField label="Descricao">
+                {project.descricao ? (
+                  <p className="text-[13px] leading-relaxed text-foreground">
+                    {project.descricao}
+                  </p>
+                ) : (
+                  <p className="text-[13px] italic text-muted-foreground/70">
+                    Sem descricao definida.
+                  </p>
+                )}
+              </SettingsField>
+            </div>
+          </div>
+        </SettingsSection>
+
+        {/* Cronograma */}
+        <SettingsSection
+          icon={Calendar}
+          title="Cronograma"
+          description="Datas que delimitam o ciclo de vida deste projeto."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <SettingsDateCard
+              label="Criado em"
+              date={project.criadoEm}
+              tone="neutral"
+            />
+            <SettingsDateCard
+              label="Data de inicio"
+              date={project.dataInicio}
+              tone="blue"
+              fallback="Nao definida"
+            />
+            <SettingsDateCard
+              label="Data de termino"
+              date={project.dataFim}
+              tone="amber"
+              fallback="Em aberto"
+            />
+          </div>
+          {hasDataInicio && hasDataFim && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="text-muted-foreground">Janela do projeto</span>
+                <span className="font-medium text-foreground tabular-nums">
+                  {new Date(project.dataInicio!).toLocaleDateString("pt-BR")}{" "}
+                  <span className="text-muted-foreground">→</span>{" "}
+                  {new Date(project.dataFim!).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-amber-500"
+                  style={{ width: `${Math.max(conclusao, 4)}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{doneCount} concluidas</span>
+                <span>{totalIssues} no total</span>
+              </div>
+            </div>
+          )}
+        </SettingsSection>
+
+        {/* Responsabilidade */}
+        <SettingsSection
+          icon={Users}
+          title="Responsabilidade"
+          description="Pessoas e times associados a este projeto."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <Shield className="h-3 w-3" />
+                Responsavel
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-[12px] font-semibold text-white">
+                  {(project.responsavel?.nome ?? "?")
+                    .split(" ")
+                    .map((w) => w[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase() || "?"}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-medium">
+                    {project.responsavel?.nome ?? "Sem responsavel"}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {project.responsavel?.chave
+                      ? `ID ${project.responsavel.chave}`
+                      : "Atribua um responsavel"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <GitBranch className="h-3 w-3" />
+                Time
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-violet-500/15 text-violet-500">
+                  <Users className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-medium">
+                    {project.teamId ? "Time vinculado" : "Sem vinculo de time"}
+                  </p>
+                  <p className="truncate font-mono text-[11px] text-muted-foreground">
+                    {project.teamId ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SettingsSection>
+
+        {/* Notificacoes (estaticas) */}
+        <SettingsSection
+          icon={Bell}
+          title="Notificacoes"
+          description="Eventos que disparam alertas para membros do projeto."
+        >
+          <div className="divide-y divide-border rounded-lg border border-border bg-card">
+            <SettingsToggleRow
+              icon={Sparkles}
+              title="Nova issue criada"
+              description="Notificar quando uma nova intencao for adicionada."
+              defaultChecked
+            />
+            <SettingsToggleRow
+              icon={CheckCircle2}
+              title="Issue concluida"
+              description="Notificar quando uma intencao mudar para concluida."
+              defaultChecked
+            />
+            <SettingsToggleRow
+              icon={Bug}
+              title="Falha em automacao"
+              description="Notificar quando uma execucao automatica falhar."
+              defaultChecked
+            />
+            <SettingsToggleRow
+              icon={UserPlus}
+              title="Novos membros"
+              description="Notificar quando um membro for adicionado ao projeto."
+              defaultChecked={false}
+            />
+          </div>
+        </SettingsSection>
+
+        {/* Workflow / colunas */}
+        <SettingsSection
+          icon={Layers}
+          title="Workflow"
+          description="Colunas que compoem o fluxo Kanban deste projeto."
+        >
+          <div className="flex flex-wrap gap-2">
+            {KANBAN_COLUMNS.map((col) => {
+              const count = issues.filter((i) => i.status === col.status)
+                .length;
+              return (
+                <div
+                  key={col.status}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border border-border px-3 py-2",
+                    col.headerBg,
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider",
+                      col.headerText,
+                    )}
+                  >
+                    {col.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                      col.badgeBg,
+                      col.badgeText,
+                    )}
+                  >
+                    {count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </SettingsSection>
+
+        {/* Integracoes / acesso */}
+        <SettingsSection
+          icon={Cpu}
+          title="Integracoes e acesso"
+          description="Atalhos para automacao e privacidade do projeto."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-cyan-500/15 text-cyan-500">
+                <Cpu className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium">Automacao</p>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  Agente, credenciais e fila de aprovacao deste projeto.
+                </p>
+              </div>
+              <span className="self-center rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-semibold text-cyan-600 dark:text-cyan-400">
+                Ativo
+              </span>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-amber-500">
+                <Lock className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium">Privacidade</p>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  Apenas membros vinculados podem ver tasks e atividades.
+                </p>
+              </div>
+              <span className="self-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                Privado
+              </span>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-500/15 text-blue-500">
+                <Tag className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium">Tags do projeto</p>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  Gerencie etiquetas reutilizaveis nas issues.
+                </p>
+              </div>
+              <span className="self-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Em breve
+              </span>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-500">
+                <Globe className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium">Webhooks</p>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                  Envie eventos do projeto para sistemas externos.
+                </p>
+              </div>
+              <span className="self-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Em breve
+              </span>
+            </div>
+          </div>
+        </SettingsSection>
+
+        {/* Acoes rapidas */}
+        <SettingsSection
+          icon={SlidersHorizontal}
+          title="Acoes"
+          description="Atalhos para edicao detalhada e operacoes do projeto."
+        >
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onOpenProperties}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Editar propriedades
+            </button>
+            <a
+              href={`/projects/${project.chave}/automation`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Cpu className="h-3.5 w-3.5" />
+              Abrir automacao
+            </a>
+          </div>
+        </SettingsSection>
+
+        {/* Zona de perigo */}
+        {canManage && (
+          <section className="rounded-lg border border-destructive/30 bg-destructive/5 p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-destructive/15 text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[14px] font-semibold text-destructive">
+                  Zona de perigo
+                </h3>
+                <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+                  Excluir este projeto remove issues, membros e webhooks de
+                  forma irreversivel. Execucoes em andamento bloqueiam a
+                  exclusao.
+                </p>
+                <button
+                  type="button"
+                  onClick={onDeleteProject}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-[12px] font-medium text-destructive transition-colors hover:bg-destructive/10 hover:border-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir projeto
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SettingsStatCard({
+  icon: Icon,
+  label,
+  value,
+  iconBg,
+  iconColor,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  iconBg: string;
+  iconColor: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-md",
+            iconBg,
+          )}
+        >
+          <Icon className={cn("h-4 w-4", iconColor)} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="truncate text-[16px] font-semibold tabular-nums">
+            {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card/40 p-5">
+      <header className="mb-4 flex items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[14px] font-semibold tracking-tight">{title}</h2>
+          {description && (
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function SettingsField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function SettingsDateCard({
+  label,
+  date,
+  tone,
+  fallback,
+}: {
+  label: string;
+  date?: string | null;
+  tone: "neutral" | "blue" | "amber";
+  fallback?: string;
+}) {
+  const toneClasses: Record<typeof tone, { bg: string; color: string }> = {
+    neutral: { bg: "bg-muted", color: "text-foreground" },
+    blue: { bg: "bg-blue-500/15", color: "text-blue-500" },
+    amber: { bg: "bg-amber-500/15", color: "text-amber-500" },
+  };
+  const t = toneClasses[tone];
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span
+          className={cn(
+            "flex h-5 w-5 items-center justify-center rounded-md",
+            t.bg,
+          )}
+        >
+          <Calendar className={cn("h-3 w-3", t.color)} />
+        </span>
+        {label}
+      </div>
+      <p className="mt-2 text-[15px] font-semibold tabular-nums">
+        {date ? (
+          new Date(date).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        ) : (
+          <span className="text-muted-foreground/70 italic font-normal text-[13px]">
+            {fallback ?? "—"}
+          </span>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function SettingsToggleRow({
+  icon: Icon,
+  title,
+  description,
+  defaultChecked,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  defaultChecked?: boolean;
+}) {
+  const [checked, setChecked] = useState(!!defaultChecked);
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium">{title}</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => setChecked((v) => !v)}
+        role="switch"
+        aria-checked={checked}
+        className={cn(
+          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+          checked ? "bg-emerald-500" : "bg-muted",
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-4 w-4 transform rounded-full bg-background shadow transition-transform",
+            checked ? "translate-x-[18px]" : "translate-x-0.5",
+          )}
+        />
+      </button>
+    </div>
   );
 }
 
