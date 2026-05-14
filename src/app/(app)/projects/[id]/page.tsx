@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Star,
   MoreHorizontal,
@@ -25,6 +26,7 @@ import {
   CheckCheck,
   SlidersHorizontal,
   UserPlus,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -55,6 +57,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { ProjectStatusList } from "@/components/projects/project-status-list";
 import { AddProjectMemberModal } from "@/components/projects/add-project-member-modal";
+import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import {
   DropdownMenu,
@@ -149,6 +152,7 @@ interface ProjectPageProps {
 
 export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const { id: projectId } = use(params);
+  const router = useRouter();
   const { data: project, isLoading } = useProject(projectId);
   const { data: intentions } = useIntentions({ projectSlug: projectId });
   const role = useAuthStore((s) => s.user?.role);
@@ -161,6 +165,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const [newIssueOpen, setNewIssueOpen] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
 
   const issuesList = (intentions ?? []) as IntentionDocument[];
 
@@ -282,6 +287,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 onNewTask={() => setNewIssueOpen(true)}
                 canAddMembers={isAdmin}
                 onAddMembers={() => setAddMemberOpen(true)}
+                canDeleteProject={isAdmin}
+                onDeleteProject={() => setDeleteProjectOpen(true)}
               />
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
@@ -291,6 +298,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 projectId={projectId}
                 canManage={isAdmin}
                 onAddMembers={() => setAddMemberOpen(true)}
+                canDeleteProject={isAdmin}
+                onDeleteProject={() => setDeleteProjectOpen(true)}
               />
             )}
           </div>
@@ -325,6 +334,17 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         open={addMemberOpen}
         onOpenChange={setAddMemberOpen}
       />
+
+      {/* Delete project dialog — ADMIN-only.
+          Em sucesso, redireciona para /projects (a tela atual deixou de existir). */}
+      {project && (
+        <DeleteProjectDialog
+          project={{ chave: projectId, nome: project.nome }}
+          open={deleteProjectOpen}
+          onOpenChange={setDeleteProjectOpen}
+          onSuccess={() => router.push("/projects")}
+        />
+      )}
     </PageTransition>
   );
 }
@@ -747,6 +767,8 @@ function OverviewTab({
   onNewTask,
   canAddMembers,
   onAddMembers,
+  canDeleteProject,
+  onDeleteProject,
 }: {
   projectId: string;
   project:
@@ -762,6 +784,8 @@ function OverviewTab({
   onNewTask: () => void;
   canAddMembers: boolean;
   onAddMembers: () => void;
+  canDeleteProject: boolean;
+  onDeleteProject: () => void;
 }) {
   const totalIssues = issues.length;
   const executingCount = issues.filter((i) => i.status === "executing").length;
@@ -777,15 +801,29 @@ function OverviewTab({
             <h1 className="text-3xl font-semibold tracking-tight">
               {isLoading ? "..." : (project?.nome ?? "Projeto")}
             </h1>
-            {canAddMembers && (
-              <button
-                type="button"
-                onClick={onAddMembers}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Adicionar membros
-              </button>
+            {(canAddMembers || canDeleteProject) && (
+              <div className="flex shrink-0 flex-col items-stretch gap-2">
+                {canDeleteProject && (
+                  <button
+                    type="button"
+                    onClick={onDeleteProject}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 hover:border-destructive/60 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Excluir projeto
+                  </button>
+                )}
+                {canAddMembers && (
+                  <button
+                    type="button"
+                    onClick={onAddMembers}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Adicionar membros
+                  </button>
+                )}
+              </div>
             )}
           </div>
           {project?.descricao && (
@@ -1090,10 +1128,14 @@ function MembersTab({
   projectId,
   canManage,
   onAddMembers,
+  canDeleteProject,
+  onDeleteProject,
 }: {
   projectId: string;
   canManage: boolean;
   onAddMembers: () => void;
+  canDeleteProject: boolean;
+  onDeleteProject: () => void;
 }) {
   const { data: members, isLoading } = useProjectMembers(projectId);
   const updateMember = useUpdateProjectMember(projectId);
@@ -1105,22 +1147,36 @@ function MembersTab({
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 2xl:px-10">
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-semibold tracking-tight">
             Membros do projeto
             <span className="ml-2 text-[13px] font-normal text-muted-foreground tabular-nums">
               {list.length}
             </span>
           </h2>
-          {canManage && (
-            <button
-              type="button"
-              onClick={onAddMembers}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              Adicionar membros
-            </button>
+          {(canManage || canDeleteProject) && (
+            <div className="flex shrink-0 flex-col items-stretch gap-2">
+              {canDeleteProject && (
+                <button
+                  type="button"
+                  onClick={onDeleteProject}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 hover:border-destructive/60 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir projeto
+                </button>
+              )}
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={onAddMembers}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Adicionar membros
+                </button>
+              )}
+            </div>
           )}
         </div>
 
