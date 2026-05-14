@@ -281,12 +281,23 @@ export function useDispatchExecution(projectId: string) {
   return useMutation({
     mutationFn: (intentionId: string) =>
       automationApi.dispatchExecution(projectId, { intentionId }),
-    onSuccess: () => {
+    onSuccess: (_data, intentionId) => {
       toast.success("Execucao iniciada");
       queryClient.invalidateQueries({ queryKey: ["executions", projectId] });
       queryClient.invalidateQueries({
         queryKey: automationKeys.executions(projectId, undefined),
       });
+      // Move a task para EXECUTING no board imediatamente
+      queryClient.setQueriesData<{ id: string; status: string }[]>(
+        { queryKey: ["intentions"] },
+        (old) => {
+          if (!old) return old;
+          return old.map((t) =>
+            t.id === intentionId ? { ...t, status: "executing" } : t,
+          );
+        },
+      );
+      queryClient.invalidateQueries({ queryKey: ["intentions"] });
     },
     onError: (err) => {
       const msg =
