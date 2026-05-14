@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Loader2,
   LogOut,
+  Plus,
   Settings,
   User as UserIcon,
   UserPlus,
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CreateWorkspaceDialog } from "@/components/common/create-workspace-dialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,8 +45,12 @@ import { cn } from "@/lib/utils";
  *  - Spinner inline durante a troca (200-500ms típico). Botão fica
  *    `disabled` para evitar duplo-clique.
  *
+ * Criação de nova workspace:
+ *  - Item "Criar nova workspace" no final do dropdown abre `CreateWorkspaceDialog`.
+ *  - O modal reusa `CreateWorkspaceForm` (mesmo componente da tela /orphan).
+ *  - Após criar, o switcher reflete a nova org como ativa via store + refresh.
+ *
  * Não-objetivos:
- *  - Criar nova org via dropdown (separado em /organizations/new — fora do escopo).
  *  - Favoritos / recentes / atalhos de teclado (COULD HAVE).
  */
 export function WorkspaceSwitcher() {
@@ -57,6 +63,7 @@ export function WorkspaceSwitcher() {
 
   const [switching, setSwitching] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const orgs = user?.availableOrgs ?? [];
   const hasMultiple = orgs.length > 1;
@@ -199,6 +206,19 @@ export function WorkspaceSwitcher() {
             </>
           )}
 
+          <DropdownMenuItem
+            disabled={!!switching}
+            onSelect={(e) => {
+              e.preventDefault();
+              setCreateOpen(true);
+            }}
+            className="text-[13px]"
+          >
+            <Plus className="mr-2 h-3.5 w-3.5" />
+            Criar nova workspace
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem asChild className="text-[13px]">
             <Link href="/settings/account/profile">
               <UserIcon className="mr-2 h-3.5 w-3.5" />
@@ -227,6 +247,7 @@ export function WorkspaceSwitcher() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }
