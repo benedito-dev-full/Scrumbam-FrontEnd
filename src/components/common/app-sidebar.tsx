@@ -252,12 +252,6 @@ export function AppSidebar() {
               <LogOut className="h-4 w-4" />
             </button>
           </div>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-          >
-            <span className="text-amber-400">↑</span> Plano gratuito
-          </button>
         </div>
       </div>
     </aside>
