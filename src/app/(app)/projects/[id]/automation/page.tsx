@@ -12,7 +12,6 @@ import { AgentLinkForm } from "./_components/agent-link-form";
 import { AgentStatusCard } from "./_components/agent-status-card";
 import { DeployKeyPanel } from "./_components/deploy-key-panel";
 import { ProjectSlugCard } from "./_components/project-slug-card";
-import { ExecutionHistory } from "./_components/execution-history";
 import { ApprovalQueuePanel } from "./_components/approval-queue-panel";
 import { ExecuteIntentionPanel } from "./_components/execute-intention-panel";
 
@@ -29,7 +28,7 @@ interface AutomationPageProps {
  *    (sem `remotePath`/gitBot — moveram para `/vps/:id`)
  * 3. ProjectSlugCard — slug auto-derivado + snippet pro CLAUDE.md da VPS
  * 4. DeployKeyPanel — gera/lista/revoga deploy key SSH per-projeto
- * 5. ApprovalQueuePanel + ExecuteIntentionPanel + ExecutionHistory
+ * 5. ApprovalQueuePanel + ExecuteIntentionPanel
  *
  * Acesso:
  * - Visivel para todos os roles (MEMBER/VIEWER veem readonly via guards backend).
@@ -121,9 +120,6 @@ export default function AutomationPage({ params }: AutomationPageProps) {
 
               {/* 6. Disparar execução */}
               <ExecuteIntentionPanel projectId={id} />
-
-              {/* 7. Histórico de execuções */}
-              <ExecutionHistory projectId={id} />
             </div>
           </div>
         </div>
