@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Star,
   MoreHorizontal,
@@ -24,6 +25,7 @@ import {
   HelpCircle,
   CheckCheck,
   SlidersHorizontal,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 
@@ -55,6 +57,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { ProjectStatusList } from "@/components/projects/project-status-list";
 import { AddProjectMemberModal } from "@/components/projects/add-project-member-modal";
+import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
 import {
   DropdownMenu,
@@ -149,6 +152,7 @@ interface ProjectPageProps {
 
 export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const { id: projectId } = use(params);
+  const router = useRouter();
   const { data: project, isLoading } = useProject(projectId);
   const { data: intentions } = useIntentions({ projectSlug: projectId });
   const role = useAuthStore((s) => s.user?.role);
@@ -161,6 +165,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
   const [newIssueOpen, setNewIssueOpen] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const issuesList = (intentions ?? []) as IntentionDocument[];
 
@@ -282,6 +287,8 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 onNewTask={() => setNewIssueOpen(true)}
                 canAddMembers={isAdmin}
                 onAddMembers={() => setAddMemberOpen(true)}
+                canDelete={isAdmin}
+                onDeleteProject={() => setDeleteOpen(true)}
               />
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
@@ -325,6 +332,17 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
         open={addMemberOpen}
         onOpenChange={setAddMemberOpen}
       />
+
+      {/* Delete project dialog — ADMIN-only.
+          Redireciona para /projects apos sucesso (o projeto deixa de existir). */}
+      {project && (
+        <DeleteProjectDialog
+          project={{ chave: project.chave, nome: project.nome }}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onSuccess={() => router.push("/projects")}
+        />
+      )}
     </PageTransition>
   );
 }
@@ -747,6 +765,8 @@ function OverviewTab({
   onNewTask,
   canAddMembers,
   onAddMembers,
+  canDelete,
+  onDeleteProject,
 }: {
   projectId: string;
   project:
@@ -762,6 +782,8 @@ function OverviewTab({
   onNewTask: () => void;
   canAddMembers: boolean;
   onAddMembers: () => void;
+  canDelete: boolean;
+  onDeleteProject: () => void;
 }) {
   const totalIssues = issues.length;
   const executingCount = issues.filter((i) => i.status === "executing").length;
@@ -777,15 +799,29 @@ function OverviewTab({
             <h1 className="text-3xl font-semibold tracking-tight">
               {isLoading ? "..." : (project?.nome ?? "Projeto")}
             </h1>
-            {canAddMembers && (
-              <button
-                type="button"
-                onClick={onAddMembers}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Adicionar membros
-              </button>
+            {(canDelete || canAddMembers) && (
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={onDeleteProject}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 hover:border-destructive transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Excluir projeto
+                  </button>
+                )}
+                {canAddMembers && (
+                  <button
+                    type="button"
+                    onClick={onAddMembers}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Adicionar membros
+                  </button>
+                )}
+              </div>
             )}
           </div>
           {project?.descricao && (
