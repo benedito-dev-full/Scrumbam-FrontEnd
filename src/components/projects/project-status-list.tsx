@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import Link from "next/link";
 import {
   CalendarPlus,
@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useMoveStatus, useUpdateIntention } from "@/lib/hooks/use-intentions";
+import { useDispatchExecution } from "@/lib/hooks/use-automation";
 import { useTaskDueDate } from "@/lib/hooks/use-task-due-dates";
 import type {
   IntentionDocument,
@@ -148,10 +149,29 @@ export function ProjectStatusList({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("list");
+  const [pendingExecution, setPendingExecution] = useState<{
+    taskId: string;
+    seconds: number;
+  } | null>(null);
+
+  const { mutate: dispatchExecution } = useDispatchExecution(projectId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+
+  useEffect(() => {
+    if (!pendingExecution) return;
+    if (pendingExecution.seconds <= 0) {
+      dispatchExecution(pendingExecution.taskId);
+      setPendingExecution(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setPendingExecution((p) => (p ? { ...p, seconds: p.seconds - 1 } : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [pendingExecution, dispatchExecution]);
 
   const groups = STATUS_CONFIG.map((cfg) => ({
     ...cfg,
@@ -183,7 +203,14 @@ export function ProjectStatusList({
 
     if (!task || task.status === newStatus) return;
 
+    // Cancela counter anterior se existir (card arrastado para outra coluna)
+    setPendingExecution(null);
+
     move(String(active.id), newStatus);
+
+    if (newStatus === "ready") {
+      setPendingExecution({ taskId: String(active.id), seconds: 5 });
+    }
   };
 
   return (
@@ -213,6 +240,8 @@ export function ProjectStatusList({
                   onToggleCollapsed={() => toggleCollapsed(g.key)}
                   onNewTask={onNewTask}
                   isDraggingActive={activeId !== null}
+                  pendingExecution={pendingExecution}
+                  onCancelExecution={() => setPendingExecution(null)}
                 />
               ))
             )}
@@ -344,6 +373,8 @@ function StatusGroup({
   onToggleCollapsed,
   onNewTask,
   isDraggingActive,
+  pendingExecution,
+  onCancelExecution,
 }: {
   config: StatusConfig;
   tasks: IntentionDocument[];
@@ -352,6 +383,8 @@ function StatusGroup({
   onToggleCollapsed: () => void;
   onNewTask: () => void;
   isDraggingActive: boolean;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: config.key });
 
@@ -406,6 +439,8 @@ function StatusGroup({
           config={config}
           projectId={projectId}
           onNewTask={onNewTask}
+          pendingExecution={pendingExecution}
+          onCancelExecution={onCancelExecution}
         />
       )}
     </section>
@@ -417,11 +452,15 @@ function StatusTable({
   config,
   projectId,
   onNewTask,
+  pendingExecution,
+  onCancelExecution,
 }: {
   tasks: IntentionDocument[];
   config: StatusConfig;
   projectId: string;
   onNewTask: () => void;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
   return (
     <div className="px-4">
@@ -455,6 +494,8 @@ function StatusTable({
           task={task}
           config={config}
           projectId={projectId}
+          pendingExecution={pendingExecution}
+          onCancelExecution={onCancelExecution}
         />
       ))}
 
@@ -478,12 +519,17 @@ function TaskRow({
   task,
   config,
   projectId,
+  pendingExecution,
+  onCancelExecution,
 }: {
   task: IntentionDocument;
   config: StatusConfig;
   projectId: string;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
   const href = `/projects/${projectId}/issues/${task.id}`;
+  const isCountingDown = pendingExecution?.taskId === task.id;
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
@@ -497,28 +543,49 @@ function TaskRow({
       {...attributes}
       className={cn(
         ROW_GRID,
-        "group/row relative h-[38px] select-none border-b border-zinc-800/80 text-[13px] transition-colors hover:bg-zinc-900/60",
+        "group/row relative select-none border-b border-zinc-800/80 text-[13px] transition-colors hover:bg-zinc-900/60",
         "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-40",
+        isCountingDown ? "h-auto py-1" : "h-[38px]",
       )}
     >
-      <div className="flex min-w-0 items-center gap-1.5">
-        <span
-          aria-hidden
-          className="flex h-5 w-4 shrink-0 items-center justify-center text-zinc-600/0 transition-colors group-hover/row:text-zinc-600"
-        >
-          <GripVertical className="h-3.5 w-3.5" />
-        </span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span
+            aria-hidden
+            className="flex h-5 w-4 shrink-0 items-center justify-center text-zinc-600/0 transition-colors group-hover/row:text-zinc-600"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </span>
 
-        <Link
-          href={href}
-          draggable={false}
-          onClick={(e) => e.stopPropagation()}
-          className="flex min-w-0 flex-1 items-center gap-2 font-semibold text-zinc-100 hover:underline"
-        >
-          <StatusGlyph config={config} />
-          <span className="truncate">{task.title}</span>
-        </Link>
+          <Link
+            href={href}
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
+            className="flex min-w-0 flex-1 items-center gap-2 font-semibold text-zinc-100 hover:underline"
+          >
+            <StatusGlyph config={config} />
+            <span className="truncate">{task.title}</span>
+          </Link>
+        </div>
+
+        {isCountingDown && (
+          <div className="ml-[22px] flex items-center justify-between gap-2 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px]">
+            <span className="font-medium text-amber-600">
+              Executando em {pendingExecution!.seconds}s...
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancelExecution();
+              }}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
 
       <AssigneeCell task={task} />

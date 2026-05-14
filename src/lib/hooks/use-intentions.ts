@@ -49,6 +49,10 @@ export function useIntentions(filters?: IntentionFilters) {
       queryFn: () => intentionsApi.list(pid),
       staleTime: 30 * 1000,
       enabled: isAll && allProjectIds.length > 0,
+      refetchInterval: (query: { state: { data?: Array<{ status: string }> } }) => {
+        const items = query.state.data ?? [];
+        return items.some((i) => i.status === 'executing') ? 3000 : false;
+      },
     })),
   });
 
@@ -59,6 +63,10 @@ export function useIntentions(filters?: IntentionFilters) {
     enabled: !isAll && !!singleProjectId,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const items = (query.state.data ?? []) as Array<{ status: string }>;
+      return items.some((i) => i.status === 'executing') ? 3000 : false;
+    },
   });
 
   const query = isAll
