@@ -197,13 +197,6 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
                 )}
               />
             </button>
-            <button
-              type="button"
-              className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Mais opcoes"
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
           </nav>
 
           <div className="flex items-center gap-1">
