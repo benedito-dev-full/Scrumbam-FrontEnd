@@ -64,6 +64,12 @@ export interface UpdateProjectDto {
   /** @deprecated usar `teamId`. Mantido apenas para compat. */
   idTeam?: string | null;
   startDate?: string;
+  /**
+   * ID do novo responsavel (owner) do projeto. `null` para desvincular,
+   * `undefined` (omitido) preserva. O backend espelha o ID do usuario que
+   * vira owner — apenas membros do projeto sao candidatos validos.
+   */
+  ownerId?: string | null;
 }
 
 export interface ProjectLastActivity {
