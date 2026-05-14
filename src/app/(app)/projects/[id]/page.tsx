@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   Star,
   MoreHorizontal,
-  Link2,
   Bell,
   ChevronDown,
   ChevronRight,
@@ -218,13 +217,6 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             >
               <PenSquare className="h-3.5 w-3.5" />
               Nova issue
-            </button>
-            <button
-              type="button"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Copiar link"
-            >
-              <Link2 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
