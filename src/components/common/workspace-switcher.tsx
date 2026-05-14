@@ -61,6 +61,13 @@ export function WorkspaceSwitcher() {
   const orgs = user?.availableOrgs ?? [];
   const hasMultiple = orgs.length > 1;
 
+  // ADR-V2-038: usuário órfão (sem workspace) — não renderizar o switcher.
+  // A própria sidebar redireciona para /orphan; este componente ficaria
+  // sem dados (sem orgNome, sem orgId) e quebraria visualmente.
+  if (user?.isOrphan) {
+    return null;
+  }
+
   const orgInitials = (user?.orgNome || "DT")
     .split(" ")
     .map((w) => w[0])

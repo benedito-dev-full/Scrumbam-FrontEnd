@@ -51,6 +51,19 @@ function unwrapItems(data: any): any[] {
 }
 
 export const organizationsApi = {
+  /**
+   * Cria nova organização (ADR-V2-038 — usado no fluxo órfão).
+   *
+   * Backend `POST /organizations` aceita `{ nome, description? }` e cria
+   * a org com o caller como ADMIN. Após a criação, o frontend chama
+   * `authApi.switchOrg(id)` para emitir novo JWT já apontando para a
+   * nova org (e derrubando o estado órfão).
+   */
+  create: async (dto: { nome: string }): Promise<Organization> => {
+    const { data } = await api.post(ENDPOINTS.ORGANIZATIONS, dto);
+    return mapOrganization(data);
+  },
+
   getOrg: async (orgId: string): Promise<Organization> => {
     const { data } = await api.get(ENDPOINTS.ORG(orgId));
     return mapOrganization(data);

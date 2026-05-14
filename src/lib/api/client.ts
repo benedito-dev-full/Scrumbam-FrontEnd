@@ -56,6 +56,23 @@ api.interceptors.response.use(
       url.includes("/auth/register") ||
       url.includes("/auth/refresh");
 
+    // 403 NO_WORKSPACE (ADR-V2-038): JWT é válido mas usuário não tem
+    // workspace ativa. NÃO faz logout — JWT órfão continua válido.
+    // Redireciona para /orphan (tela de empty state com CTAs).
+    if (
+      error.response?.status === 403 &&
+      (error.response?.data as { code?: string } | undefined)?.code ===
+        "NO_WORKSPACE"
+    ) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/orphan")
+      ) {
+        window.location.href = "/orphan";
+      }
+      return Promise.reject(error);
+    }
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&

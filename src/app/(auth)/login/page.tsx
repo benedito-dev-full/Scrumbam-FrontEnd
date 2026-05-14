@@ -29,6 +29,7 @@ function buildUser(data: AuthResponse): User {
     orgId: data.user.organizationId || "",
     orgNome: data.user.organizationName || "",
     availableOrgs: data.user.availableOrgs ?? [],
+    isOrphan: data.user.isOrphan ?? !data.user.organizationId,
   };
 }
 
@@ -64,6 +65,16 @@ export default function LoginPage() {
 
       if (!data.user.entidadeId) {
         setError("Conta com dados incompletos. Contate o administrador.");
+        return;
+      }
+
+      // ADR-V2-038: usuário órfão (sem organizationId no JWT) — pular
+      // auto-switch e ir direto para /orphan. JWT é válido, só não tem
+      // workspace ativa.
+      if (data.user.isOrphan || !data.user.organizationId) {
+        const orphanUser = buildUser(data);
+        login(orphanUser, data.accessToken, data.refreshToken);
+        router.replace("/orphan");
         return;
       }
 

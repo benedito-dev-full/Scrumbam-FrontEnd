@@ -7,6 +7,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
 
 const PUBLIC_PATHS = ["/login", "/register", "/invite"];
+const ORPHAN_PATH = "/orphan";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isHydrated || isValidating) return;
 
     const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+    const isOrphanPath = pathname.startsWith(ORPHAN_PATH);
 
     // Se tem user no store, validar que o cookie ainda e valido
     // Cache: so revalida se passaram mais de 5 minutos desde a ultima validacao
@@ -40,6 +42,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authApi
         .getMe()
         .then((me) => {
+          // ADR-V2-038: estado órfão — JWT válido sem organizationId.
+          // Hidrata user com flag isOrphan e redireciona para /orphan.
+          if (me.isOrphan) {
+            setUser({
+              id: user.id,
+              entidadeId: me.id,
+              nome: me.name,
+              email: me.email ?? user.email,
+              role: "",
+              orgId: "",
+              orgNome: "",
+              availableOrgs: [],
+              isOrphan: true,
+            });
+            markValidated();
+            if (!isOrphanPath) {
+              router.replace(ORPHAN_PATH);
+            }
+            return;
+          }
           // Atualizar user com dados frescos do backend
           setUser({
             id: user.id, // manter id do UserGroup (nao vem no /me)
@@ -53,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // revalidacao (5min). Se admin adicionou/removeu user de outra
             // org, o switcher reflete na proxima janela de revalidacao.
             availableOrgs: me.availableOrgs ?? [],
+            isOrphan: false,
           });
           markValidated();
         })
@@ -74,12 +97,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
 
+    // ADR-V2-038: user órfão tentando acessar rota tenant-scoped → /orphan.
+    // O interceptor 403 NO_WORKSPACE em client.ts também faz isso, mas
+    // pegamos antes para evitar 1 round-trip desnecessário.
+    if (user?.isOrphan && !isPublicPath && !isOrphanPath) {
+      router.replace(ORPHAN_PATH);
+    }
+
     // Se tem user e esta em rota publica, redirect para app.
     // Excecao: /invite — usuario logado pode chegar aqui via flow=existing_user
     // (ja tem conta noutra org, esta sendo adicionado a esta). Deixa renderizar
     // a tela de merge em vez de expulsar para /intentions.
     if (user && isPublicPath && !pathname.startsWith("/invite")) {
-      router.replace("/intentions");
+      router.replace(user.isOrphan ? ORPHAN_PATH : "/intentions");
     }
   }, [user, pathname, router, isHydrated]);
 

@@ -1,6 +1,7 @@
 import api from "./client";
 import { ENDPOINTS } from "./endpoints";
 import type {
+  AuthResponse,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
@@ -8,6 +9,29 @@ import type {
   SwitchOrgResponse,
 } from "@/types/auth";
 import type { MeResponse, UpdateMeDto } from "@/types";
+
+/**
+ * Convite pendente exposto via `GET /auth/pending-invites` (ADR-V2-038).
+ *
+ * Diferente do tipo `PendingInvite` em `./invites.ts` — aquele é o que
+ * o ADMIN vê dentro de uma org; este é o que o USUÁRIO ÓRFÃO vê de
+ * convites endereçados ao seu email em qualquer org.
+ *
+ * IMPORTANTE: o `inviteId` aqui é APENAS para exibição. Para aceitar
+ * o convite o usuário precisa clicar no link recebido por email
+ * (que contém o `token` raw, não exposto neste DTO por segurança).
+ */
+export interface OrphanPendingInvite {
+  inviteId: string;
+  orgId: string;
+  orgName: string;
+  role: "ADMIN" | "MEMBER" | "VIEWER";
+  expiresAt: string;
+}
+
+export interface OrphanPendingInvitesResponse {
+  invites: OrphanPendingInvite[];
+}
 
 export const authApi = {
   login: async (dto: LoginRequest): Promise<LoginResponse> => {
@@ -78,6 +102,39 @@ export const authApi = {
     const { data } = await api.post<SwitchOrgResponse>(
       ENDPOINTS.AUTH_SWITCH_ORG,
       { organizationId },
+    );
+    return data;
+  },
+
+  /**
+   * Lista convites pendentes para o email do usuário autenticado
+   * (ADR-V2-038 — Estado Órfão). Usado na tela `/orphan` para mostrar
+   * convites que aguardam aceite.
+   *
+   * O backend retorna `{ invites: [...] }` com `inviteId` (sanitizado,
+   * para exibição) mas NÃO retorna o `token` raw — o aceite continua
+   * sendo via link do email (ver `invitesApi.accept`).
+   */
+  getPendingInvites: async (): Promise<OrphanPendingInvitesResponse> => {
+    const { data } = await api.get<OrphanPendingInvitesResponse>(
+      ENDPOINTS.AUTH_PENDING_INVITES,
+    );
+    return data;
+  },
+
+  /**
+   * Aceita um convite por token raw (ADR-V2-038). Backend devolve novo
+   * JWT já com `organizationId` populado, derrubando o estado órfão.
+   *
+   * Note que este método é destinado ao fluxo "usuário autenticado órfão
+   * clica em CTA que carrega o token via querystring". Para o fluxo
+   * tradicional (não autenticado, vindo do email com form de nome+senha),
+   * usar `invitesApi.accept` que envia `{ name, password }`.
+   */
+  acceptInvite: async (token: string): Promise<AuthResponse> => {
+    const { data } = await api.post<AuthResponse>(
+      `/invites/${encodeURIComponent(token)}/accept`,
+      {},
     );
     return data;
   },

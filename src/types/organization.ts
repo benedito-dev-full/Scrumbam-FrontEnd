@@ -68,6 +68,15 @@ export interface MeResponse {
     nome: string;
     role: OrgRole;
   }[];
+  /**
+   * Estado órfão (ADR-V2-038). Quando `true`, o usuário não tem workspace
+   * ativa — JWT é válido mas não contém `organizationId`. Frontend deve
+   * redirecionar para `/orphan` (tela de empty state com CTAs para criar
+   * workspace ou aceitar convite pendente).
+   *
+   * Opcional para back-compat com backends pré-ADR-V2-038.
+   */
+  isOrphan?: boolean;
 }
 
 export interface UpdateMeDto {

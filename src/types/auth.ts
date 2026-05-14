@@ -44,6 +44,11 @@ export interface UserProfile {
   orgRole?: string;
   /** Lista de orgs com vínculo ativo do usuário (ADR-V2-030). */
   availableOrgs?: AvailableOrg[];
+  /**
+   * Estado órfão (ADR-V2-038). `true` quando o usuário não está em
+   * nenhuma workspace ativa — JWT válido sem `organizationId`.
+   */
+  isOrphan?: boolean;
 }
 
 /**
@@ -79,4 +84,11 @@ export interface User {
    * Quando length <= 1, mostra apenas o nome da org atual (sem dropdown).
    */
   availableOrgs: AvailableOrg[];
+  /**
+   * Estado órfão (ADR-V2-038). `true` quando o usuário não está em
+   * nenhuma workspace ativa. Renderização condicional na sidebar
+   * (esconder switcher, esconder tenant-scoped routes) e middleware
+   * de redirect para `/orphan`.
+   */
+  isOrphan?: boolean;
 }
