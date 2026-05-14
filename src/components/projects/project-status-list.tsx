@@ -261,6 +261,8 @@ export function ProjectStatusList({
             projectId={projectId}
             onNewTask={onNewTask}
             activeId={activeId}
+            pendingExecution={pendingExecution}
+            onCancelExecution={() => setPendingExecution(null)}
           />
         )}
       </div>
@@ -977,11 +979,15 @@ function KanbanView({
   projectId,
   onNewTask,
   activeId,
+  pendingExecution,
+  onCancelExecution,
 }: {
   groups: (StatusConfig & { tasks: IntentionDocument[] })[];
   projectId: string;
   onNewTask: () => void;
   activeId: string | null;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
   return (
     <div className="flex items-start gap-2 px-3 pb-4 pt-2">
@@ -993,6 +999,8 @@ function KanbanView({
           projectId={projectId}
           onNewTask={onNewTask}
           activeId={activeId}
+          pendingExecution={pendingExecution}
+          onCancelExecution={onCancelExecution}
         />
       ))}
     </div>
@@ -1005,12 +1013,16 @@ function KanbanColumn({
   projectId,
   onNewTask,
   activeId,
+  pendingExecution,
+  onCancelExecution,
 }: {
   config: StatusConfig;
   tasks: IntentionDocument[];
   projectId: string;
   onNewTask: () => void;
   activeId: string | null;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: config.key });
 
@@ -1054,6 +1066,8 @@ function KanbanColumn({
               task={task}
               projectId={projectId}
               isDragging={activeId === task.id}
+              pendingExecution={pendingExecution}
+              onCancelExecution={onCancelExecution}
             />
           ))
         )}
@@ -1075,11 +1089,16 @@ function KanbanCard({
   task,
   projectId,
   isDragging,
+  pendingExecution,
+  onCancelExecution,
 }: {
   task: IntentionDocument;
   projectId: string;
   isDragging: boolean;
+  pendingExecution: { taskId: string; seconds: number } | null;
+  onCancelExecution: () => void;
 }) {
+  const isCountingDown = pendingExecution?.taskId === task.id;
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: task.id,
     data: { task },
@@ -1127,6 +1146,21 @@ function KanbanCard({
         <p className="line-clamp-3 text-[13px] font-medium leading-snug text-zinc-100">
           {task.title}
         </p>
+
+        {isCountingDown && (
+          <div className="mt-1.5 flex items-center justify-between gap-2 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px]">
+            <span className="font-medium text-amber-600">
+              Executando em {pendingExecution!.seconds}s...
+            </span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onCancelExecution(); }}
+              className="text-zinc-400 transition-colors hover:text-zinc-100"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
 
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           <div className="flex items-center gap-2 text-zinc-500">
