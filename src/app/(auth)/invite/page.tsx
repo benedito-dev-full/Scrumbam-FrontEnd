@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import { invitesApi, type InviteInfo } from "@/lib/api/invites";
+import { authApi } from "@/lib/api/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -46,7 +47,43 @@ function buildUserFromAuth(data: AuthResponse): User {
     orgId: data.user.organizationId || "",
     orgNome: data.user.organizationName || "",
     availableOrgs: data.user.availableOrgs ?? [],
+    isOrphan: data.user.isOrphan ?? !data.user.organizationId,
   };
+}
+
+/**
+ * Após accept de convite, garantir que `availableOrgs` no store reflete
+ * o estado atual do banco — busca fresh via `/auth/me` e atualiza o user.
+ *
+ * Defesa contra cenários onde o cache local (Zustand persist) pode ter
+ * ficado stale entre abas/navegadores ou onde a response do accept não
+ * carregou todas as orgs (race entre transaction commit e re-query).
+ */
+async function hydrateAvailableOrgsFresh(
+  setUser: (u: User) => void,
+  currentUser: User,
+): Promise<void> {
+  try {
+    const me = await authApi.getMe();
+    setUser({
+      ...currentUser,
+      entidadeId: me.id,
+      nome: me.name,
+      email: me.email ?? currentUser.email,
+      role: me.orgRole?.toLowerCase() || me.role || currentUser.role,
+      orgId: me.organizationId ?? currentUser.orgId,
+      orgNome: me.organizationName ?? currentUser.orgNome,
+      availableOrgs: me.availableOrgs ?? currentUser.availableOrgs,
+      isOrphan: me.isOrphan ?? false,
+    });
+  } catch {
+    // Falha aqui não bloqueia o redirect — o AuthProvider revalida em
+    // 5min na pior das hipóteses. Logamos para debug mas seguimos.
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[invite/accept] getMe pós-accept falhou — seguindo com dados do accept",
+    );
+  }
 }
 
 function InviteContent() {
@@ -98,6 +135,7 @@ function AcceptForm({
   router: ReturnType<typeof useRouter>;
 }) {
   const login = useAuthStore((s) => s.login);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -107,12 +145,16 @@ function AcceptForm({
 
   const acceptMutation = useMutation({
     mutationFn: () => invitesApi.accept(token, { name, password }),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const user = buildUserFromAuth(data);
       login(user, data.accessToken, data.refreshToken);
       if (typeof window !== "undefined" && user.orgId) {
         window.localStorage.setItem(LAST_ORG_LS_KEY, user.orgId);
       }
+      // Defesa: força refresh de availableOrgs via /auth/me antes do redirect.
+      // Cobre cenário onde o user já tinha sessão de outra org e o store
+      // local poderia ter ficado stale (multi-tab, multi-invite, etc.).
+      await hydrateAvailableOrgsFresh(setUser, user);
       router.replace(data.redirectTo || "/intentions");
     },
     onError: (err) => {
@@ -293,6 +335,7 @@ function MergeAcceptForm({
   router: ReturnType<typeof useRouter>;
 }) {
   const login = useAuthStore((s) => s.login);
+  const setUser = useAuthStore((s) => s.setUser);
   const currentUser = useAuthStore((s) => s.user);
   const [error, setError] = useState("");
 
@@ -304,12 +347,18 @@ function MergeAcceptForm({
     // Backend ignora name/password no flow existing_user — passamos {} explicitamente.
     mutationFn: () =>
       invitesApi.accept(token, {} as { name: string; password: string }),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const user = buildUserFromAuth(data);
       login(user, data.accessToken, data.refreshToken);
       if (typeof window !== "undefined" && user.orgId) {
         window.localStorage.setItem(LAST_ORG_LS_KEY, user.orgId);
       }
+      // Defesa CRÍTICA no flow merge: o user já estava logado em outra org
+      // antes de aceitar este convite. Força refresh de `availableOrgs` via
+      // /auth/me para garantir que o workspace switcher mostra TODAS as
+      // orgs do user (a antiga + a recém-aceita), não apenas a do response
+      // do accept. Cobre stale cache do Zustand persist entre abas.
+      await hydrateAvailableOrgsFresh(setUser, user);
       // Redireciona para a app: ja estamos na org recem-mergeada (tokens
       // emitidos pelo backend com preferredOrgId=orgMergeada).
       router.replace(data.redirectTo || "/intentions");
