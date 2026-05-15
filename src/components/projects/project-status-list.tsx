@@ -479,15 +479,7 @@ function StatusTable({
         <HeaderCell label="Status" />
         <HeaderCell label="Comentários" />
 
-        <div className="flex justify-center">
-          <button
-            type="button"
-            aria-label="Adicionar coluna"
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-zinc-100"
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
-        </div>
+        <div />
       </div>
 
       {tasks.map((task) => (
