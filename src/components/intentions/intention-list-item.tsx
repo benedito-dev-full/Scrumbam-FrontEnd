@@ -162,7 +162,7 @@ export function IntentionListItem({ intention }: Props) {
     <Link
       href={`/projects/${intention.projectSlug}/issues/${intention.id}`}
       className={cn(
-        "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:shadow-sm",
+        "group relative flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:shadow-sm",
         isExecuting &&
           "border-l-2 border-l-[var(--ai-accent)] hover:bg-[var(--ai-accent-muted)]",
         isFailed && "border-l-2 border-l-destructive opacity-70",
@@ -170,6 +170,9 @@ export function IntentionListItem({ intention }: Props) {
         !isExecuting && !isTerminal && "hover:bg-accent/50",
       )}
     >
+      {/* Shimmer overlay — visible only while executing */}
+      {isExecuting && <span className="shimmer-executing" aria-hidden />}
+
       {/* Status icon */}
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
         <StatusIcon status={intention.status} />

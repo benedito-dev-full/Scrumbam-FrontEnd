@@ -229,3 +229,30 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Shimmer effect for EXECUTING intentions */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.shimmer-executing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shimmer-executing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    color-mix(in oklch, var(--ai-accent) 22%, transparent) 50%,
+    transparent 65%
+  );
+  animation: shimmer-sweep 2.2s ease-in-out infinite;
+}
