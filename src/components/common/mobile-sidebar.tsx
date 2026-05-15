@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { FolderKanban, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,6 +18,7 @@ import {
   isNavItemActive,
   type NavItem,
 } from "@/lib/navigation";
+import { WorkspaceSwitcher } from "@/components/common/workspace-switcher";
 
 interface MobileSidebarProps {
   open: boolean;
@@ -37,14 +38,9 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         .toUpperCase()
     : "U";
 
-  const orgInitials = (user?.orgNome || "DT")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   const close = () => onOpenChange(false);
+  const isProjectsActive =
+    pathname === "/projects" || pathname.startsWith("/projects/");
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -53,17 +49,28 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         className="w-[280px] p-0 bg-sidebar text-sidebar-foreground"
         showCloseButton={false}
       >
-        <SheetHeader className="px-3 py-3 border-b border-sidebar-border">
-          <SheetTitle className="flex items-center gap-2 text-left text-[13px] font-medium">
-            <span className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-cyan-400 to-cyan-600 text-[10px] font-bold text-black">
-              {orgInitials}
-            </span>
-            <span className="truncate">{user?.orgNome || "Workspace"}</span>
-          </SheetTitle>
+        <SheetHeader className="px-3 py-2 border-b border-sidebar-border">
+          <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+          <WorkspaceSwitcher />
         </SheetHeader>
 
         <nav className="px-2 pt-2">
           <ul className="space-y-px">
+            <li>
+              <Link
+                href="/projects"
+                onClick={close}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] transition-colors min-h-[40px]",
+                  isProjectsActive
+                    ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                )}
+              >
+                <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Projetos</span>
+              </Link>
+            </li>
             {navTopItems.map((item) => (
               <MobileLink
                 key={item.href ?? item.label}
