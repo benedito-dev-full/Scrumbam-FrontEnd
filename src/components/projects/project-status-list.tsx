@@ -10,7 +10,6 @@ import {
   Flag,
   GripVertical,
   Layers,
-  MessageSquare,
   MoreHorizontal,
   Plus,
   Search,
@@ -127,7 +126,7 @@ const PRIORITY_LABEL: Record<IntentionPriority, string> = Object.fromEntries(
 ) as Record<IntentionPriority, string>;
 
 const ROW_GRID =
-  "grid grid-cols-[minmax(420px,1fr)_160px_200px_160px_200px_200px_40px] items-center gap-2 pl-[30px] pr-1.5";
+  "grid grid-cols-[minmax(420px,1fr)_160px_200px_160px_200px_40px] items-center gap-2 pl-[30px] pr-1.5";
 
 const CELL_BOX =
   "flex h-7 w-full items-center rounded-md px-1.5 text-left transition-colors hover:bg-zinc-800/80";
@@ -477,7 +476,6 @@ function StatusTable({
         <HeaderCell label="Data de vencimento" />
         <HeaderCell label="Prioridade" />
         <HeaderCell label="Status" />
-        <HeaderCell label="Comentários" />
 
         <div />
       </div>
@@ -589,17 +587,6 @@ function TaskRow({
       <PriorityCell task={task} />
 
       <StatusCell task={task} config={config} />
-
-      <div className="flex items-center text-zinc-600">
-        <button
-          type="button"
-          aria-label="Comentar"
-          title="Comentar"
-          className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-        </button>
-      </div>
 
       <div />
     </div>
@@ -1146,7 +1133,11 @@ function KanbanCard({
             </span>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onCancelExecution(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onCancelExecution();
+              }}
               className="text-zinc-400 transition-colors hover:text-zinc-100"
             >
               Cancelar
