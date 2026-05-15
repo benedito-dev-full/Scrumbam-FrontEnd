@@ -141,7 +141,7 @@ export default function ProfilePage() {
 
   return (
     <PageTransition>
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-4 sm:py-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
 

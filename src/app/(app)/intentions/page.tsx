@@ -87,12 +87,12 @@ export default function MyIssuesPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Header */}
-        <header className="flex h-11 shrink-0 items-center px-8 border-b border-border">
+        <header className="flex h-11 shrink-0 items-center px-4 sm:px-8 border-b border-border">
           <h1 className="text-[13px] font-medium">My issues</h1>
         </header>
 
         {/* Tabs + filter row */}
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-8">
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4 sm:px-8">
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (
               <button
@@ -172,21 +172,19 @@ export default function MyIssuesPage() {
 
 function ColumnHeader() {
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-8 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 sm:px-8 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {/* Pri (16px, mesmo da PriorityIcon) */}
       <span className="w-4 shrink-0 text-center" title="Prioridade">
         Pri
       </span>
       {/* Codigo (w-14, mesmo da row) */}
-      <span className="w-14 shrink-0">Codigo</span>
+      <span className="w-14 shrink-0 hidden sm:inline">Codigo</span>
       {/* Status icon column (~14px, decorativa — sem label) */}
       <span className="w-3.5 shrink-0" />
       {/* Titulo (flex-1) */}
       <span className="flex-1">Titulo</span>
-      {/* Right group — mesmas larguras do IssueRow.
-          A coluna do avatar (w-5) nao recebe label porque "Resp" transborda
-          os 20px e cola no "Criada em". Tooltip no avatar ja explica. */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right group — oculto em mobile, visível em sm+ */}
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
         <span className="w-24">Tipo</span>
         <span className="w-32">Projeto</span>
         <span className="w-5 shrink-0" />
@@ -280,7 +278,7 @@ function DateGroup({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 px-8 py-2 text-[12px] text-muted-foreground hover:bg-accent/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 sm:px-8 py-2 text-[12px] text-muted-foreground hover:bg-accent/30 transition-colors"
       >
         {open ? (
           <ChevronDown className="h-3 w-3" />
@@ -335,16 +333,17 @@ function IssueRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 px-8 py-2 hover:bg-accent/30 transition-colors text-[13px] border-b border-border/40"
+      className="flex items-center gap-2 px-4 sm:px-8 py-2 hover:bg-accent/30 transition-colors text-[13px] border-b border-border/40"
     >
       <PriorityIcon priority={item.priority} />
-      <span className="text-[12px] text-muted-foreground tabular-nums w-14 shrink-0">
+      <span className="hidden sm:inline text-[12px] text-muted-foreground tabular-nums w-14 shrink-0">
         {code}
       </span>
       <StatusIcon status={item.status} />
       <span className="flex-1 truncate">{item.title}</span>
 
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Colunas extras — ocultas em mobile, visíveis em sm+ */}
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
         <div className="w-24 flex justify-start">
           <TypeBadge type={item.type} />
         </div>
@@ -490,7 +489,7 @@ function formatShortDate(iso: string): string {
 
 function SubscribedStub() {
   return (
-    <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
+    <div className="flex flex-col items-center justify-center px-4 sm:px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
       <h3 className="mt-3 text-sm font-medium">Inscricoes em breve</h3>
       <p className="mt-1 text-[12px] text-muted-foreground max-w-sm">
@@ -509,7 +508,7 @@ function EmptyState({ tab }: { tab: TabKey }) {
     activity: "Sem atividade recente.",
   };
   return (
-    <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
+    <div className="flex flex-col items-center justify-center px-4 sm:px-8 py-16 text-center">
       <CircleDashed className="h-8 w-8 text-muted-foreground/40" />
       <h3 className="mt-3 text-sm font-medium">Nada por aqui</h3>
       <p className="mt-1 text-[12px] text-muted-foreground">{messages[tab]}</p>
@@ -520,22 +519,22 @@ function EmptyState({ tab }: { tab: TabKey }) {
 function SkeletonRows() {
   return (
     <div>
-      <div className="px-8 py-2">
+      <div className="px-4 sm:px-8 py-2">
         <div className="h-3 w-20 bg-muted rounded animate-pulse" />
       </div>
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="flex items-center gap-2 px-8 py-2 border-b border-border/40 animate-pulse"
+          className="flex items-center gap-2 px-4 sm:px-8 py-2 border-b border-border/40 animate-pulse"
         >
           <div className="h-4 w-4 bg-muted rounded" />
-          <div className="h-3 w-12 bg-muted rounded" />
+          <div className="hidden sm:block h-3 w-12 bg-muted rounded" />
           <div className="h-3.5 w-3.5 bg-muted rounded-full" />
           <div className="h-3 flex-1 bg-muted rounded" />
-          <div className="h-4 w-12 bg-muted rounded" />
-          <div className="h-4 w-20 bg-muted rounded" />
-          <div className="h-5 w-5 bg-muted rounded-full" />
-          <div className="h-3 w-24 bg-muted rounded" />
+          <div className="hidden sm:block h-4 w-12 bg-muted rounded" />
+          <div className="hidden sm:block h-4 w-20 bg-muted rounded" />
+          <div className="hidden sm:block h-5 w-5 bg-muted rounded-full" />
+          <div className="hidden sm:block h-3 w-24 bg-muted rounded" />
         </div>
       ))}
     </div>

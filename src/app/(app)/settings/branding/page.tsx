@@ -66,7 +66,7 @@ export default function BrandingPage() {
 
   if (loading) {
     return (
-      <PageTransition className="space-y-6 px-8 py-8">
+      <PageTransition className="space-y-6 px-4 sm:px-8 py-4 sm:py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-48 rounded bg-muted" />
           <div className="h-64 rounded bg-muted" />
@@ -76,7 +76,7 @@ export default function BrandingPage() {
   }
 
   return (
-    <PageTransition className="space-y-6 px-8 py-8">
+    <PageTransition className="space-y-6 px-4 sm:px-8 py-4 sm:py-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
           Branding (White Label)

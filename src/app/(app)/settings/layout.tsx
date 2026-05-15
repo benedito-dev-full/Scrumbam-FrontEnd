@@ -92,10 +92,11 @@ export default function SettingsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Inner sidebar (settings nav) */}
-      <aside className="flex w-[240px] shrink-0 flex-col border-r border-border bg-sidebar overflow-auto">
-        <div className="px-4 pt-4 pb-2">
+    <div className="flex h-full flex-col overflow-hidden md:flex-row">
+      {/* Settings nav — horizontal scroll no mobile, sidebar vertical no desktop */}
+      <aside className="shrink-0 border-b border-border bg-sidebar overflow-x-auto md:flex md:w-[240px] md:flex-col md:overflow-y-auto md:overflow-x-hidden md:border-b-0 md:border-r">
+        {/* Voltar ao app — só no desktop */}
+        <div className="hidden px-4 pt-4 pb-2 md:block">
           <Link
             href="/projects"
             className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
@@ -105,7 +106,41 @@ export default function SettingsLayout({
           </Link>
         </div>
 
-        <nav className="flex-1 px-2 pb-4 pt-2">
+        {/* Mobile: faixa horizontal com ícones + labels */}
+        <nav className="flex items-center gap-1 px-2 py-2 md:hidden">
+          <Link
+            href="/projects"
+            className="flex shrink-0 items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Link>
+          <div className="h-4 w-px bg-border mx-1 shrink-0" />
+          {GROUPS.flatMap((g) => g.items).map((item) => {
+            const active = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-[12px] font-medium transition-colors whitespace-nowrap",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                  item.stub && !active && "opacity-50",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Desktop: nav vertical com grupos */}
+        <nav className="hidden md:block flex-1 px-2 pb-4 pt-2">
           {GROUPS.map((group) => (
             <div key={group.label} className="mt-4 first:mt-0">
               <p className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">

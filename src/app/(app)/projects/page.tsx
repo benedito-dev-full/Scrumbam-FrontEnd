@@ -100,7 +100,7 @@ export default function ProjectsPage() {
     <PageTransition className="h-full">
       <div className="flex h-full flex-col">
         {/* Page header */}
-        <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-8">
+        <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4 sm:px-8">
           <h1 className="text-[13px] font-medium">Projetos</h1>
           <div className="flex items-center gap-2">
             {isAdmin && (
@@ -131,7 +131,7 @@ export default function ProjectsPage() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 sm:p-8">
           {isLoading ? (
             <SkeletonCards />
           ) : !projects?.length ? (
@@ -420,7 +420,7 @@ function SkeletonCards() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center px-8 py-24 text-center">
+    <div className="flex flex-col items-center justify-center px-4 sm:px-8 py-16 sm:py-24 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
         <FolderOpen className="h-6 w-6 text-muted-foreground" />
       </div>

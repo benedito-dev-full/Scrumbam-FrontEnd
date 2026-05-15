@@ -75,7 +75,7 @@ export default function TeamsSettingsPage() {
 
   return (
     <PageTransition>
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-4 sm:py-8">
         <div className="mx-auto max-w-5xl space-y-8">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">

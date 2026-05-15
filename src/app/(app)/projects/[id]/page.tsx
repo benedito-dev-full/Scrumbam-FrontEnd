@@ -247,14 +247,14 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
 
         {/* Tabs row */}
         <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
+                  "shrink-0 rounded-md px-2 py-1 text-[12px] font-medium transition-colors",
                   activeTab === tab.key
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
@@ -838,14 +838,14 @@ function OverviewTab({
 
         {/* Métricas rápidas */}
         {totalIssues > 0 && (
-          <div className="flex items-center gap-6 rounded-lg border border-border bg-muted/30 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 rounded-lg border border-border bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-muted-foreground">Total</span>
               <span className="text-[15px] font-semibold tabular-nums">
                 {totalIssues}
               </span>
             </div>
-            <div className="h-4 w-px bg-border" />
+            <div className="hidden sm:block h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
               <span className="text-[11px] text-muted-foreground">
@@ -855,7 +855,7 @@ function OverviewTab({
                 {executingCount}
               </span>
             </div>
-            <div className="h-4 w-px bg-border" />
+            <div className="hidden sm:block h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="text-[11px] text-muted-foreground">
@@ -1079,25 +1079,25 @@ function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
 
   return (
     <div>
-      <div className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border px-4 sm:px-6 lg:px-8 py-2 text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-[40px_28px_minmax(0,1fr)] sm:grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border px-4 sm:px-6 lg:px-8 py-2 text-[11px] font-medium text-muted-foreground">
         <div>Pri</div>
-        <div>Codigo</div>
+        <div className="hidden sm:block">Codigo</div>
         <div></div>
         <div>Titulo</div>
-        <div>Atualizado</div>
+        <div className="hidden sm:block">Atualizado</div>
       </div>
       {issues.map((i) => (
         <div
           key={i.id}
-          className="grid grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border/40 px-4 sm:px-6 lg:px-8 py-2 text-[13px] hover:bg-accent/30 transition-colors"
+          className="grid grid-cols-[40px_28px_minmax(0,1fr)] sm:grid-cols-[40px_70px_28px_minmax(0,1fr)_120px] items-center gap-3 border-b border-border/40 px-4 sm:px-6 lg:px-8 py-2 text-[13px] hover:bg-accent/30 transition-colors"
         >
           <PriorityIcon priority={i.priority} />
-          <span className="text-[12px] text-muted-foreground tabular-nums">
+          <span className="hidden sm:inline text-[12px] text-muted-foreground tabular-nums">
             INT-{i.id}
           </span>
           <StatusIcon status={i.status} />
           <span className="truncate">{i.title}</span>
-          <span className="text-[12px] text-muted-foreground">
+          <span className="hidden sm:inline text-[12px] text-muted-foreground">
             {formatRelative(i.updatedAt)}
           </span>
         </div>
@@ -1163,11 +1163,11 @@ function MembersTab({
         </div>
 
         <div>
-          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
+          <div className="grid grid-cols-[minmax(0,1fr)_140px_28px] sm:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">
             <div>Nome</div>
-            <div>Email</div>
+            <div className="hidden sm:block">Email</div>
             <div>Cargo</div>
-            <div>Função</div>
+            <div className="hidden sm:block">Função</div>
             <div></div>
           </div>
 
@@ -1232,7 +1232,7 @@ function ProjectMemberRow({
 
   return (
     <>
-      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border/40 px-3 py-2 text-[13px] hover:bg-accent/20 transition-colors">
+      <div className="grid grid-cols-[minmax(0,1fr)_140px_28px] sm:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_140px_minmax(0,1.5fr)_28px] items-center gap-3 border-b border-border/40 px-3 py-2 text-[13px] hover:bg-accent/20 transition-colors">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-medium text-white">
             {initials || "?"}
@@ -1240,7 +1240,7 @@ function ProjectMemberRow({
           <span className="truncate font-medium">{member.nome}</span>
         </div>
 
-        <span className="truncate text-[12px] text-muted-foreground">
+        <span className="hidden sm:inline truncate text-[12px] text-muted-foreground">
           {member.email ?? "—"}
         </span>
 
@@ -1251,7 +1251,7 @@ function ProjectMemberRow({
           onChange={onChangeRole}
         />
 
-        <span className="truncate text-[12px] text-muted-foreground">
+        <span className="hidden sm:inline truncate text-[12px] text-muted-foreground">
           {member.cargo ?? "—"}
         </span>
 
@@ -1696,8 +1696,9 @@ function SettingsTab({
         >
           <div className="flex flex-wrap gap-2">
             {KANBAN_COLUMNS.map((col) => {
-              const count = issues.filter((i) => i.status === col.status)
-                .length;
+              const count = issues.filter(
+                (i) => i.status === col.status,
+              ).length;
               return (
                 <div
                   key={col.status}

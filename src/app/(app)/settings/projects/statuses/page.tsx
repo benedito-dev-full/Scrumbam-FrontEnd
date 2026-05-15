@@ -124,7 +124,7 @@ export default function ProjectStatusesPage() {
 
   return (
     <PageTransition>
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-8 py-4 sm:py-8">
         <div className="mx-auto max-w-3xl space-y-6">
           {/* Header */}
           <div className="space-y-2">
