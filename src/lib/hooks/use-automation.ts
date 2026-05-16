@@ -11,7 +11,10 @@ import {
   automationApi,
   type LinkAgentInput,
   type ListExecutionsQuery,
+  type ProvisionInput,
+  type ProvisionResult,
 } from "@/lib/api/automation";
+import { QUERY_KEYS } from "@/lib/constants";
 
 /**
  * Hooks de Automation Fase 2 — vinculo projeto<->agente, git
@@ -439,6 +442,39 @@ export function useApproveExecutionGlobal() {
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? "Erro ao aprovar execucao";
       toast.error(msg);
+    },
+  });
+}
+
+// =====================================================================
+// Provision (clonar repositorio na VPS)
+// =====================================================================
+
+/**
+ * Mutation para provisionar (clonar) repositorio na VPS.
+ * Invalida queries de deploy key, agent-link e project apos sucesso.
+ *
+ * Nota: o ProvisionModal usa chamadas imperativas diretas (nao este hook)
+ * para controle granular de sub-fase (saving-url, loading-key, etc.).
+ * Este hook e disponibilizado para usos externos mais simples.
+ */
+export function useProvision(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation<
+    ProvisionResult,
+    unknown,
+    { agentId: string } & ProvisionInput
+  >({
+    mutationFn: ({ agentId, useSshKey }) =>
+      automationApi.provision(projectId, agentId, { useSshKey }),
+    onSuccess: (_data, { agentId }) => {
+      qc.invalidateQueries({
+        queryKey: QUERY_KEYS.deployKey(projectId, agentId),
+      });
+      qc.invalidateQueries({
+        queryKey: ["automation", "agent-link", projectId],
+      });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.project(projectId) });
     },
   });
 }

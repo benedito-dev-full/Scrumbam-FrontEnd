@@ -133,6 +133,19 @@ export interface ListExecutionsQuery {
   limit?: number;
 }
 
+export interface ProvisionInput {
+  useSshKey?: boolean;
+}
+
+export interface ProvisionResult {
+  projectSlug: string;
+  projectPath: string;
+  alreadyExisted: boolean;
+  currentBranch: string;
+  headCommitSha: string;
+  usedSshKey: boolean;
+}
+
 // === Helpers ===
 
 // V2 V2ProjectAgentStatus item shape (ver agent-status-response.dto.ts):
@@ -159,7 +172,12 @@ function mapStatusToLink(projectId: string, raw: any): ProjectAgentLink {
     projectSlug:
       typeof primary?.projectSlug === "string" ? primary.projectSlug : null,
     remoteBranch: null,
-    remoteRepoUrl: null,
+    remoteRepoUrl:
+      typeof primary?.remoteRepoUrl === "string"
+        ? primary.remoteRepoUrl
+        : typeof primary?.repoUrl === "string"
+          ? primary.repoUrl
+          : null,
     executionTimeoutMs: 600000,
   };
 }
@@ -199,6 +217,23 @@ export const automationApi = {
     if (link.agent?.id) {
       await api.delete(`/projects/${projectId}/agent/${link.agent.id}`);
     }
+  },
+
+  /**
+   * POST /projects/:projectId/agent/:agentId/provision
+   * Clona (ou re-clona) o repositorio na VPS. Requer repoUrl salvo no projeto.
+   * useSshKey=true usa a deploy key SSH; false usa HTTPS publico.
+   */
+  provision: async (
+    projectId: string,
+    agentId: string,
+    input?: ProvisionInput,
+  ): Promise<ProvisionResult> => {
+    const { data } = await api.post<ProvisionResult>(
+      `/projects/${projectId}/agent/${agentId}/provision`,
+      { useSshKey: input?.useSshKey ?? true },
+    );
+    return data;
   },
 
   /** GET /projects/:id/agent/status (V2 nao tem livePing — flag ignorada). */

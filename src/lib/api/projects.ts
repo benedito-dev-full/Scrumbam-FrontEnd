@@ -115,6 +115,10 @@ export const projectsApi = {
     if (Object.prototype.hasOwnProperty.call(dto, "ownerId")) {
       payload.ownerId = dto.ownerId;
     }
+    // repoUrl: aceitar null explicito (limpa o campo).
+    if (Object.prototype.hasOwnProperty.call(dto, "repoUrl")) {
+      payload.repoUrl = dto.repoUrl;
+    }
     const { data } = await api.patch(ENDPOINTS.PROJECT(id), payload);
     return mapProject(data);
   },

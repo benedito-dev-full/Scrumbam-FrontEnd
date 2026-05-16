@@ -76,6 +76,11 @@ export interface UpdateProjectDto {
    * vira owner — apenas membros do projeto sao candidatos validos.
    */
   ownerId?: string | null;
+  /**
+   * URL SSH ou HTTPS do repositorio Git. `null` limpa o campo,
+   * `undefined` (omitido) preserva o valor atual.
+   */
+  repoUrl?: string | null;
 }
 
 export interface ProjectLastActivity {
