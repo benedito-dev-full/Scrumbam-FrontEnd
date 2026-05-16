@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +10,10 @@ import {
   XCircle,
   CheckCircle2,
   AlertCircle,
+  GitBranch,
+  Rocket,
+  Lock,
+  Globe,
 } from "lucide-react";
 import {
   Dialog,
@@ -53,6 +57,8 @@ type Step2Phase =
   | "success"
   | "error";
 
+type RepoType = "ssh" | "https" | "unknown";
+
 interface ProvisionModalProps {
   projectId: string;
   open: boolean;
@@ -65,6 +71,13 @@ interface ProvisionModalProps {
 // =====================================================================
 // Helpers
 // =====================================================================
+
+function detectRepoType(url: string): RepoType {
+  const trimmed = url.trim();
+  if (trimmed.startsWith("git@")) return "ssh";
+  if (trimmed.startsWith("https://")) return "https";
+  return "unknown";
+}
 
 function mapProvisionError(err: unknown): string {
   const status = (err as { response?: { status?: number } })?.response?.status;
@@ -94,7 +107,7 @@ function mapProvisionError(err: unknown): string {
 }
 
 // =====================================================================
-// StepIndicator
+// StepIndicator — linha que preenche ao avançar
 // =====================================================================
 
 function StepIndicator({
@@ -110,26 +123,80 @@ function StepIndicator({
         <React.Fragment key={n}>
           <span
             className={cn(
-              "flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium",
+              "flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium transition-all duration-300",
               n === current
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground scale-110"
                 : n < current
-                  ? "bg-primary/30 text-primary"
+                  ? "bg-primary/40 text-primary"
                   : "bg-muted text-muted-foreground",
             )}
           >
-            {n < current ? <Check className="h-3 w-3" /> : n}
+            {n < current ? (
+              <Check className="h-3 w-3 animate-in zoom-in duration-200" />
+            ) : (
+              n
+            )}
           </span>
           {n < total && (
-            <div
-              className={cn(
-                "h-px w-4 bg-border",
-                n < current && "bg-primary/30",
-              )}
-            />
+            <div className="relative h-px w-6 bg-border overflow-hidden">
+              <div
+                className={cn(
+                  "absolute inset-y-0 left-0 bg-primary transition-all duration-500",
+                  n < current ? "w-full" : "w-0",
+                )}
+              />
+            </div>
           )}
         </React.Fragment>
       ))}
+    </div>
+  );
+}
+
+// =====================================================================
+// PhaseSpinner — spinner com texto rotativo
+// =====================================================================
+
+function PhaseSpinner({ phase }: { phase: Step2Phase }) {
+  const messages: Partial<Record<Step2Phase, string[]>> = {
+    "saving-url": ["Salvando URL...", "Persistindo configuração..."],
+    "loading-key": ["Verificando deploy key...", "Consultando agente..."],
+    "generating-key": [
+      "Gerando chave SSH...",
+      "Criando par ed25519...",
+      "Quase lá...",
+    ],
+    provisioning: [
+      "Conectando à VPS...",
+      "Clonando repositório...",
+      "Pode levar até 60 segundos...",
+      "Aguarde...",
+    ],
+  };
+
+  const [msgIndex, setMsgIndex] = useState(0);
+  const list = messages[phase] ?? ["Processando..."];
+
+  useEffect(() => {
+    setMsgIndex(0);
+    const interval = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % list.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [phase, list.length]);
+
+  return (
+    <div className="py-10 flex flex-col items-center gap-4 text-center">
+      <div className="relative">
+        <Loader2 className="h-9 w-9 animate-spin text-primary" />
+        <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+      </div>
+      <p
+        key={msgIndex}
+        className="text-[13px] text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-300"
+      >
+        {list[msgIndex]}
+      </p>
     </div>
   );
 }
@@ -164,9 +231,18 @@ export function ProvisionModal({
   const [deployKey, setDeployKey] = useState<DeployKey | null>(null);
   const [result, setResult] = useState<ProvisionResult | null>(null);
   const [error, setError] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
   // Derived
-  const agentId = step === 1 ? selectedAgentId : (initialAgentId ?? selectedAgentId);
+  const agentId =
+    step === 1 ? selectedAgentId : (initialAgentId ?? selectedAgentId);
+  const repoType = detectRepoType(repoUrl);
+
+  // Auto-detect public/private from URL
+  useEffect(() => {
+    if (repoType === "ssh") setIsPublic(false);
+    if (repoType === "https") setIsPublic(true);
+  }, [repoType]);
 
   // ---------------------------------------------------------------
   // Reset on close
@@ -175,7 +251,6 @@ export function ProvisionModal({
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
-        // Reset all state
         setStep(initialStep);
         setSelectedAgentId(initialAgentId ?? "");
         setBranch("main");
@@ -185,6 +260,7 @@ export function ProvisionModal({
         setDeployKey(null);
         setResult(null);
         setError("");
+        setCopied(false);
         onClose();
       }
     },
@@ -199,23 +275,21 @@ export function ProvisionModal({
     if (!selectedAgentId) return;
     linkMutation.mutate(
       { idAgent: selectedAgentId, remoteBranch: branch },
-      {
-        onSuccess: () => {
-          setStep(2);
-        },
-      },
+      { onSuccess: () => setStep(2) },
     );
   };
 
   // ---------------------------------------------------------------
-  // Step 2: Provision flow (imperative, granular state control)
+  // Step 2: Provision flow
   // ---------------------------------------------------------------
 
   const handleProvision = useCallback(async () => {
     const activeAgentId = agentId;
     if (!activeAgentId) return;
 
-    // 1. Save repoUrl via PATCH
+    const useSshKey = repoType === "ssh" || !isPublic;
+
+    // 1. Save repoUrl
     setPhase("saving-url");
     try {
       await projectsApi.update(projectId, { repoUrl });
@@ -226,7 +300,7 @@ export function ProvisionModal({
     }
 
     // 2. SSH path: ensure deploy key
-    if (!isPublic) {
+    if (useSshKey) {
       setPhase("loading-key");
       let key = deployKey;
       if (!key) {
@@ -234,7 +308,7 @@ export function ProvisionModal({
           key = await deployKeyApi.get(projectId, activeAgentId);
           setDeployKey(key);
           setPhase("key-ready");
-          return; // pause — user needs to add key on GitHub
+          return;
         } catch (err) {
           const status = (err as { response?: { status?: number } })?.response
             ?.status;
@@ -244,7 +318,7 @@ export function ProvisionModal({
               key = await deployKeyApi.generate(projectId, activeAgentId);
               setDeployKey(key);
               setPhase("key-ready");
-              return; // pause
+              return;
             } catch {
               setPhase("error");
               setError("Erro ao gerar deploy key na VPS.");
@@ -256,16 +330,15 @@ export function ProvisionModal({
           return;
         }
       }
-      // key already exists and user clicked "Adicionei" — continue below
     }
 
-    // 3. Provision (clone)
+    // 3. Provision
     setPhase("provisioning");
     try {
       const provisionResult = await automationApi.provision(
         projectId,
         activeAgentId,
-        { useSshKey: !isPublic },
+        { useSshKey },
       );
       setResult(provisionResult);
       setPhase("success");
@@ -280,23 +353,69 @@ export function ProvisionModal({
       setPhase("error");
       setError(mapProvisionError(err));
     }
-  }, [agentId, projectId, repoUrl, isPublic, deployKey, qc]);
+  }, [agentId, projectId, repoUrl, repoType, isPublic, deployKey, qc]);
 
-  // Copy to clipboard helper
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).catch(() => {
-      /* ignore */
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     });
   };
 
   // ---------------------------------------------------------------
-  // Render helpers
+  // URL validation warning (Proposta 1)
+  // ---------------------------------------------------------------
+
+  const renderUrlWarning = () => {
+    if (!repoUrl.trim()) return null;
+
+    // HTTPS + sem checkbox público = repo privado via HTTPS → bloquear
+    if (repoType === "https" && !isPublic) {
+      return (
+        <div className="flex items-start gap-2 rounded-sm border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-600 leading-relaxed animate-in fade-in duration-200">
+          <Lock className="h-3 w-3 mt-0.5 shrink-0" />
+          <span>
+            Repositórios privados requerem autenticação. Use a URL SSH{" "}
+            <code className="text-[10px]">git@github.com:org/repo.git</code>{" "}
+            — o agente usará a deploy key para clonar e fazer push com
+            segurança.
+          </span>
+        </div>
+      );
+    }
+
+    // HTTPS + público = ok
+    if (repoType === "https" && isPublic) {
+      return (
+        <div className="flex items-center gap-2 rounded-sm border border-green-500/30 bg-green-500/10 px-3 py-2 text-[11px] text-green-600 animate-in fade-in duration-200">
+          <Globe className="h-3 w-3 shrink-0" />
+          <span>Repositório público via HTTPS — nenhuma chave necessária.</span>
+        </div>
+      );
+    }
+
+    // SSH = deploy key
+    if (repoType === "ssh") {
+      return (
+        <div className="flex items-center gap-2 rounded-sm border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-primary animate-in fade-in duration-200">
+          <Lock className="h-3 w-3 shrink-0" />
+          <span>
+            Repositório SSH — uma deploy key será gerada e usada pelo agente.
+          </span>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // ---------------------------------------------------------------
+  // Render Step 1
   // ---------------------------------------------------------------
 
   const renderStep1 = () => (
-    <>
+    <div className="animate-in fade-in slide-in-from-right-2 duration-200">
       <div className="space-y-4 py-2">
-        {/* Agent selector */}
         <div className="space-y-1.5">
           <Label htmlFor="provision-agent" className="text-[12px]">
             VPS
@@ -321,6 +440,14 @@ export function ProvisionModal({
               {agents?.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        a.status === "online"
+                          ? "bg-green-500"
+                          : "bg-muted-foreground",
+                      )}
+                    />
                     <span>{a.nome}</span>
                     <span className="text-[11px] text-muted-foreground">
                       ({a.status})
@@ -345,7 +472,6 @@ export function ProvisionModal({
           )}
         </div>
 
-        {/* Branch */}
         <div className="space-y-1.5">
           <Label htmlFor="provision-branch" className="text-[12px]">
             Branch padrão
@@ -388,45 +514,34 @@ export function ProvisionModal({
           )}
         </Button>
       </DialogFooter>
-    </>
+    </div>
   );
 
+  // ---------------------------------------------------------------
+  // Render Step 2
+  // ---------------------------------------------------------------
+
   const renderStep2 = () => {
-    // --- Spinner phases ---
+    // Spinner phases
     if (
       phase === "saving-url" ||
       phase === "loading-key" ||
       phase === "generating-key" ||
       phase === "provisioning"
     ) {
-      const messages: Record<string, string> = {
-        "saving-url": "Salvando URL do repositório...",
-        "loading-key": "Verificando deploy key na VPS...",
-        "generating-key": "Gerando deploy key SSH na VPS...",
-        provisioning:
-          "Clonando repositório na VPS... (pode levar até 60 segundos)",
-      };
-      return (
-        <div className="py-8 flex flex-col items-center gap-3 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-[13px] text-muted-foreground">
-            {messages[phase]}
-          </p>
-        </div>
-      );
+      return <PhaseSpinner phase={phase} />;
     }
 
-    // --- Key ready: pause for user to add on GitHub ---
+    // Key ready
     if (phase === "key-ready" && deployKey) {
       return (
-        <>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="space-y-4 py-2">
             <p className="text-[12px] text-muted-foreground leading-relaxed">
               Adicione a deploy key abaixo no GitHub/GitLab para que a VPS
               possa clonar o repositório via SSH.
             </p>
 
-            {/* Public key display */}
             <div className="space-y-1.5">
               <Label className="text-[12px]">Deploy key (pública)</Label>
               <div className="relative">
@@ -442,7 +557,11 @@ export function ProvisionModal({
                   className="absolute top-2 right-2 p-1 rounded hover:bg-muted transition-colors"
                   title="Copiar"
                 >
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-green-500 animate-in zoom-in duration-150" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                 </button>
               </div>
               {deployKey.fingerprint && (
@@ -452,7 +571,6 @@ export function ProvisionModal({
               )}
             </div>
 
-            {/* Instructions */}
             {deployKey.instructions.length > 0 && (
               <div className="space-y-1.5">
                 <Label className="text-[12px]">Instruções</Label>
@@ -487,16 +605,19 @@ export function ProvisionModal({
               Adicionei a deploy key
             </Button>
           </DialogFooter>
-        </>
+        </div>
       );
     }
 
-    // --- Success ---
+    // Success
     if (phase === "success" && result) {
       return (
-        <>
+        <div className="animate-in fade-in zoom-in-95 duration-300">
           <div className="py-6 flex flex-col items-center gap-4 text-center">
-            <CheckCircle2 className="h-10 w-10 text-green-500" />
+            <div className="relative">
+              <CheckCircle2 className="h-12 w-12 text-green-500 animate-in zoom-in duration-300" />
+              <Rocket className="absolute -top-1 -right-1 h-4 w-4 text-primary animate-in slide-in-from-bottom-2 duration-500 delay-200" />
+            </div>
             <div className="space-y-1">
               <p className="text-[14px] font-medium">
                 Repositório clonado com sucesso!
@@ -506,14 +627,14 @@ export function ProvisionModal({
               </p>
             </div>
             <div className="flex gap-4 text-[12px] text-muted-foreground">
-              <span>
-                Branch:{" "}
+              <span className="flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
                 <span className="font-mono text-foreground">
                   {result.currentBranch}
                 </span>
               </span>
               <span>
-                Commit:{" "}
+                commit{" "}
                 <span className="font-mono text-foreground">
                   {result.headCommitSha.slice(0, 7)}
                 </span>
@@ -536,16 +657,16 @@ export function ProvisionModal({
               Concluir
             </Button>
           </DialogFooter>
-        </>
+        </div>
       );
     }
 
-    // --- Error ---
+    // Error
     if (phase === "error") {
       return (
-        <>
+        <div className="animate-in fade-in duration-200">
           <div className="py-6 flex flex-col items-center gap-4 text-center">
-            <XCircle className="h-10 w-10 text-destructive" />
+            <XCircle className="h-10 w-10 text-destructive animate-in zoom-in duration-200" />
             <div className="space-y-1">
               <p className="text-[14px] font-medium">Erro no provisionamento</p>
               <p className="text-[12px] text-muted-foreground max-w-xs">
@@ -575,13 +696,16 @@ export function ProvisionModal({
               Tentar novamente
             </Button>
           </DialogFooter>
-        </>
+        </div>
       );
     }
 
-    // --- Idle: main form ---
+    // Idle — main form
+    const isHttpsPrivate = repoType === "https" && !isPublic;
+    const canSubmit = repoUrl.trim() && !isHttpsPrivate;
+
     return (
-      <>
+      <div className="animate-in fade-in slide-in-from-left-2 duration-200">
         <div className="space-y-4 py-2">
           {/* Repo URL */}
           <div className="space-y-1.5">
@@ -598,33 +722,28 @@ export function ProvisionModal({
               autoComplete="off"
               spellCheck={false}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Use SSH (git@...) para repositórios privados ou HTTPS para
-              repositórios públicos.
-            </p>
           </div>
 
-          {/* Public repo checkbox */}
-          <div className="flex items-center gap-2">
-            <input
-              id="provision-is-public"
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
-            />
-            <Label
-              htmlFor="provision-is-public"
-              className="text-[12px] cursor-pointer"
-            >
-              Repositório público (sem deploy key SSH)
-            </Label>
-          </div>
+          {/* URL warning / info (Proposta 1) */}
+          {renderUrlWarning()}
 
-          {!isPublic && (
-            <div className="rounded-sm border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
-              Uma deploy key SSH será gerada na VPS e precisará ser adicionada
-              ao seu repositório no GitHub/GitLab antes do clone.
+          {/* Checkbox público — só mostra se URL não for SSH */}
+          {repoType !== "ssh" && (
+            <div className="flex items-center gap-2 animate-in fade-in duration-200">
+              <input
+                id="provision-is-public"
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                disabled={repoType === "https"}
+              />
+              <Label
+                htmlFor="provision-is-public"
+                className="text-[12px] cursor-pointer"
+              >
+                Repositório público (sem deploy key SSH)
+              </Label>
             </div>
           )}
         </div>
@@ -642,12 +761,17 @@ export function ProvisionModal({
             size="sm"
             className="text-[12px]"
             onClick={() => handleProvision()}
-            disabled={!repoUrl.trim()}
+            disabled={!canSubmit}
+            title={
+              isHttpsPrivate
+                ? "Use URL SSH para repositórios privados"
+                : undefined
+            }
           >
-            {isPublic ? "Clonar" : "Continuar"}
+            {repoType === "ssh" ? "Continuar" : "Clonar"}
           </Button>
         </DialogFooter>
-      </>
+      </div>
     );
   };
 
