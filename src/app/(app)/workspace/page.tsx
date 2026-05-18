@@ -206,16 +206,18 @@ export default function WorkspaceOverviewPage() {
             <BookmarksCard bookmarks={bookmarks} onRemove={removeBookmark} />
           </div>
 
-          {/* Folders / Projetos */}
+          {/* Times */}
+          <TeamsCard teams={teams ?? []} projectsByTeam={projectsByTeam} />
+
+          {/* Folders / Projetos — último na hierarquia (estilo ClickUp).
+              Min-h alto faz o card preencher visualmente o restante da tela
+              quando há poucas pastas, evitando "buraco" embaixo do widget. */}
           <FoldersCard
             projects={projects ?? []}
             summaries={summaries ?? []}
             progressByProjectId={progressByProjectId}
             loading={projectsLoading}
           />
-
-          {/* Times */}
-          <TeamsCard teams={teams ?? []} projectsByTeam={projectsByTeam} />
         </div>
       </div>
     </PageTransition>
@@ -623,7 +625,7 @@ function FoldersCard({
 
     return (
       <>
-        <section className="rounded-xl border border-border bg-card/30 p-4">
+        <section className="flex min-h-[60vh] flex-col rounded-xl border border-border bg-card/30 p-4">
           <header className="mb-3 flex items-center gap-2">
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
             <h2 className="text-[14px] font-semibold tracking-tight">
@@ -677,19 +679,11 @@ function FoldersCard({
                   <button
                     type="button"
                     onClick={() => setOpenFolder(f.id)}
-                    className="flex flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                    className="flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
                   >
-                    <span
-                      className="inline-block h-3 w-3 shrink-0 rounded-sm"
-                      style={{ backgroundColor: projectHex(f.nome) }}
-                      aria-hidden
-                    />
-                    <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate text-[13px] font-medium">
+                    <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-[12px] font-medium">
                       {f.nome}
-                    </span>
-                    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                      {f.projectCount}
                     </span>
                   </button>
                   <DropdownMenu>
@@ -698,7 +692,7 @@ function FoldersCard({
                         type="button"
                         aria-label={`Opções da pasta ${f.nome}`}
                         title="Opções"
-                        className="mr-1 flex h-7 w-7 items-center justify-center rounded text-muted-foreground/60 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+                        className="mr-1 flex h-6 w-6 items-center justify-center rounded text-muted-foreground/60 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="h-3.5 w-3.5" />
@@ -725,14 +719,11 @@ function FoldersCard({
                 <button
                   type="button"
                   onClick={() => setOpenFolder(UNASSIGNED_FOLDER_ID)}
-                  className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+                  className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-2.5 py-1.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
                 >
-                  <Folder className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-                  <span className="truncate text-[13px] font-medium text-muted-foreground">
+                  <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                  <span className="truncate text-[12px] font-medium text-muted-foreground">
                     Sem pasta
-                  </span>
-                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                    {unassignedCount}
                   </span>
                 </button>
               )}
@@ -762,7 +753,7 @@ function FoldersCard({
 
   // ----- Estado 2: Lists (substitui o card Folders) -----
   return (
-    <section className="rounded-xl border border-border bg-card/30 p-4">
+    <section className="flex min-h-[60vh] flex-col rounded-xl border border-border bg-card/30 p-4">
       <header className="mb-3 flex items-center gap-2">
         <button
           type="button"
