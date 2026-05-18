@@ -197,7 +197,7 @@ function MyTasksCard({
   ];
 
   return (
-    <Card title="Minhas tarefas" icon={ListChecks}>
+    <Card title="Minhas tarefas" icon={ListChecks} accent="text-emerald-500">
       {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-4 w-full" />
@@ -205,7 +205,11 @@ function MyTasksCard({
           <Skeleton className="h-4 w-2/3" />
         </div>
       ) : total === 0 ? (
-        <EmptyState text="Voce nao tem tarefas atribuidas." />
+        <EmptyState
+          text="Você não tem tarefas atribuídas."
+          icon={ListChecks}
+          cta={{ label: "Criar tarefa", href: "/intentions/new" }}
+        />
       ) : (
         <ul className="space-y-1.5">
           {rows.map((r) => {
@@ -238,9 +242,12 @@ function MyTasksCard({
 
 function RecentActivityCard({ summaries }: { summaries: ProjectSummary[] }) {
   return (
-    <Card title="Atividade recente" icon={Activity}>
+    <Card title="Atividade recente" icon={Activity} accent="text-sky-500">
       {summaries.length === 0 ? (
-        <EmptyState text="Sem atividade recente nos projetos." />
+        <EmptyState
+          text="Sem atividade recente nos projetos."
+          icon={Activity}
+        />
       ) : (
         <ul className="space-y-2">
           {summaries.map((s) => (
@@ -284,9 +291,12 @@ function BookmarksCard({
   onRemove: (id: string) => void;
 }) {
   return (
-    <Card title="Favoritos" icon={Bookmark}>
+    <Card title="Favoritos" icon={Bookmark} accent="text-amber-500">
       {bookmarks.length === 0 ? (
-        <EmptyState text="Marque projetos ou tarefas como favoritos para acessa-los rapido." />
+        <EmptyState
+          text="Marque projetos ou tarefas como favoritos para acessá-los rápido."
+          icon={Bookmark}
+        />
       ) : (
         <ul className="space-y-1">
           {bookmarks.map((b) => (
@@ -644,17 +654,31 @@ function Card({
   title,
   icon: Icon,
   hint,
+  accent,
   children,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   hint?: string;
+  /** Cor semantica do icone (Tailwind text-*). Default: muted. */
+  accent?: string;
   children: React.ReactNode;
 }) {
+  // Deriva o background do badge a partir do accent (ex: text-emerald-500 -> bg-emerald-500/10)
+  const accentBg = accent
+    ? accent.replace("text-", "bg-").replace(/-\d+$/, "-500/10")
+    : "bg-muted";
   return (
     <section className="rounded-xl border border-border bg-card/30 p-4">
       <header className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-md",
+            accentBg,
+          )}
+        >
+          <Icon className={cn("h-4 w-4", accent ?? "text-muted-foreground")} />
+        </span>
         <h2 className="text-[14px] font-semibold tracking-tight">{title}</h2>
         {hint && (
           <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
@@ -667,11 +691,41 @@ function Card({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({
+  text,
+  icon: Icon,
+  cta,
+}: {
+  text: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  cta?: { label: string; href?: string; onClick?: () => void };
+}) {
   return (
-    <p className="rounded-md border border-dashed border-border/60 bg-muted/20 px-3 py-6 text-center text-[12px] text-muted-foreground">
-      {text}
-    </p>
+    <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/60 bg-muted/20 px-3 py-6 text-center">
+      {Icon && (
+        <Icon className="h-6 w-6 text-muted-foreground/60" aria-hidden />
+      )}
+      <p className="text-[12px] text-muted-foreground">{text}</p>
+      {cta &&
+        (cta.href ? (
+          <Link
+            href={cta.href}
+            className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2.5 py-1 text-[11.5px] font-medium text-foreground hover:bg-foreground/15 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            {cta.label}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={cta.onClick}
+            className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2.5 py-1 text-[11.5px] font-medium text-foreground hover:bg-foreground/15 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            {cta.label}
+          </button>
+        ))}
+    </div>
   );
 }
 
