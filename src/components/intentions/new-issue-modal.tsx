@@ -203,12 +203,13 @@ export function NewIssueModal({
   const [createMore, setCreateMore] = useState(false);
 
   useEffect(() => {
+    // So pre-seleciona quando vier explicito (modal aberto de dentro de
+    // /projects/[id]). Caso contrario deixa em branco — o usuario precisa
+    // escolher o projeto, evita criar issue no projeto errado por inercia.
     if (defaultProjectId) {
       setProjectId(defaultProjectId);
-    } else if (projects && projects.length > 0 && !projectId) {
-      setProjectId(projects[0].chave);
     }
-  }, [projects, defaultProjectId, projectId]);
+  }, [defaultProjectId]);
 
   const reset = () => {
     setTitle("");
@@ -217,6 +218,9 @@ export function NewIssueModal({
     setPriority("none");
     setAssigneeId("");
     setCanal("web");
+    // So zera o projeto se nao veio fixado (modal aberto de /projects/[id]
+    // mantem o projeto entre criacoes).
+    if (!defaultProjectId) setProjectId("");
   };
 
   const handleClose = () => {
@@ -396,14 +400,26 @@ export function NewIssueModal({
               </PopoverContent>
             </Popover>
 
-            {/* Project (required) */}
+            {/* Project (required) — destacado quando vazio */}
             <Popover>
               <PopoverTrigger asChild>
-                <Chip
-                  active={!!project}
-                  icon={Box}
-                  label={project ? project.nome : "Projeto"}
-                />
+                <button
+                  type="button"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] transition-colors",
+                    project
+                      ? "border-border bg-accent text-foreground hover:bg-accent/80"
+                      : "border-amber-500/60 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15",
+                  )}
+                  title={
+                    project ? project.nome : "Selecionar projeto (obrigatório)"
+                  }
+                >
+                  <Box className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate max-w-[160px]">
+                    {project ? project.nome : "Selecionar projeto"}
+                  </span>
+                </button>
               </PopoverTrigger>
               <PopoverContent
                 align="start"
