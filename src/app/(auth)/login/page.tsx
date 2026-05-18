@@ -7,6 +7,7 @@ import { AxiosError } from "axios";
 
 import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
+import { getEntidadeIdFromToken } from "@/lib/auth/decode-jwt";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -20,12 +21,14 @@ import { Eye, EyeOff } from "lucide-react";
  * Centralizado para login + auto-switch terem o mesmo shape (ADR-V2-030).
  */
 function buildUser(data: AuthResponse): User {
+  // Fonte autoritativa do entidadeId: o JWT. O claim 'entidadeId' eh
+  // setado pelo backend V2 e referencia DEntidade.chave (diferente do
+  // 'sub' que eh DUserGroup.chave). O response do /auth/login pode vir
+  // sem esse campo ou trocar com data.user.id em alguns fluxos.
+  const fromToken = getEntidadeIdFromToken(data.accessToken);
   return {
     id: data.user.id,
-    // Fallback para data.user.id quando backend nao envia entidadeId:
-    // alguns endpoints/fluxos retornam null. Sem o fallback o card
-    // 'Minhas tarefas' nunca casa com assigneeId das intentions.
-    entidadeId: data.user.entidadeId ?? data.user.id,
+    entidadeId: fromToken ?? data.user.entidadeId ?? data.user.id,
     nome: data.user.name,
     email: data.user.email,
     role: data.user.orgRole?.toLowerCase() || data.user.role || "member",

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
+import { getEntidadeIdFromToken } from "@/lib/auth/decode-jwt";
 
 const PUBLIC_PATHS = ["/login", "/register", "/invite"];
 const ORPHAN_PATH = "/orphan";
@@ -39,6 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!needsRevalidation()) return; // cache valido, skip request
 
       setIsValidating(true);
+      // entidadeId autoritativo vem do JWT (claim 'entidadeId'). me.id pode
+      // ser DUserGroup.chave, sobrescrever quebraria o filtro de assignee.
+      const accessToken = useAuthStore.getState().accessToken;
+      const entidadeIdFromToken =
+        getEntidadeIdFromToken(accessToken) || user.entidadeId;
       authApi
         .getMe()
         .then((me) => {
@@ -47,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (me.isOrphan) {
             setUser({
               id: user.id,
-              entidadeId: me.id,
+              entidadeId: entidadeIdFromToken,
               nome: me.name,
               email: me.email ?? user.email,
               role: "",
@@ -65,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Atualizar user com dados frescos do backend
           setUser({
             id: user.id, // manter id do UserGroup (nao vem no /me)
-            entidadeId: me.id,
+            entidadeId: entidadeIdFromToken,
             nome: me.name,
             email: me.email ?? user.email,
             role: me.orgRole?.toLowerCase() || me.role || "member",

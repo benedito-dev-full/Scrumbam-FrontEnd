@@ -10,6 +10,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import { invitesApi, type InviteInfo } from "@/lib/api/invites";
 import { authApi } from "@/lib/api/auth";
+import { getEntidadeIdFromToken } from "@/lib/auth/decode-jwt";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -38,9 +39,10 @@ export default function InvitePage() {
 }
 
 function buildUserFromAuth(data: AuthResponse): User {
+  const fromToken = getEntidadeIdFromToken(data.accessToken);
   return {
     id: data.user.id,
-    entidadeId: data.user.entidadeId ?? data.user.id,
+    entidadeId: fromToken ?? data.user.entidadeId ?? data.user.id,
     nome: data.user.name,
     email: data.user.email,
     role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
@@ -67,7 +69,9 @@ async function hydrateAvailableOrgsFresh(
     const me = await authApi.getMe();
     setUser({
       ...currentUser,
-      entidadeId: me.id,
+      // Preserva entidadeId do currentUser (vem do JWT em buildUserFromAuth).
+      // me.id pode ser DUserGroup.chave, nao DEntidade.chave.
+      entidadeId: currentUser.entidadeId || me.id,
       nome: me.name,
       email: me.email ?? currentUser.email,
       role: me.orgRole?.toLowerCase() || me.role || currentUser.role,

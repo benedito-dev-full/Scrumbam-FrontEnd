@@ -7,6 +7,7 @@ import { Loader2, Plus } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth";
 import { organizationsApi } from "@/lib/api/organizations";
+import { getEntidadeIdFromToken } from "@/lib/auth/decode-jwt";
 import { LAST_ORG_LS_KEY, useAuthStore } from "@/lib/stores/auth-store";
 import type { AuthResponse, User } from "@/types/auth";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,10 @@ import { Label } from "@/components/ui/label";
  */
 
 function buildUser(data: AuthResponse): User {
+  const fromToken = getEntidadeIdFromToken(data.accessToken);
   return {
     id: data.user.id,
-    entidadeId: data.user.entidadeId ?? data.user.id,
+    entidadeId: fromToken ?? data.user.entidadeId ?? data.user.id,
     nome: data.user.name,
     email: data.user.email,
     role: data.user.orgRole?.toLowerCase() || data.user.role || "member",

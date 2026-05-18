@@ -51,12 +51,7 @@ export default function WorkspaceOverviewPage() {
   usePageTitle(user?.orgNome ?? "Workspace");
 
   const orgId = useAuthStore((s) => s.user?.orgId);
-  // entidadeId pode vir vazio se backend retornou null no login antigo.
-  // Cai para user.id (que o auth-provider sincroniza com me.id no reload)
-  // para nao quebrar o filtro de 'Minhas tarefas'.
-  const myEntidadeId = useAuthStore(
-    (s) => s.user?.entidadeId || s.user?.id || null,
-  );
+  const myEntidadeId = useAuthStore((s) => s.user?.entidadeId);
 
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: summaries } = useProjectSummaries(orgId ?? undefined);

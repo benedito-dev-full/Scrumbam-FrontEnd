@@ -7,6 +7,7 @@ import { AxiosError } from "axios";
 
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
+import { getEntidadeIdFromToken } from "@/lib/auth/decode-jwt";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -58,7 +59,10 @@ export default function RegisterPage() {
 
       const user: User = {
         id: data.user.id,
-        entidadeId: data.user.entidadeId ?? data.user.id,
+        entidadeId:
+          getEntidadeIdFromToken(data.accessToken) ??
+          data.user.entidadeId ??
+          data.user.id,
         nome: data.user.name,
         email: data.user.email,
         role: data.user.orgRole?.toLowerCase() || data.user.role || "admin",
