@@ -6,7 +6,9 @@ import {
   Activity,
   Bookmark,
   Calendar,
+  ChevronDown,
   ChevronLeft,
+  ChevronRight,
   CircleDashed,
   CircleDot,
   Flag,
@@ -20,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ProjectSummary } from "@/types";
+import type { IntentionDocument } from "@/types/intention";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -80,25 +83,29 @@ export default function WorkspaceOverviewPage() {
       ),
     [allMyTasks],
   );
-  const myByStatus = useMemo(() => {
-    // Agrega ready + validating + validated em "ready" pois todos significam
+  const myTasksByStatus = useMemo(() => {
+    // Agrupa as tasks completas (nao so contagem) por categoria.
+    // ready + validating + validated viram "ready" pois todos significam
     // "fora da inbox, ainda nao em execucao".
-    const map: Record<string, number> = {
-      inbox: 0,
-      ready: 0,
-      executing: 0,
+    const buckets: Record<
+      "inbox" | "ready" | "executing",
+      IntentionDocument[]
+    > = {
+      inbox: [],
+      ready: [],
+      executing: [],
     };
     for (const t of myActiveTasks) {
-      if (t.status === "inbox") map.inbox += 1;
+      if (t.status === "inbox") buckets.inbox.push(t);
       else if (
         t.status === "ready" ||
         t.status === "validating" ||
         t.status === "validated"
       )
-        map.ready += 1;
-      else if (t.status === "executing") map.executing += 1;
+        buckets.ready.push(t);
+      else if (t.status === "executing") buckets.executing.push(t);
     }
-    return map;
+    return buckets;
   }, [myActiveTasks]);
 
   // Atividade recente — top 5 projetos por lastActivity timestamp.
@@ -155,9 +162,10 @@ export default function WorkspaceOverviewPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <MyTasksCard
               loading={intentionsLoading}
-              byStatus={myByStatus}
+              tasksByStatus={myTasksByStatus}
               activeTotal={myActiveTasks.length}
               hasHistory={allMyTasks.length > 0}
+              projects={projects ?? []}
             />
             <RecentActivityCard summaries={recentActivity} />
             <BookmarksCard bookmarks={bookmarks} onRemove={removeBookmark} />
@@ -182,46 +190,60 @@ export default function WorkspaceOverviewPage() {
 // Widget: Minhas tarefas
 // ============================================================
 
+type StatusKey = "inbox" | "ready" | "executing";
+
 function MyTasksCard({
   loading,
-  byStatus,
+  tasksByStatus,
   activeTotal,
   hasHistory,
+  projects,
 }: {
   loading: boolean;
-  byStatus: Record<string, number>;
+  tasksByStatus: Record<StatusKey, IntentionDocument[]>;
   activeTotal: number;
   hasHistory: boolean;
+  projects: Array<{ chave: string; nome: string }>;
 }) {
-  const rows: Array<{
-    key: string;
+  // Seção expandida default: primeira com tasks > 0; se nenhuma tiver, inbox.
+  const initialExpanded: StatusKey = useMemo(() => {
+    if (tasksByStatus.inbox.length > 0) return "inbox";
+    if (tasksByStatus.ready.length > 0) return "ready";
+    if (tasksByStatus.executing.length > 0) return "executing";
+    return "inbox";
+  }, [tasksByStatus]);
+  const [expanded, setExpanded] = useState<StatusKey>(initialExpanded);
+
+  const sections: Array<{
+    key: StatusKey;
     label: string;
     icon: typeof CircleDashed;
     color: string;
-    href: string;
   }> = [
     {
       key: "inbox",
       label: "Inbox",
       icon: CircleDashed,
       color: "text-zinc-400",
-      href: "/intentions/inbox",
     },
     {
       key: "ready",
       label: "Pronto",
       icon: ListChecks,
       color: "text-blue-400",
-      href: "/intentions?status=ready",
     },
     {
       key: "executing",
       label: "Em execucao",
       icon: CircleDot,
       color: "text-violet-400",
-      href: "/intentions?status=executing",
     },
   ];
+
+  const projectName = (id: string | null | undefined): string => {
+    if (!id) return "";
+    return projects.find((p) => p.chave === id)?.nome ?? "";
+  };
 
   return (
     <Card title="Minhas tarefas" icon={ListChecks} accent="text-emerald-500">
@@ -232,14 +254,12 @@ function MyTasksCard({
           <Skeleton className="h-4 w-2/3" />
         </div>
       ) : activeTotal === 0 && !hasHistory ? (
-        // Nunca teve tasks atribuidas
         <EmptyState
           text="Você não tem tarefas atribuídas."
           icon={ListChecks}
           cta={{ label: "Criar tarefa", onClick: openNewIssueModal }}
         />
       ) : activeTotal === 0 ? (
-        // Tem historico mas zero pendentes
         <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-emerald-500/30 bg-emerald-500/5 px-3 py-6 text-center">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15">
             <ListChecks className="h-4 w-4 text-emerald-400" />
@@ -255,22 +275,72 @@ function MyTasksCard({
           </Link>
         </div>
       ) : (
-        <ul className="space-y-1.5">
-          {rows.map((r) => {
-            const count = byStatus[r.key] ?? 0;
-            const Icon = r.icon;
+        <ul className="space-y-1">
+          {sections.map((s) => {
+            const tasks = tasksByStatus[s.key];
+            const count = tasks.length;
+            const isOpen = expanded === s.key;
+            const Icon = s.icon;
             return (
-              <li key={r.key}>
-                <Link
-                  href={r.href}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors hover:bg-accent/50"
+              <li key={s.key}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(isOpen ? ("" as StatusKey) : s.key)
+                  }
+                  className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors hover:bg-accent/50"
+                  aria-expanded={isOpen}
                 >
-                  <Icon className={cn("h-3.5 w-3.5 shrink-0", r.color)} />
-                  <span className="flex-1">{r.label}</span>
+                  {isOpen ? (
+                    <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  )}
+                  <Icon className={cn("h-3.5 w-3.5 shrink-0", s.color)} />
+                  <span className="flex-1 text-left">{s.label}</span>
                   <span className="text-[12px] tabular-nums text-muted-foreground">
                     {count}
                   </span>
-                </Link>
+                </button>
+                {isOpen && (
+                  <div className="ml-5 mt-0.5 mb-1.5 border-l border-border/50 pl-2">
+                    {count === 0 ? (
+                      <p className="px-2 py-1.5 text-[11.5px] text-muted-foreground/70 italic">
+                        Nenhuma tarefa nesta categoria.
+                      </p>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {tasks.slice(0, 6).map((t) => (
+                          <li key={t.id}>
+                            <Link
+                              href={`/projects/${t.projectSlug}/issues/${t.id}`}
+                              className="flex flex-col gap-0.5 rounded-md px-2 py-1 transition-colors hover:bg-accent/40"
+                            >
+                              <span className="truncate text-[12.5px]">
+                                {t.title}
+                              </span>
+                              {projectName(t.projectSlug) && (
+                                <span className="truncate text-[10.5px] text-muted-foreground">
+                                  em {projectName(t.projectSlug)}
+                                </span>
+                              )}
+                            </Link>
+                          </li>
+                        ))}
+                        {count > 6 && (
+                          <li>
+                            <Link
+                              href={`/intentions?status=${s.key}`}
+                              className="block px-2 py-1 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              Ver mais {count - 6} →
+                            </Link>
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
