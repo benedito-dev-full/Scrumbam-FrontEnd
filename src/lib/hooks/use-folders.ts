@@ -187,3 +187,91 @@ export function useDeleteFolder() {
     },
   });
 }
+
+/**
+ * Move um projeto para dentro de uma pasta.
+ *
+ * Backend V2: `POST /entidades/folders/:folderId/projects/:projectId`.
+ * A rota é atômica (`prisma.$transaction`): soft-deleta qualquer vínculo
+ * ativo anterior do projeto em outra pasta e cria o novo — evita race
+ * condition mesmo com dois cliques simultâneos.
+ *
+ * Param `targetName` é usado apenas no toast de sucesso (não vai pra rede).
+ */
+export function useMoveProjectToFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      folderId,
+      projectId,
+    }: {
+      folderId: string;
+      projectId: string;
+      targetName?: string;
+      projectName?: string;
+    }) => foldersApi.moveProject(folderId, projectId),
+    onSuccess: (_data, vars) => {
+      invalidateFolderQueries(queryClient);
+      const projectLabel = vars.projectName
+        ? `"${vars.projectName}"`
+        : "Projeto";
+      const targetLabel = vars.targetName
+        ? `"${vars.targetName}"`
+        : "a pasta selecionada";
+      toast.success(`${projectLabel} movido para ${targetLabel}.`);
+    },
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      const status = err.response?.status;
+      if (status === 404) {
+        toast.error("Pasta ou projeto não encontrado.");
+      } else if (status === 403) {
+        toast.error("Sem permissão para mover este projeto.");
+      } else {
+        toast.error(err.response?.data?.message || "Falha ao mover projeto.");
+      }
+    },
+  });
+}
+
+/**
+ * Remove um projeto de uma pasta (vai pro limbo "Sem pasta").
+ *
+ * Backend V2: `DELETE /entidades/folders/:folderId/projects/:projectId`.
+ * Soft-deleta o vínculo DVincula -183. DProject permanece intacto.
+ */
+export function useRemoveProjectFromFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      folderId,
+      projectId,
+    }: {
+      folderId: string;
+      projectId: string;
+      projectName?: string;
+    }) => foldersApi.unmoveProject(folderId, projectId),
+    onSuccess: (_data, vars) => {
+      invalidateFolderQueries(queryClient);
+      const projectLabel = vars.projectName
+        ? `"${vars.projectName}"`
+        : "Projeto";
+      toast.success(`${projectLabel} movido para 'Sem pasta'.`);
+    },
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      const status = err.response?.status;
+      if (status === 404) {
+        toast.error("Vínculo não encontrado (talvez já tenha sido removido).");
+      } else if (status === 403) {
+        toast.error("Sem permissão para mover este projeto.");
+      } else {
+        toast.error(err.response?.data?.message || "Falha ao mover projeto.");
+      }
+    },
+  });
+}

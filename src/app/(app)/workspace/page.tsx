@@ -39,6 +39,7 @@ import {
 import { CreateFolderModal } from "@/components/folders/create-folder-modal";
 import { RenameFolderModal } from "@/components/folders/rename-folder-modal";
 import { DeleteFolderDialog } from "@/components/folders/delete-folder-dialog";
+import { MoveProjectSubmenu } from "@/components/folders/move-project-submenu";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProjects, useProjectSummaries } from "@/lib/hooks/use-projects";
@@ -807,6 +808,9 @@ function FoldersCard({
                 <th className="hidden sm:table-cell px-2 py-1.5 font-medium text-right">
                   Tarefas
                 </th>
+                <th className="w-8 px-2 py-1.5">
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -900,6 +904,35 @@ function FoldersCard({
                     </td>
                     <td className="hidden sm:table-cell px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
                       {tasks}
+                    </td>
+                    <td className="px-2 py-2 align-middle">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={`Ações do projeto ${p.nome}`}
+                            title="Ações"
+                            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/60 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <MoveProjectSubmenu
+                            projectId={p.chave}
+                            projectName={p.nome}
+                            currentFolderId={realFolderId}
+                          />
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href={`/projects/${p.chave}`}>
+                              <ListChecks className="mr-2 h-3.5 w-3.5" />
+                              Abrir projeto
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );
