@@ -625,7 +625,7 @@ function FoldersCard({
 
     return (
       <>
-        <section className="flex min-h-[60vh] flex-col rounded-xl border border-border bg-card/30 p-4">
+        <section className="flex min-h-[35vh] flex-col rounded-xl border border-border bg-card/30 p-4">
           <header className="mb-3 flex items-center gap-2">
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
             <h2 className="text-[14px] font-semibold tracking-tight">
@@ -658,8 +658,8 @@ function FoldersCard({
           </header>
 
           {isLoadingList ? (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="h-10 w-full" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-9 w-[240px]" />
             </div>
           ) : showEmpty ? (
             <EmptyState
@@ -670,19 +670,22 @@ function FoldersCard({
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            // Flex-wrap com largura fixa por tile (~240px). Estilo ClickUp/Linear:
+            // cada pasta tem o mesmo tamanho compacto, independente de quantas houver
+            // (1 ou 50). Evita o efeito "1 pasta vira full-width" do grid-cols-N.
+            <div className="flex flex-wrap gap-2">
               {realFolders.map((f: FolderType) => (
                 <div
                   key={f.id}
-                  className="group relative flex items-center rounded-md border border-border/70 bg-card/40 transition-colors hover:border-border hover:bg-accent/30"
+                  className="group relative flex w-[240px] items-center rounded-md border border-border/70 bg-card/40 transition-colors hover:border-border hover:bg-accent/30"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFolder(f.id)}
-                    className="flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
+                    className="flex flex-1 items-center gap-2 px-3 py-2 text-left"
                   >
-                    <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate text-[12px] font-medium">
+                    <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-[13px] font-medium">
                       {f.nome}
                     </span>
                   </button>
@@ -719,10 +722,10 @@ function FoldersCard({
                 <button
                   type="button"
                   onClick={() => setOpenFolder(UNASSIGNED_FOLDER_ID)}
-                  className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-2.5 py-1.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+                  className="flex w-[240px] items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-3 py-2 text-left hover:border-border hover:bg-accent/30 transition-colors"
                 >
-                  <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                  <span className="truncate text-[12px] font-medium text-muted-foreground">
+                  <Folder className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <span className="truncate text-[13px] font-medium text-muted-foreground">
                     Sem pasta
                   </span>
                 </button>
@@ -753,7 +756,7 @@ function FoldersCard({
 
   // ----- Estado 2: Lists (substitui o card Folders) -----
   return (
-    <section className="flex min-h-[60vh] flex-col rounded-xl border border-border bg-card/30 p-4">
+    <section className="flex min-h-[35vh] flex-col rounded-xl border border-border bg-card/30 p-4">
       <header className="mb-3 flex items-center gap-2">
         <button
           type="button"
