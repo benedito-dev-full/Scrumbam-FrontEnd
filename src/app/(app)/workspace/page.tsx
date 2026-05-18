@@ -187,7 +187,7 @@ function MyTasksCard({
   ];
 
   return (
-    <Card title="Minhas tarefas" icon={ListChecks}>
+    <Card title="Minhas tarefas" icon={ListChecks} accent="text-emerald-500">
       {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-4 w-full" />
@@ -195,7 +195,7 @@ function MyTasksCard({
           <Skeleton className="h-4 w-2/3" />
         </div>
       ) : total === 0 ? (
-        <EmptyState text="Voce nao tem tarefas atribuidas." />
+        <EmptyState text="Você não tem tarefas atribuídas." />
       ) : (
         <ul className="space-y-1.5">
           {rows.map((r) => {
@@ -240,7 +240,7 @@ interface ProjectSummary {
 
 function RecentActivityCard({ summaries }: { summaries: ProjectSummary[] }) {
   return (
-    <Card title="Atividade recente" icon={Activity}>
+    <Card title="Atividade recente" icon={Activity} accent="text-sky-500">
       {summaries.length === 0 ? (
         <EmptyState text="Sem atividade recente nos projetos." />
       ) : (
@@ -286,9 +286,9 @@ function BookmarksCard({
   onRemove: (id: string) => void;
 }) {
   return (
-    <Card title="Favoritos" icon={Bookmark}>
+    <Card title="Favoritos" icon={Bookmark} accent="text-amber-500">
       {bookmarks.length === 0 ? (
-        <EmptyState text="Marque projetos ou tarefas como favoritos para acessa-los rapido." />
+        <EmptyState text="Marque projetos ou tarefas como favoritos para acessá-los rápido." />
       ) : (
         <ul className="space-y-1">
           {bookmarks.map((b) => (
@@ -398,7 +398,7 @@ function TeamsCard({
   return (
     <Card title="Times" icon={Users} hint={`${teams.length}`}>
       {teams.length === 0 ? (
-        <EmptyState text="Voce ainda nao participa de nenhum time. Crie um em /teams." />
+        <EmptyState text="Você ainda não participa de nenhum time." />
       ) : (
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {teams.map((t) => (
@@ -441,17 +441,30 @@ function Card({
   title,
   icon: Icon,
   hint,
+  accent,
   children,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   hint?: string;
+  /** Cor semantica do icone (Tailwind text-*). Default: muted. */
+  accent?: string;
   children: React.ReactNode;
 }) {
+  const accentBg = accent
+    ? accent.replace("text-", "bg-").replace(/-\d+/, "-500/10")
+    : "bg-muted";
   return (
     <section className="rounded-xl border border-border bg-card/30 p-4">
       <header className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-md",
+            accentBg,
+          )}
+        >
+          <Icon className={cn("h-4 w-4", accent ?? "text-muted-foreground")} />
+        </span>
         <h2 className="text-[14px] font-semibold tracking-tight">{title}</h2>
         {hint && (
           <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
