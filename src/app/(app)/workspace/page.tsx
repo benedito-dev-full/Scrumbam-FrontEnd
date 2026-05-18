@@ -129,6 +129,21 @@ export default function WorkspaceOverviewPage() {
     return map;
   }, [projects]);
 
+  // Progresso real por projeto: conta tasks com status=done sobre total.
+  // Reusa allIntentions (ja buscadas pelo card 'Minhas tarefas'); sem
+  // round-trip extra no backend.
+  const progressByProjectId = useMemo(() => {
+    const m = new Map<string, { done: number; total: number }>();
+    for (const t of allIntentions ?? []) {
+      if (!t.projectSlug) continue;
+      const cur = m.get(t.projectSlug) ?? { done: 0, total: 0 };
+      cur.total += 1;
+      if (t.status === "done") cur.done += 1;
+      m.set(t.projectSlug, cur);
+    }
+    return m;
+  }, [allIntentions]);
+
   const totalTasks = (allIntentions ?? []).length;
   const totalProjects = (projects ?? []).length;
   const totalMembers = (orgMembers ?? []).length;
@@ -175,6 +190,7 @@ export default function WorkspaceOverviewPage() {
           <FoldersCard
             projects={projects ?? []}
             summaries={summaries ?? []}
+            progressByProjectId={progressByProjectId}
             loading={projectsLoading}
           />
 
@@ -486,10 +502,12 @@ function formatDateShort(dateStr?: string | null): string | null {
 function FoldersCard({
   projects,
   summaries,
+  progressByProjectId,
   loading,
 }: {
   projects: ProjectListItem[];
   summaries: ProjectSummary[];
+  progressByProjectId: Map<string, { done: number; total: number }>;
   loading: boolean;
 }) {
   // null = mostra Folders. Quando seleciona uma pasta, mostra Lists.
@@ -606,12 +624,14 @@ function FoldersCard({
             <tbody>
               {projects.map((p) => {
                 const summary = summaryById.get(p.chave);
-                const tasks = summary?.taskCount ?? p.taskCount;
-                const throughput = summary?.weeklyThroughput ?? 0;
+                // Progresso real: tasks com status=done sobre total.
+                // Calculado client-side via progressByProjectId (vem do
+                // workspace, derivado de allIntentions).
+                const local = progressByProjectId.get(p.chave);
+                const tasks = local?.total ?? summary?.taskCount ?? p.taskCount;
+                const done = local?.done ?? 0;
                 const progress =
-                  tasks > 0
-                    ? Math.min(100, Math.round((throughput / tasks) * 100))
-                    : 0;
+                  tasks > 0 ? Math.round((done / tasks) * 100) : 0;
                 // dataInicio/dataFim podem nao vir no useProjects basico.
                 // ProjectSummary nao tem essas datas. Mostra placeholder se nao existir.
                 const dataInicio = formatDateShort(
@@ -660,7 +680,7 @@ function FoldersCard({
                             />
                           </div>
                           <span className="text-[11px] tabular-nums text-muted-foreground">
-                            {throughput}/{tasks}
+                            {done}/{tasks}
                           </span>
                         </div>
                       ) : (
