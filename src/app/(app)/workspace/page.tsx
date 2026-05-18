@@ -195,7 +195,11 @@ function MyTasksCard({
           <Skeleton className="h-4 w-2/3" />
         </div>
       ) : total === 0 ? (
-        <EmptyState text="Você não tem tarefas atribuídas." />
+        <EmptyState
+          text="Você não tem tarefas atribuídas."
+          icon={ListChecks}
+          cta={{ label: "Criar tarefa", href: "/intentions/new" }}
+        />
       ) : (
         <ul className="space-y-1.5">
           {rows.map((r) => {
@@ -242,7 +246,10 @@ function RecentActivityCard({ summaries }: { summaries: ProjectSummary[] }) {
   return (
     <Card title="Atividade recente" icon={Activity} accent="text-sky-500">
       {summaries.length === 0 ? (
-        <EmptyState text="Sem atividade recente nos projetos." />
+        <EmptyState
+          text="Sem atividade recente nos projetos."
+          icon={Activity}
+        />
       ) : (
         <ul className="space-y-2">
           {summaries.map((s) => (
@@ -288,7 +295,10 @@ function BookmarksCard({
   return (
     <Card title="Favoritos" icon={Bookmark} accent="text-amber-500">
       {bookmarks.length === 0 ? (
-        <EmptyState text="Marque projetos ou tarefas como favoritos para acessá-los rápido." />
+        <EmptyState
+          text="Marque projetos ou tarefas como favoritos para acessá-los rápido."
+          icon={Bookmark}
+        />
       ) : (
         <ul className="space-y-1">
           {bookmarks.map((b) => (
@@ -350,7 +360,11 @@ function FoldersCard({
           <Skeleton className="h-16 w-full" />
         </div>
       ) : projects.length === 0 ? (
-        <EmptyState text="Nenhum projeto no workspace ainda." />
+        <EmptyState
+          text="Nenhum projeto no workspace ainda."
+          icon={Folder}
+          cta={{ label: "Novo projeto", href: "/projects?new=1" }}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
@@ -398,7 +412,11 @@ function TeamsCard({
   return (
     <Card title="Times" icon={Users} hint={`${teams.length}`}>
       {teams.length === 0 ? (
-        <EmptyState text="Você ainda não participa de nenhum time." />
+        <EmptyState
+          text="Você ainda não participa de nenhum time."
+          icon={Users}
+          cta={{ label: "Ir para times", href: "/teams" }}
+        />
       ) : (
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {teams.map((t) => (
@@ -477,11 +495,41 @@ function Card({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({
+  text,
+  icon: Icon,
+  cta,
+}: {
+  text: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  cta?: { label: string; href?: string; onClick?: () => void };
+}) {
   return (
-    <p className="rounded-md border border-dashed border-border/60 bg-muted/20 px-3 py-6 text-center text-[12px] text-muted-foreground">
-      {text}
-    </p>
+    <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/60 bg-muted/20 px-3 py-6 text-center">
+      {Icon && (
+        <Icon className="h-6 w-6 text-muted-foreground/60" aria-hidden />
+      )}
+      <p className="text-[12px] text-muted-foreground">{text}</p>
+      {cta &&
+        (cta.href ? (
+          <Link
+            href={cta.href}
+            className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2.5 py-1 text-[11.5px] font-medium text-foreground hover:bg-foreground/15 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            {cta.label}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={cta.onClick}
+            className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2.5 py-1 text-[11.5px] font-medium text-foreground hover:bg-foreground/15 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            {cta.label}
+          </button>
+        ))}
+    </div>
   );
 }
 
