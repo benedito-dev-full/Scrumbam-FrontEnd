@@ -16,10 +16,12 @@ function buildCrumbs(pathname: string, orgNome?: string): Crumb[] {
 
   // Always start with org name if available
   if (orgNome) {
-    crumbs.push({ label: orgNome, href: "/intentions" });
+    crumbs.push({ label: orgNome, href: "/workspace" });
   }
 
   const labelMap: Record<string, string> = {
+    workspace: "Workspace",
+    inbox: "Inbox",
     intentions: "Intencoes",
     "hill-chart": "Hill Chart",
     new: "Nova Intencao",
@@ -36,6 +38,22 @@ function buildCrumbs(pathname: string, orgNome?: string): Crumb[] {
     branding: "Branding",
     webhooks: "Webhooks",
     channels: "Canais",
+    teams: "Times",
+    team: "Time",
+    members: "Membros",
+    automation: "Automacao",
+    integrations: "Integracoes",
+    vps: "VPS",
+    import: "Importar",
+    more: "Mais",
+    account: "Conta",
+    profile: "Perfil",
+    preferences: "Preferencias",
+    notifications: "Notificacoes",
+    general: "Geral",
+    statuses: "Statuses",
+    issues: "Issues",
+    mine: "Meus",
   };
 
   let path = "";
@@ -61,7 +79,10 @@ export function BreadcrumbNav() {
   if (crumbs.length === 0) return null;
 
   return (
-    <nav className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground" aria-label="Navegacao breadcrumb">
+    <nav
+      className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground"
+      aria-label="Navegacao breadcrumb"
+    >
       {crumbs.map((crumb, index) => (
         <span key={index} className="flex items-center gap-1 sm:gap-1.5">
           {index > 0 && (
