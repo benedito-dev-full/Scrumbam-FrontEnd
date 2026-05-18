@@ -5,12 +5,12 @@ import Link from "next/link";
 import {
   Activity,
   Bookmark,
-  Box,
   CircleDashed,
   CircleDot,
   Folder,
   ListChecks,
   Plus,
+  Star,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -133,7 +133,11 @@ export default function WorkspaceOverviewPage() {
           </div>
 
           {/* Folders / Projetos */}
-          <FoldersCard projects={projects ?? []} loading={projectsLoading} />
+          <FoldersCard
+            projects={projects ?? []}
+            summaries={summaries ?? []}
+            loading={projectsLoading}
+          />
 
           {/* Times */}
           <TeamsCard teams={teams ?? []} projectsByTeam={projectsByTeam} />
@@ -346,18 +350,34 @@ interface ProjectListItem {
 
 function FoldersCard({
   projects,
+  summaries,
   loading,
 }: {
   projects: ProjectListItem[];
+  summaries: ProjectSummary[];
   loading: boolean;
 }) {
+  const { isBookmarked, toggle } = useBookmarks();
+
+  // Mapa rapido para enriquecer projetos com summaries (lastActivity, throughput).
+  const summaryById = useMemo(() => {
+    const m = new Map<string, ProjectSummary>();
+    for (const s of summaries) m.set(s.projectId, s);
+    return m;
+  }, [summaries]);
+
   return (
-    <Card title="Projetos" icon={Folder} hint={`${projects.length}`}>
+    <Card
+      title="Projetos"
+      icon={Folder}
+      accent="text-indigo-500"
+      hint={`${projects.length}`}
+    >
       {loading ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
         </div>
       ) : projects.length === 0 ? (
         <EmptyState
@@ -366,25 +386,124 @@ function FoldersCard({
           cta={{ label: "Novo projeto", href: "/projects?new=1" }}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <Link
-              key={p.chave}
-              href={`/projects/${p.chave}`}
-              className="flex items-center gap-3 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 transition-colors hover:border-border hover:bg-accent/30"
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-600 text-[12px] font-bold text-white">
-                {(p.nome[0] ?? "P").toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium">{p.nome}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {p.taskCount} {p.taskCount === 1 ? "tarefa" : "tarefas"}
-                </p>
-              </div>
-              <Box className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-            </Link>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="w-8 px-2 py-1.5"></th>
+                <th className="px-2 py-1.5 font-medium">Nome</th>
+                <th className="hidden md:table-cell px-2 py-1.5 font-medium">
+                  Progresso
+                </th>
+                <th className="hidden lg:table-cell px-2 py-1.5 font-medium">
+                  Última atividade
+                </th>
+                <th className="hidden sm:table-cell px-2 py-1.5 font-medium text-right">
+                  Tarefas
+                </th>
+                <th className="w-8 px-2 py-1.5"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((p) => {
+                const summary = summaryById.get(p.chave);
+                const tasks = summary?.taskCount ?? p.taskCount;
+                const throughput = summary?.weeklyThroughput ?? 0;
+                // Progresso visual: ratio throughput/tasks limitado a 100%.
+                const progress =
+                  tasks > 0
+                    ? Math.min(100, Math.round((throughput / tasks) * 100))
+                    : 0;
+                const lastTs = summary?.lastActivity?.timestamp;
+                const fav = isBookmarked(p.chave);
+                const href = `/projects/${p.chave}`;
+                return (
+                  <tr
+                    key={p.chave}
+                    className="group border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors"
+                  >
+                    <td className="px-2 py-2 align-middle">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggle({
+                            id: p.chave,
+                            kind: "project",
+                            label: p.nome,
+                            href,
+                          });
+                        }}
+                        aria-label={
+                          fav
+                            ? "Remover dos favoritos"
+                            : "Adicionar aos favoritos"
+                        }
+                        className={cn(
+                          "rounded p-1 transition-colors",
+                          fav
+                            ? "text-amber-400 hover:text-amber-300"
+                            : "text-muted-foreground/40 hover:text-amber-400 opacity-0 group-hover:opacity-100",
+                          fav && "opacity-100",
+                        )}
+                      >
+                        <Star
+                          className={cn("h-3.5 w-3.5", fav && "fill-current")}
+                        />
+                      </button>
+                    </td>
+                    <td className="px-2 py-2 align-middle">
+                      <Link
+                        href={href}
+                        className="flex items-center gap-2 min-w-0"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-600 text-[11px] font-bold text-white">
+                          {(p.nome[0] ?? "P").toUpperCase()}
+                        </span>
+                        <span className="truncate font-medium">{p.nome}</span>
+                      </Link>
+                    </td>
+                    <td className="hidden md:table-cell px-2 py-2 align-middle">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              progress > 60
+                                ? "bg-emerald-500"
+                                : progress > 30
+                                  ? "bg-sky-500"
+                                  : "bg-slate-500",
+                            )}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] tabular-nums text-muted-foreground">
+                          {progress}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="hidden lg:table-cell px-2 py-2 align-middle text-[12px] text-muted-foreground">
+                      {formatRelative(lastTs)}
+                    </td>
+                    <td className="hidden sm:table-cell px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
+                      {tasks}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-right">
+                      <Link
+                        href={href}
+                        className="text-[11px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                        aria-label="Abrir projeto"
+                      >
+                        Abrir →
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </Card>
