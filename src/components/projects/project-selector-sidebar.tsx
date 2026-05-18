@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronRight,
@@ -36,6 +36,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
  */
 export function ProjectSelectorSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: projects, isLoading } = useProjects();
   const userRole = useAuthStore((s) => s.user?.role);
   const isAdmin = userRole?.toUpperCase() === "ADMIN";
@@ -58,7 +59,10 @@ export function ProjectSelectorSidebar() {
       <div className="group/header flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-sidebar-accent/70">
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => {
+            setExpanded((v) => !v);
+            router.push("/workspace");
+          }}
           className="flex flex-1 items-center gap-1.5 text-left text-foreground/85 hover:text-foreground transition-colors"
           aria-expanded={expanded}
           aria-controls="sidebar-projects-list"
