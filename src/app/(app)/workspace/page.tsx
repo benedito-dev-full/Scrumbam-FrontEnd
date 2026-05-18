@@ -61,22 +61,45 @@ export default function WorkspaceOverviewPage() {
   const { bookmarks, remove: removeBookmark } = useBookmarks();
 
   // Minhas tarefas — filtradas client-side (V2 nao expoe filtro por assigneeId).
-  const myTasks = useMemo(
+  // Card mostra apenas tarefas A FAZER. Concluidas/canceladas/descartadas/
+  // falhadas viram historico e nao poluem o widget (sao consultaveis em
+  // /intentions). Mantemos a contagem total das do usuario para detectar o
+  // estado "tudo em dia" (tem historico mas zero pendentes).
+  const allMyTasks = useMemo(
     () => (allIntentions ?? []).filter((i) => i.assigneeId === myEntidadeId),
     [allIntentions, myEntidadeId],
   );
+  const myActiveTasks = useMemo(
+    () =>
+      allMyTasks.filter(
+        (t) =>
+          t.status !== "done" &&
+          t.status !== "failed" &&
+          t.status !== "cancelled" &&
+          t.status !== "discarded",
+      ),
+    [allMyTasks],
+  );
   const myByStatus = useMemo(() => {
+    // Agrega ready + validating + validated em "ready" pois todos significam
+    // "fora da inbox, ainda nao em execucao".
     const map: Record<string, number> = {
       inbox: 0,
       ready: 0,
       executing: 0,
-      done: 0,
     };
-    for (const t of myTasks) {
-      if (t.status in map) map[t.status] += 1;
+    for (const t of myActiveTasks) {
+      if (t.status === "inbox") map.inbox += 1;
+      else if (
+        t.status === "ready" ||
+        t.status === "validating" ||
+        t.status === "validated"
+      )
+        map.ready += 1;
+      else if (t.status === "executing") map.executing += 1;
     }
     return map;
-  }, [myTasks]);
+  }, [myActiveTasks]);
 
   // Atividade recente — top 5 projetos por lastActivity timestamp.
   const recentActivity = useMemo(() => {
@@ -133,7 +156,8 @@ export default function WorkspaceOverviewPage() {
             <MyTasksCard
               loading={intentionsLoading}
               byStatus={myByStatus}
-              total={myTasks.length}
+              activeTotal={myActiveTasks.length}
+              hasHistory={allMyTasks.length > 0}
             />
             <RecentActivityCard summaries={recentActivity} />
             <BookmarksCard bookmarks={bookmarks} onRemove={removeBookmark} />
@@ -161,11 +185,13 @@ export default function WorkspaceOverviewPage() {
 function MyTasksCard({
   loading,
   byStatus,
-  total,
+  activeTotal,
+  hasHistory,
 }: {
   loading: boolean;
   byStatus: Record<string, number>;
-  total: number;
+  activeTotal: number;
+  hasHistory: boolean;
 }) {
   const rows: Array<{
     key: string;
@@ -205,12 +231,29 @@ function MyTasksCard({
           <Skeleton className="h-4 w-3/4" />
           <Skeleton className="h-4 w-2/3" />
         </div>
-      ) : total === 0 ? (
+      ) : activeTotal === 0 && !hasHistory ? (
+        // Nunca teve tasks atribuidas
         <EmptyState
           text="Você não tem tarefas atribuídas."
           icon={ListChecks}
           cta={{ label: "Criar tarefa", onClick: openNewIssueModal }}
         />
+      ) : activeTotal === 0 ? (
+        // Tem historico mas zero pendentes
+        <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-emerald-500/30 bg-emerald-500/5 px-3 py-6 text-center">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15">
+            <ListChecks className="h-4 w-4 text-emerald-400" />
+          </div>
+          <p className="text-[12.5px] font-medium text-emerald-200">
+            Você está em dia!
+          </p>
+          <Link
+            href="/intentions"
+            className="text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Ver concluídas →
+          </Link>
+        </div>
       ) : (
         <ul className="space-y-1.5">
           {rows.map((r) => {
