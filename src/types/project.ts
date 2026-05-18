@@ -14,6 +14,12 @@ export interface Project {
   responsavel: ProjectResponsavel | null;
   /** ID do time (DEntidade idClasse=-460). null quando projeto nao esta vinculado a team. */
   teamId?: string | null;
+  /**
+   * ID da pasta (DEntidade idClasse=-155) que agrupa o projeto.
+   * null = projeto está no "limbo" (sem pasta). Vínculo via DVincula -183
+   * (ADR-V2-FOLDERS-001).
+   */
+  folderId?: string | null;
 }
 
 export interface ProjectDetail {

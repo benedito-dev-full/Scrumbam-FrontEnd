@@ -21,13 +21,19 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import type { ProjectSummary } from "@/types";
+import type { Folder as FolderType, ProjectSummary } from "@/types";
+import { UNASSIGNED_FOLDER_ID } from "@/types";
 import type { IntentionDocument } from "@/types/intention";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProjects, useProjectSummaries } from "@/lib/hooks/use-projects";
+import {
+  useFolders,
+  useFolderProjects,
+  useUnassignedProjects,
+} from "@/lib/hooks/use-folders";
 import { useIntentions } from "@/lib/hooks/use-intentions";
 import { useMyTeams } from "@/lib/hooks/use-teams";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
@@ -510,9 +516,30 @@ function FoldersCard({
   progressByProjectId: Map<string, { done: number; total: number }>;
   loading: boolean;
 }) {
-  // null = mostra Folders. Quando seleciona uma pasta, mostra Lists.
-  // Hoje so existe a pasta "Projetos" virtual — agrupa todos os projetos.
-  const [openFolder, setOpenFolder] = useState<null | "projects">(null);
+  // openFolder = null  → mostra grid de pastas (Estado 1).
+  // openFolder = ID    → mostra lista de projects (Estado 2).
+  //   ID pode ser DEntidade -155 (pasta real) ou UNASSIGNED_FOLDER_ID
+  //   ("__unassigned__", pasta virtual de projects sem pasta).
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
+
+  // Pastas reais (DEntidade -155 via useFolders → /entidades/folders).
+  // Backend retorna ordenadas alfabeticamente por nome.
+  const {
+    data: folders,
+    isLoading: foldersLoading,
+    isError: foldersError,
+  } = useFolders();
+
+  // Projects sem pasta (limbo). Usado para contagem da "Sem pasta" no Estado 1
+  // e como lista no Estado 2 quando openFolder === UNASSIGNED_FOLDER_ID.
+  const { data: unassignedProjects, isLoading: unassignedLoading } =
+    useUnassignedProjects();
+
+  // Projects de UMA pasta especifica. So dispara quando openFolder e um ID real.
+  const realFolderId =
+    openFolder && openFolder !== UNASSIGNED_FOLDER_ID ? openFolder : null;
+  const { data: folderProjects, isLoading: folderProjectsLoading } =
+    useFolderProjects(realFolderId);
 
   const summaryById = useMemo(() => {
     const m = new Map<string, ProjectSummary>();
@@ -520,8 +547,60 @@ function FoldersCard({
     return m;
   }, [summaries]);
 
+  // Lista renderizada no Estado 2 (drill-down) — normaliza para ProjectListItem
+  // do widget. Inclui dataInicio/dataFim via casting (campos opcionais).
+  const drillProjects = useMemo<ProjectListItem[]>(() => {
+    const src =
+      openFolder === UNASSIGNED_FOLDER_ID
+        ? (unassignedProjects ?? [])
+        : realFolderId
+          ? (folderProjects ?? [])
+          : [];
+    return src.map(
+      (p) =>
+        ({
+          chave: p.chave,
+          nome: p.nome,
+          taskCount: p.taskCount,
+          teamId: p.teamId ?? null,
+          dataInicio: p.dataInicio,
+          dataFim: p.dataFim,
+        }) as ProjectListItem,
+    );
+  }, [openFolder, realFolderId, unassignedProjects, folderProjects]);
+
+  // Nome da pasta selecionada para o breadcrumb.
+  const drillFolderName = useMemo(() => {
+    if (openFolder === UNASSIGNED_FOLDER_ID) return "Sem pasta";
+    if (!realFolderId) return "";
+    const f = (folders ?? []).find((x: FolderType) => x.id === realFolderId);
+    return f?.nome ?? "Pasta";
+  }, [openFolder, realFolderId, folders]);
+
+  const drillLoading =
+    openFolder === UNASSIGNED_FOLDER_ID
+      ? unassignedLoading
+      : folderProjectsLoading;
+
+  // Contagem de "Sem pasta" — preferencialmente do hook (backend autoritativo).
+  // Fallback para os projects ja carregados pelo useProjects (campo folderId)
+  // quando o backend indisponivel/erro — evita tela em branco no cutover.
+  const apiUnassignedCount = (unassignedProjects ?? []).length;
+  const localUnassignedCount = projects.filter(
+    (p) => !(p as ProjectListItem & { folderId?: string | null }).folderId,
+  ).length;
+  const unassignedCount = foldersError
+    ? localUnassignedCount
+    : apiUnassignedCount;
+  const hasUnassigned = unassignedCount > 0;
+
   // ----- Estado 1: Folders -----
   if (openFolder === null) {
+    const realFolders = folders ?? [];
+    const isLoadingList = loading || foldersLoading || unassignedLoading;
+    const showEmpty =
+      !isLoadingList && realFolders.length === 0 && !hasUnassigned;
+
     return (
       <section className="rounded-xl border border-border bg-card/30 p-4">
         <header className="mb-3 flex items-center gap-2">
@@ -531,9 +610,12 @@ function FoldersCard({
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Expandir"
+              aria-label="Expandir primeira pasta"
               title="Expandir"
-              onClick={() => setOpenFolder("projects")}
+              onClick={() => {
+                if (realFolders.length > 0) setOpenFolder(realFolders[0].id);
+                else if (hasUnassigned) setOpenFolder(UNASSIGNED_FOLDER_ID);
+              }}
             >
               <Maximize2 className="h-3 w-3" />
             </button>
@@ -548,25 +630,50 @@ function FoldersCard({
           </div>
         </header>
 
-        {loading ? (
+        {isLoadingList ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <Skeleton className="h-10 w-full" />
           </div>
-        ) : projects.length === 0 ? (
-          <EmptyState text="Nenhum projeto no workspace ainda." />
+        ) : showEmpty ? (
+          <EmptyState text="Nenhuma pasta ou projeto neste workspace ainda." />
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => setOpenFolder("projects")}
-              className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
-            >
-              <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-[13px] font-medium">Projetos</span>
-              <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                {projects.length}
-              </span>
-            </button>
+            {realFolders.map((f: FolderType) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setOpenFolder(f.id)}
+                className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+              >
+                <span
+                  className="inline-block h-3 w-3 shrink-0 rounded-sm"
+                  style={{ backgroundColor: projectHex(f.nome) }}
+                  aria-hidden
+                />
+                <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-[13px] font-medium">
+                  {f.nome}
+                </span>
+                <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                  {f.projectCount}
+                </span>
+              </button>
+            ))}
+            {hasUnassigned && (
+              <button
+                type="button"
+                onClick={() => setOpenFolder(UNASSIGNED_FOLDER_ID)}
+                className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+              >
+                <Folder className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                <span className="truncate text-[13px] font-medium text-muted-foreground">
+                  Sem pasta
+                </span>
+                <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                  {unassignedCount}
+                </span>
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -589,14 +696,16 @@ function FoldersCard({
         <FolderOpen className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-[14px] font-semibold tracking-tight">Lists</h2>
         <span className="text-[11px] tabular-nums text-muted-foreground">
-          / Projetos
+          / {drillFolderName}
         </span>
         <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-          {projects.length}
+          {drillProjects.length}
         </span>
       </header>
 
-      {projects.length === 0 ? (
+      {drillLoading ? (
+        <Skeleton className="h-10 w-full" />
+      ) : drillProjects.length === 0 ? (
         <EmptyState text="Nenhum projeto nesta pasta." />
       ) : (
         <div className="overflow-x-auto">
@@ -622,7 +731,7 @@ function FoldersCard({
               </tr>
             </thead>
             <tbody>
-              {projects.map((p) => {
+              {drillProjects.map((p) => {
                 const summary = summaryById.get(p.chave);
                 // Progresso real: tasks com status=done sobre total.
                 // Calculado client-side via progressByProjectId (vem do

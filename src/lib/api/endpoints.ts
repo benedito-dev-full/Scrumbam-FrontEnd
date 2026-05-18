@@ -151,6 +151,16 @@ export const ENDPOINTS = {
   TEAM_MEMBERS: (id: string) => `/teams/${id}/members`,
   TEAM_MEMBER: (id: string, userId: string) => `/teams/${id}/members/${userId}`,
 
+  // Folders (Pasta agrupadora de projetos — ADR-V2-FOLDERS-001)
+  // Rotas vivem em EntidadeController (Pilar 2 — zero controller novo).
+  FOLDERS: "/entidades/folders",
+  FOLDER: (id: string) => `/entidades/folders/${id}`,
+  FOLDER_PROJECTS: (folderId: string) =>
+    `/entidades/folders/${folderId}/projects`,
+  FOLDERS_UNASSIGNED: "/entidades/folders/unassigned",
+  FOLDER_PROJECT_LINK: (folderId: string, projectId: string) =>
+    `/entidades/folders/${folderId}/projects/${projectId}`,
+
   // Automation - Vinculo Projeto<->Agente (Fase 2)
   PROJECT_AGENT_LINK: (id: string) => `/projects/${id}/agent-link`,
   PROJECT_AGENT_STATUS: (id: string) => `/projects/${id}/agent-status`,

@@ -22,6 +22,7 @@ function mapProject(raw: any): Project {
     criadoEm: raw.criadoEm || raw.createdAt,
     taskCount: raw.taskCount ?? raw.memberCount ?? 0,
     teamId: raw.teamId ?? null,
+    folderId: raw.folderId ?? null,
     responsavel: raw.owner
       ? {
           chave: raw.owner.id || raw.owner.chave,

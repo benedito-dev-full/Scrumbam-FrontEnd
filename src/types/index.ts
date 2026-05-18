@@ -22,6 +22,13 @@ export type {
   DeleteProjectResponse,
 } from "./project";
 export type {
+  Folder,
+  CreateFolderDto,
+  UpdateFolderDto,
+  FolderViewId,
+} from "./folder";
+export { UNASSIGNED_FOLDER_ID } from "./folder";
+export type {
   Task,
   TaskTag,
   CreateTaskDto,

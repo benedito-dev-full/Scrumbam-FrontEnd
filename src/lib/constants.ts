@@ -294,4 +294,10 @@ export const QUERY_KEYS = {
     detail: (id: string) => ["teams", id] as const,
     members: (teamId: string) => ["teams", teamId, "members"] as const,
   },
+  folders: {
+    list: (orgId: string) => ["folders", orgId] as const,
+    detail: (id: string) => ["folder", id] as const,
+    projects: (folderId: string) => ["folder", folderId, "projects"] as const,
+    unassigned: (orgId: string) => ["folders", "unassigned", orgId] as const,
+  },
 } as const;
