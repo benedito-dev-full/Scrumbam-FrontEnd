@@ -156,6 +156,22 @@ interface NewIssueModalProps {
   defaultProjectId?: string;
 }
 
+/**
+ * Custom event name escutado pelo AppSidebar para abrir o modal de
+ * Nova issue de qualquer lugar do app sem precisar levantar o estado
+ * a um nivel maior. Use {@link openNewIssueModal} para disparar.
+ */
+export const NEW_ISSUE_EVENT = "scrumban:new-issue:open";
+
+/**
+ * Dispara o evento global que abre o NewIssueModal (host na AppSidebar).
+ * Substitui o antigo redirecionamento para /intentions/new.
+ */
+export function openNewIssueModal() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(NEW_ISSUE_EVENT));
+}
+
 const MIN_DESCRIPTION_LENGTH = 20;
 
 /**

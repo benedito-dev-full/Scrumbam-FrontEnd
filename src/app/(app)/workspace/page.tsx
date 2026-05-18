@@ -29,6 +29,7 @@ import { useIntentions } from "@/lib/hooks/use-intentions";
 import { useMyTeams } from "@/lib/hooks/use-teams";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { useBookmarks } from "@/lib/hooks/use-task-bookmarks";
+import { openNewIssueModal } from "@/components/intentions/new-issue-modal";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -208,7 +209,7 @@ function MyTasksCard({
         <EmptyState
           text="Você não tem tarefas atribuídas."
           icon={ListChecks}
-          cta={{ label: "Criar tarefa", href: "/intentions/new" }}
+          cta={{ label: "Criar tarefa", onClick: openNewIssueModal }}
         />
       ) : (
         <ul className="space-y-1.5">

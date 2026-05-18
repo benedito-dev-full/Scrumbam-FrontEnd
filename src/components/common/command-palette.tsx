@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { useSearch } from "@/lib/hooks/use-search";
+import { openNewIssueModal } from "@/components/intentions/new-issue-modal";
 
 /**
  * CommandPalette - Global search dialog (Cmd+K / Ctrl+K)
@@ -198,9 +199,7 @@ export function CommandPalette() {
           <>
             <CommandGroup heading="Acoes Rapidas">
               <CommandItem
-                onSelect={() =>
-                  handleSelect(() => router.push("/intentions/new"))
-                }
+                onSelect={() => handleSelect(() => openNewIssueModal())}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Criar intencao

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Plus,
   Sparkles,
@@ -26,6 +25,7 @@ import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useIntentions } from "@/lib/hooks/use-intentions";
 import { IntentionFiltersBar } from "./intention-filters";
 import { IntentionListItem } from "./intention-list-item";
+import { openNewIssueModal } from "./new-issue-modal";
 import type { IntentionFilters } from "@/types/intention";
 
 // V3 main sections (always visible)
@@ -138,12 +138,13 @@ export function IntentionList({ projectId }: IntentionListProps) {
             Documente suas intencoes e deixe projetos executarem
           </p>
         </div>
-        <Link href="/intentions/new">
-          <Button className="gap-2 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white shrink-0 px-2.5 sm:px-4">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Intencao</span>
-          </Button>
-        </Link>
+        <Button
+          onClick={openNewIssueModal}
+          className="gap-2 bg-[var(--scrumban-brand)] hover:bg-[var(--scrumban-brand)]/90 text-white shrink-0 px-2.5 sm:px-4"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Nova Intencao</span>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -170,11 +171,9 @@ export function IntentionList({ projectId }: IntentionListProps) {
           <p className="mt-2 text-sm text-muted-foreground max-w-sm">
             Crie sua primeira intencao para comecar a trabalhar com projetos.
           </p>
-          <Link href="/intentions/new">
-            <Button className="mt-6 gap-2">
-              <Sparkles className="h-4 w-4" /> Criar Primeira Intencao
-            </Button>
-          </Link>
+          <Button onClick={openNewIssueModal} className="mt-6 gap-2">
+            <Sparkles className="h-4 w-4" /> Criar Primeira Intencao
+          </Button>
         </div>
       )}
 

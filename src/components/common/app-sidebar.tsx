@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useState, useCallback, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import {
   Search,
   PenSquare,
@@ -35,7 +41,10 @@ import {
 } from "@/lib/hooks/use-sidebar-customization";
 import { CustomizeSidebarModal } from "@/components/common/customize-sidebar-modal";
 import { WorkspaceSwitcher } from "@/components/common/workspace-switcher";
-import { NewIssueModal } from "@/components/intentions/new-issue-modal";
+import {
+  NewIssueModal,
+  NEW_ISSUE_EVENT,
+} from "@/components/intentions/new-issue-modal";
 import { InviteWorkspaceModal } from "@/components/settings/invite-workspace-modal";
 import { ProjectSelectorSidebar } from "@/components/projects/project-selector-sidebar";
 
@@ -46,6 +55,14 @@ export function AppSidebar() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [newIssueOpen, setNewIssueOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+
+  // Escuta evento global para abrir o NewIssueModal de qualquer lugar
+  // (substitui o antigo redirecionamento para /intentions/new).
+  useEffect(() => {
+    const handler = () => setNewIssueOpen(true);
+    window.addEventListener(NEW_ISSUE_EVENT, handler);
+    return () => window.removeEventListener(NEW_ISSUE_EVENT, handler);
+  }, []);
 
   // Dispatcher de actions nos items da sidebar (ex.: 'invite-people').
   const handleAction = useCallback((action: NonNullable<NavItem["action"]>) => {
