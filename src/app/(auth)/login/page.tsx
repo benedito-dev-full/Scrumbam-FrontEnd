@@ -22,7 +22,10 @@ import { Eye, EyeOff } from "lucide-react";
 function buildUser(data: AuthResponse): User {
   return {
     id: data.user.id,
-    entidadeId: data.user.entidadeId ?? "",
+    // Fallback para data.user.id quando backend nao envia entidadeId:
+    // alguns endpoints/fluxos retornam null. Sem o fallback o card
+    // 'Minhas tarefas' nunca casa com assigneeId das intentions.
+    entidadeId: data.user.entidadeId ?? data.user.id,
     nome: data.user.name,
     email: data.user.email,
     role: data.user.orgRole?.toLowerCase() || data.user.role || "member",

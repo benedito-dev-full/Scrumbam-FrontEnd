@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 function buildUser(data: AuthResponse): User {
   return {
     id: data.user.id,
-    entidadeId: data.user.entidadeId ?? "",
+    entidadeId: data.user.entidadeId ?? data.user.id,
     nome: data.user.name,
     email: data.user.email,
     role: data.user.orgRole?.toLowerCase() || data.user.role || "member",
