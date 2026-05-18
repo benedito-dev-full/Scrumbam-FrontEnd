@@ -187,12 +187,13 @@ export function NewIssueModal({
   const [createMore, setCreateMore] = useState(false);
 
   useEffect(() => {
+    // Quando vier defaultProjectId (modal aberto de dentro de /projects/[id]),
+    // pre-seleciona. Caso contrario, deixa em branco para o usuario escolher
+    // explicitamente — evita criar issue no projeto errado por acidente.
     if (defaultProjectId) {
       setProjectId(defaultProjectId);
-    } else if (projects && projects.length > 0 && !projectId) {
-      setProjectId(projects[0].chave);
     }
-  }, [projects, defaultProjectId, projectId]);
+  }, [defaultProjectId]);
 
   const reset = () => {
     setTitle("");
@@ -380,33 +381,54 @@ export function NewIssueModal({
               </PopoverContent>
             </Popover>
 
-            {/* Project (required) */}
+            {/* Project (required) — destacado quando vazio */}
             <Popover>
               <PopoverTrigger asChild>
-                <Chip
-                  active={!!project}
-                  icon={Box}
-                  label={project ? project.nome : "Projeto"}
-                />
+                <button
+                  type="button"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] transition-colors",
+                    project
+                      ? "border-border bg-accent text-foreground hover:bg-accent/80"
+                      : "border-amber-500/60 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15",
+                  )}
+                  title={
+                    project ? project.nome : "Selecionar projeto (obrigatório)"
+                  }
+                >
+                  <Box className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate max-w-[160px]">
+                    {project ? project.nome : "Selecionar projeto"}
+                  </span>
+                  <ChevronRight
+                    className={cn("h-3 w-3 shrink-0 opacity-70 rotate-90")}
+                  />
+                </button>
               </PopoverTrigger>
               <PopoverContent
                 align="start"
-                className="w-56 p-1 max-h-64 overflow-auto"
+                className="w-64 p-1 max-h-64 overflow-auto"
               >
-                {(projects ?? []).map((p) => (
-                  <button
-                    key={p.chave}
-                    type="button"
-                    onClick={() => setProjectId(p.chave)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
-                      projectId === p.chave && "bg-accent",
-                    )}
-                  >
-                    <Box className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="truncate">{p.nome}</span>
-                  </button>
-                ))}
+                {(projects ?? []).length === 0 ? (
+                  <p className="px-2 py-3 text-center text-[12px] text-muted-foreground">
+                    Nenhum projeto disponível.
+                  </p>
+                ) : (
+                  (projects ?? []).map((p) => (
+                    <button
+                      key={p.chave}
+                      type="button"
+                      onClick={() => setProjectId(p.chave)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-accent transition-colors",
+                        projectId === p.chave && "bg-accent",
+                      )}
+                    >
+                      <Box className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate">{p.nome}</span>
+                    </button>
+                  ))
+                )}
               </PopoverContent>
             </Popover>
 
