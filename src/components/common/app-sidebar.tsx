@@ -11,6 +11,9 @@ import {
   HelpCircle,
   LogOut,
   Settings,
+  Plus,
+  CircleDot,
+  FolderPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -138,6 +141,41 @@ export function AppSidebar() {
         >
           <PenSquare className="h-3.5 w-3.5" />
         </button>
+      </div>
+
+      {/* Botao "+ Criar" global — dropdown com Nova issue / Novo projeto */}
+      <div className="px-3 pb-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="group flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-500 px-3 py-1.5 text-[12.5px] font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
+              aria-label="Criar"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Criar</span>
+              <ChevronDown className="ml-0.5 h-3 w-3 opacity-80" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuItem onClick={() => setNewIssueOpen(true)}>
+              <CircleDot className="mr-2 h-4 w-4" />
+              <div className="flex flex-col">
+                <span className="text-[13px]">Nova issue</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Atalho: C
+                </span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/projects?new=1">
+                <FolderPlus className="mr-2 h-4 w-4" />
+                <span className="text-[13px]">Novo projeto</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Top items (Inbox, My issues) */}
