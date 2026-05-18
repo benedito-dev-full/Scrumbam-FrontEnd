@@ -1,19 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
   Bookmark,
-  Box,
+  Calendar,
+  ChevronLeft,
   CircleDashed,
   CircleDot,
+  Flag,
   Folder,
+  FolderOpen,
+  GripVertical,
   ListChecks,
+  Maximize2,
   Plus,
   UserPlus,
   Users,
 } from "lucide-react";
+import type { ProjectSummary } from "@/types";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
@@ -133,7 +139,11 @@ export default function WorkspaceOverviewPage() {
           </div>
 
           {/* Folders / Projetos */}
-          <FoldersCard projects={projects ?? []} loading={projectsLoading} />
+          <FoldersCard
+            projects={projects ?? []}
+            summaries={summaries ?? []}
+            loading={projectsLoading}
+          />
 
           {/* Times */}
           <TeamsCard teams={teams ?? []} projectsByTeam={projectsByTeam} />
@@ -226,18 +236,6 @@ function MyTasksCard({
 // Widget: Atividade recente
 // ============================================================
 
-interface ProjectSummary {
-  projectId: string;
-  projectName: string;
-  taskCount: number;
-  weeklyThroughput: number;
-  lastActivity: {
-    timestamp: string;
-    eventType: string;
-    intentionTitle: string;
-  } | null;
-}
-
 function RecentActivityCard({ summaries }: { summaries: ProjectSummary[] }) {
   return (
     <Card title="Atividade recente" icon={Activity}>
@@ -324,7 +322,9 @@ function BookmarksCard({
 }
 
 // ============================================================
-// Widget: Folders (Projetos)
+// Widget: Folders (Projetos) — estilo ClickUp
+// Estado 1: card "Folders" com pasta "Projetos" clicavel.
+// Estado 2: card "Lists" com tabela dos projetos da pasta (substitui).
 // ============================================================
 
 interface ProjectListItem {
@@ -334,46 +334,249 @@ interface ProjectListItem {
   teamId?: string | null;
 }
 
+// Paleta para coluna "Cor" da Lists — derivada do hash do nome.
+const PROJECT_HEX = [
+  "#3b82f6",
+  "#8b5cf6",
+  "#10b981",
+  "#f59e0b",
+  "#f43f5e",
+  "#06b6d4",
+];
+function hashStr(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
+  return h >>> 0;
+}
+function projectHex(nome: string): string {
+  return PROJECT_HEX[hashStr(nome) % PROJECT_HEX.length];
+}
+
+function formatDateShort(dateStr?: string | null): string | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
 function FoldersCard({
   projects,
+  summaries,
   loading,
 }: {
   projects: ProjectListItem[];
+  summaries: ProjectSummary[];
   loading: boolean;
 }) {
-  return (
-    <Card title="Projetos" icon={Folder} hint={`${projects.length}`}>
-      {loading ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      ) : projects.length === 0 ? (
-        <EmptyState text="Nenhum projeto no workspace ainda." />
-      ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <Link
-              key={p.chave}
-              href={`/projects/${p.chave}`}
-              className="flex items-center gap-3 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 transition-colors hover:border-border hover:bg-accent/30"
+  // null = mostra Folders. Quando seleciona uma pasta, mostra Lists.
+  // Hoje so existe a pasta "Projetos" virtual — agrupa todos os projetos.
+  const [openFolder, setOpenFolder] = useState<null | "projects">(null);
+
+  const summaryById = useMemo(() => {
+    const m = new Map<string, ProjectSummary>();
+    for (const s of summaries) m.set(s.projectId, s);
+    return m;
+  }, [summaries]);
+
+  // ----- Estado 1: Folders -----
+  if (openFolder === null) {
+    return (
+      <section className="rounded-xl border border-border bg-card/30 p-4">
+        <header className="mb-3 flex items-center gap-2">
+          <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
+          <h2 className="text-[14px] font-semibold tracking-tight">Folders</h2>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Expandir"
+              title="Expandir"
+              onClick={() => setOpenFolder("projects")}
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-600 text-[12px] font-bold text-white">
-                {(p.nome[0] ?? "P").toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium">{p.nome}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {p.taskCount} {p.taskCount === 1 ? "tarefa" : "tarefas"}
-                </p>
-              </div>
-              <Box className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+              <Maximize2 className="h-3 w-3" />
+            </button>
+            <Link
+              href="/projects?new=1"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="Novo projeto"
+              title="Novo projeto"
+            >
+              <Plus className="h-3.5 w-3.5" />
             </Link>
-          ))}
+          </div>
+        </header>
+
+        {loading ? (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : projects.length === 0 ? (
+          <EmptyState text="Nenhum projeto no workspace ainda." />
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setOpenFolder("projects")}
+              className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+            >
+              <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-[13px] font-medium">Projetos</span>
+              <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                {projects.length}
+              </span>
+            </button>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  // ----- Estado 2: Lists (substitui o card Folders) -----
+  return (
+    <section className="rounded-xl border border-border bg-card/30 p-4">
+      <header className="mb-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpenFolder(null)}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label="Voltar para Folders"
+          title="Voltar"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-[14px] font-semibold tracking-tight">Lists</h2>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          / Projetos
+        </span>
+        <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+          {projects.length}
+        </span>
+      </header>
+
+      {projects.length === 0 ? (
+        <EmptyState text="Nenhum projeto nesta pasta." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="px-2 py-1.5 font-medium">Nome</th>
+                <th className="hidden sm:table-cell px-2 py-1.5 font-medium">
+                  Cor
+                </th>
+                <th className="hidden md:table-cell px-2 py-1.5 font-medium">
+                  Progresso
+                </th>
+                <th className="hidden lg:table-cell px-2 py-1.5 font-medium">
+                  Início
+                </th>
+                <th className="hidden lg:table-cell px-2 py-1.5 font-medium">
+                  Término
+                </th>
+                <th className="hidden sm:table-cell px-2 py-1.5 font-medium text-right">
+                  Tarefas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((p) => {
+                const summary = summaryById.get(p.chave);
+                const tasks = summary?.taskCount ?? p.taskCount;
+                const throughput = summary?.weeklyThroughput ?? 0;
+                const progress =
+                  tasks > 0
+                    ? Math.min(100, Math.round((throughput / tasks) * 100))
+                    : 0;
+                // dataInicio/dataFim podem nao vir no useProjects basico.
+                // ProjectSummary nao tem essas datas. Mostra placeholder se nao existir.
+                const dataInicio = formatDateShort(
+                  (p as ProjectListItem & { dataInicio?: string | null })
+                    .dataInicio,
+                );
+                const dataFim = formatDateShort(
+                  (p as ProjectListItem & { dataFim?: string | null }).dataFim,
+                );
+                const hex = projectHex(p.nome);
+                return (
+                  <tr
+                    key={p.chave}
+                    className="group border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors"
+                  >
+                    <td className="px-2 py-2 align-middle">
+                      <Link
+                        href={`/projects/${p.chave}`}
+                        className="flex items-center gap-2 min-w-0"
+                      >
+                        <ListChecks className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium">{p.nome}</span>
+                      </Link>
+                    </td>
+                    <td className="hidden sm:table-cell px-2 py-2 align-middle">
+                      <span
+                        className="inline-block h-3 w-3 rounded-full"
+                        style={{ backgroundColor: hex }}
+                        title="Cor do projeto"
+                      />
+                    </td>
+                    <td className="hidden md:table-cell px-2 py-2 align-middle">
+                      {tasks > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-28 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                progress > 60
+                                  ? "bg-emerald-500"
+                                  : progress > 30
+                                    ? "bg-sky-500"
+                                    : "bg-slate-500",
+                              )}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] tabular-nums text-muted-foreground">
+                            {throughput}/{tasks}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground/50">
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="hidden lg:table-cell px-2 py-2 align-middle text-[12px] text-muted-foreground">
+                      {dataInicio ?? (
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      )}
+                    </td>
+                    <td className="hidden lg:table-cell px-2 py-2 align-middle text-[12px] text-muted-foreground">
+                      {dataFim ? (
+                        <span className="inline-flex items-center gap-1">
+                          {dataFim}
+                          {/* Bandeira so se ja passou — afordancia de risco */}
+                          {new Date(
+                            (p as ProjectListItem & { dataFim?: string })
+                              .dataFim ?? "",
+                          ).getTime() < Date.now() && (
+                            <Flag className="h-3 w-3 text-rose-400" />
+                          )}
+                        </span>
+                      ) : (
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      )}
+                    </td>
+                    <td className="hidden sm:table-cell px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
+                      {tasks}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-    </Card>
+    </section>
   );
 }
 
