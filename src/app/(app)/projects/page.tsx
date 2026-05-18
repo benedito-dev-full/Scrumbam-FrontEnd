@@ -40,8 +40,17 @@ const PROJECT_COLORS = [
   { bg: "bg-cyan-500", text: "text-white" },
 ];
 
+// Hash simples (djb2 light) do nome completo para distribuir cores.
+// Evita que projetos comecando com a mesma letra (ex: Scrumban-Backend,
+// Scrumban-Frontend) recebam a mesma cor.
+function hashString(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
+  return h >>> 0;
+}
+
 function getProjectColor(nome: string) {
-  const idx = nome.charCodeAt(0) % PROJECT_COLORS.length;
+  const idx = hashString(nome) % PROJECT_COLORS.length;
   return PROJECT_COLORS[idx];
 }
 
@@ -56,7 +65,7 @@ const AVATAR_COLORS = [
 ];
 
 function getAvatarColor(nome: string) {
-  const idx = nome.charCodeAt(0) % AVATAR_COLORS.length;
+  const idx = hashString(nome) % AVATAR_COLORS.length;
   return AVATAR_COLORS[idx];
 }
 
