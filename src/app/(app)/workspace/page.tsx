@@ -17,7 +17,10 @@ import {
   GripVertical,
   ListChecks,
   Maximize2,
+  MoreHorizontal,
+  Pencil,
   Plus,
+  Trash2,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -26,6 +29,16 @@ import { UNASSIGNED_FOLDER_ID } from "@/types";
 import type { IntentionDocument } from "@/types/intention";
 
 import { PageTransition } from "@/components/common/page-transition";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CreateFolderModal } from "@/components/folders/create-folder-modal";
+import { RenameFolderModal } from "@/components/folders/rename-folder-modal";
+import { DeleteFolderDialog } from "@/components/folders/delete-folder-dialog";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProjects, useProjectSummaries } from "@/lib/hooks/use-projects";
@@ -522,6 +535,12 @@ function FoldersCard({
   //   ("__unassigned__", pasta virtual de projects sem pasta).
   const [openFolder, setOpenFolder] = useState<string | null>(null);
 
+  // Modais de CRUD (Etapa 2). Renderizados como portal — abertos via state.
+  // `null` em rename/delete target = modal fechado; objeto = pasta-alvo.
+  const [createOpen, setCreateOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<FolderType | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FolderType | null>(null);
+
   // Pastas reais (DEntidade -155 via useFolders → /entidades/folders).
   // Backend retorna ordenadas alfabeticamente por nome.
   const {
@@ -602,81 +621,141 @@ function FoldersCard({
       !isLoadingList && realFolders.length === 0 && !hasUnassigned;
 
     return (
-      <section className="rounded-xl border border-border bg-card/30 p-4">
-        <header className="mb-3 flex items-center gap-2">
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
-          <h2 className="text-[14px] font-semibold tracking-tight">Folders</h2>
-          <div className="ml-auto flex items-center gap-1">
-            <button
-              type="button"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Expandir primeira pasta"
-              title="Expandir"
-              onClick={() => {
-                if (realFolders.length > 0) setOpenFolder(realFolders[0].id);
-                else if (hasUnassigned) setOpenFolder(UNASSIGNED_FOLDER_ID);
-              }}
-            >
-              <Maximize2 className="h-3 w-3" />
-            </button>
-            <Link
-              href="/projects?new=1"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Novo projeto"
-              title="Novo projeto"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </header>
+      <>
+        <section className="rounded-xl border border-border bg-card/30 p-4">
+          <header className="mb-3 flex items-center gap-2">
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <h2 className="text-[14px] font-semibold tracking-tight">
+              Folders
+            </h2>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                aria-label="Expandir primeira pasta"
+                title="Expandir"
+                disabled={realFolders.length === 0 && !hasUnassigned}
+                onClick={() => {
+                  if (realFolders.length > 0) setOpenFolder(realFolders[0].id);
+                  else if (hasUnassigned) setOpenFolder(UNASSIGNED_FOLDER_ID);
+                }}
+              >
+                <Maximize2 className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                aria-label="Nova pasta"
+                title="Nova pasta"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </header>
 
-        {isLoadingList ? (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : showEmpty ? (
-          <EmptyState text="Nenhuma pasta ou projeto neste workspace ainda." />
-        ) : (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {realFolders.map((f: FolderType) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setOpenFolder(f.id)}
-                className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
-              >
-                <span
-                  className="inline-block h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: projectHex(f.nome) }}
-                  aria-hidden
-                />
-                <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="truncate text-[13px] font-medium">
-                  {f.nome}
-                </span>
-                <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                  {f.projectCount}
-                </span>
-              </button>
-            ))}
-            {hasUnassigned && (
-              <button
-                type="button"
-                onClick={() => setOpenFolder(UNASSIGNED_FOLDER_ID)}
-                className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
-              >
-                <Folder className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-                <span className="truncate text-[13px] font-medium text-muted-foreground">
-                  Sem pasta
-                </span>
-                <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                  {unassignedCount}
-                </span>
-              </button>
-            )}
-          </div>
+          {isLoadingList ? (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : showEmpty ? (
+            <EmptyState
+              text="Nenhuma pasta ou projeto neste workspace ainda."
+              cta={{
+                label: "Criar pasta",
+                onClick: () => setCreateOpen(true),
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {realFolders.map((f: FolderType) => (
+                <div
+                  key={f.id}
+                  className="group relative flex items-center rounded-md border border-border/70 bg-card/40 transition-colors hover:border-border hover:bg-accent/30"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFolder(f.id)}
+                    className="flex flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                  >
+                    <span
+                      className="inline-block h-3 w-3 shrink-0 rounded-sm"
+                      style={{ backgroundColor: projectHex(f.nome) }}
+                      aria-hidden
+                    />
+                    <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-[13px] font-medium">
+                      {f.nome}
+                    </span>
+                    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                      {f.projectCount}
+                    </span>
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={`Opções da pasta ${f.nome}`}
+                        title="Opções"
+                        className="mr-1 flex h-7 w-7 items-center justify-center rounded text-muted-foreground/60 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => setRenameTarget(f)}>
+                        <Pencil className="mr-2 h-3.5 w-3.5" />
+                        Renomear
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeleteTarget(f)}
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+              {hasUnassigned && (
+                <button
+                  type="button"
+                  onClick={() => setOpenFolder(UNASSIGNED_FOLDER_ID)}
+                  className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-card/40 px-3 py-2.5 text-left hover:border-border hover:bg-accent/30 transition-colors"
+                >
+                  <Folder className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <span className="truncate text-[13px] font-medium text-muted-foreground">
+                    Sem pasta
+                  </span>
+                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                    {unassignedCount}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Modais CRUD (Etapa 2) — renderizados como portal pelo Radix Dialog */}
+        <CreateFolderModal open={createOpen} onOpenChange={setCreateOpen} />
+        {renameTarget && (
+          <RenameFolderModal
+            open={!!renameTarget}
+            onOpenChange={(o) => !o && setRenameTarget(null)}
+            folder={renameTarget}
+          />
         )}
-      </section>
+        {deleteTarget && (
+          <DeleteFolderDialog
+            open={!!deleteTarget}
+            onOpenChange={(o) => !o && setDeleteTarget(null)}
+            folder={deleteTarget}
+          />
+        )}
+      </>
     );
   }
 
