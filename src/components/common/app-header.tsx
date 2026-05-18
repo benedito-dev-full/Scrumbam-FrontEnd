@@ -81,26 +81,29 @@ export function AppHeader({ onMenuToggle }: AppHeaderProps) {
         </Button>
 
         {/* Desktop search button — opens CommandPalette */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="hidden sm:flex items-center gap-2 h-8 px-3 text-muted-foreground font-normal w-48 justify-start"
+        <button
+          type="button"
           onClick={openCommandPalette}
           aria-label="Buscar no sistema"
+          className="hidden sm:flex items-center gap-2 h-9 w-72 lg:w-80 rounded-md border border-border bg-muted/40 px-3 text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
         >
-          <Search className="h-3.5 w-3.5" />
-          <span className="text-xs">Buscar...</span>
-          <kbd className="ml-auto pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          <Search className="h-4 w-4" />
+          <span className="text-sm">Buscar tarefas, projetos, pessoas...</span>
+          <kbd className="ml-auto pointer-events-none inline-flex h-5 items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
             <span className="text-xs">{isMac ? "\u2318" : "Ctrl"}</span>K
           </kbd>
-        </Button>
+        </button>
 
         <NotificationBell />
         <ThemeToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="Menu do usuario">
+            <Button
+              variant="ghost"
+              className="relative h-9 w-9 rounded-full"
+              aria-label="Menu do usuario"
+            >
               <Avatar className="h-8 w-8 ring-2 ring-border">
                 <AvatarFallback className="text-xs bg-[var(--scrumban-brand-muted)] text-[var(--scrumban-brand)] font-semibold">
                   {initials}
