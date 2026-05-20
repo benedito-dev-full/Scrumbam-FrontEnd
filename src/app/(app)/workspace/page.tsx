@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Star,
   Trash2,
   UserPlus,
   Users,
@@ -569,6 +570,10 @@ function FoldersCard({
     return m;
   }, [summaries]);
 
+  // Favoritos persistidos em localStorage. Star toggle na coluna esquerda da
+  // tabela do drill-down (Estado 2).
+  const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
+
   // Lista renderizada no Estado 2 (drill-down) — normaliza para ProjectListItem
   // do widget. Inclui dataInicio/dataFim via casting (campos opcionais).
   const drillProjects = useMemo<ProjectListItem[]>(() => {
@@ -786,6 +791,9 @@ function FoldersCard({
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="w-8 px-2 py-1.5">
+                  <span className="sr-only">Favorito</span>
+                </th>
                 <th className="px-2 py-1.5 font-medium">Nome</th>
                 <th className="hidden sm:table-cell px-2 py-1.5 font-medium">
                   Cor
@@ -833,6 +841,42 @@ function FoldersCard({
                     key={p.chave}
                     className="group border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors"
                   >
+                    <td className="px-2 py-2 align-middle">
+                      {(() => {
+                        const starred = isBookmarked(p.chave);
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBookmark({
+                                id: p.chave,
+                                kind: "project",
+                                label: p.nome,
+                                href: `/projects/${p.chave}`,
+                              });
+                            }}
+                            aria-label={
+                              starred
+                                ? `Remover ${p.nome} dos favoritos`
+                                : `Favoritar ${p.nome}`
+                            }
+                            title={starred ? "Remover favorito" : "Favoritar"}
+                            className={cn(
+                              "flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-accent",
+                              starred
+                                ? "text-amber-400"
+                                : "text-muted-foreground/40 hover:text-foreground",
+                            )}
+                          >
+                            <Star
+                              className="h-3.5 w-3.5"
+                              fill={starred ? "currentColor" : "none"}
+                            />
+                          </button>
+                        );
+                      })()}
+                    </td>
                     <td className="px-2 py-2 align-middle">
                       <Link
                         href={`/projects/${p.chave}`}
