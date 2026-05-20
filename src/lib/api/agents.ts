@@ -102,7 +102,8 @@ export const agentsApi = {
       expiresAt: string;
     }>("/agents/install-token", body);
 
-    const oneLineInstall = `curl -fsSL ${typeof window !== "undefined" ? window.location.origin : ""}/agent-dist/install.sh | INSTALL_TOKEN=${data.token} bash`;
+    const backendOrigin = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1").replace(/\/api\/v1\/?$/, "");
+    const oneLineInstall = `curl -fsSL ${backendOrigin}/api/v1/agent-dist/install.sh | INSTALL_TOKEN=${data.token} bash`;
 
     return {
       id: data.installTokenId,
