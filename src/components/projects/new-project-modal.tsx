@@ -7,15 +7,7 @@ import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useMyTeams } from "@/lib/hooks/use-teams";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
 import { projectsApi } from "@/lib/api/projects";
 import { QUERY_KEYS } from "@/lib/constants";
@@ -25,12 +17,10 @@ interface NewProjectModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const NO_TEAM_VALUE = "__none__";
-
 /**
  * Modal de criacao de projeto.
  *
- * Campos: nome, descricao, time (opcional), membros iniciais (opcional).
+ * Campos: nome, descricao, membros iniciais (opcional).
  * Caller sempre vira MANAGER do projeto. Membros selecionados entram como MEMBER.
  */
 export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
@@ -39,12 +29,10 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(
     new Set(),
   );
 
-  const { data: teams } = useMyTeams();
   const { data: orgMembers } = useOrgMembers(user?.orgId);
 
   // Caller nao deve aparecer na lista de "convidar membros"
@@ -57,8 +45,6 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       projectsApi.create({
         nome: name.trim(),
         descricao: description.trim() || undefined,
-        // ADR-V2-029: teamId canonico do V2 (DVincula -182).
-        teamId: selectedTeamId || undefined,
         memberIds:
           selectedMemberIds.size > 0
             ? Array.from(selectedMemberIds)
@@ -78,7 +64,6 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const reset = () => {
     setName("");
     setDescription("");
-    setSelectedTeamId("");
     setSelectedMemberIds(new Set());
   };
 
@@ -157,31 +142,6 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
             rows={6}
             className="w-full rounded-md bg-muted/40 px-3 py-2 text-[13px] text-foreground outline-none border-0 placeholder:text-muted-foreground/50 focus:bg-muted/60 transition-colors resize-none"
           />
-
-          {/* Time (opcional) */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-medium text-muted-foreground">
-              Time
-            </label>
-            <Select
-              value={selectedTeamId || NO_TEAM_VALUE}
-              onValueChange={(v) =>
-                setSelectedTeamId(v === NO_TEAM_VALUE ? "" : v)
-              }
-            >
-              <SelectTrigger className="h-9 text-[13px] bg-muted/40 border-0 focus:bg-muted/60">
-                <SelectValue placeholder="Sem time" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_TEAM_VALUE}>Sem time</SelectItem>
-                {teams?.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Membros (opcional) */}
           <div className="space-y-1">
