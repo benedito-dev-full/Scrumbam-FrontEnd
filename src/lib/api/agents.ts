@@ -18,6 +18,8 @@ export interface Agent {
   lastHeartbeat: string | null;
   installedAt: string | null;
   createdAt: string;
+  /** ID do install-token gerado pela API (installTokenId retornado por POST /agents/install-token). */
+  installTokenId?: string | null;
 }
 
 /** Resposta de POST /agents — inclui one-liner de instalação. */

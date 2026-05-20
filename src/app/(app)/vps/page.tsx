@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Server, Trash2, MoreHorizontal, Loader2 } from "lucide-react";
+import { Server, Trash2, MoreHorizontal, Loader2, Plus } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAgents, useDeleteAgent } from "@/lib/hooks/use-agents";
 import { AgentStatusBadge } from "./components/agent-status-badge";
 import { AddAgentDialog } from "./components/add-agent-dialog";
+import { VpsInstallWizard } from "@/components/agents/VpsInstallWizard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ export default function AgentsPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   return (
     <PageTransition className="h-full">
@@ -45,7 +47,18 @@ export default function AgentsPage() {
         {/* Header */}
         <header className="flex h-14 shrink-0 items-center justify-between px-8 pt-2 border-b border-border">
           <h1 className="text-[13px] font-medium">VPS</h1>
-          <AddAgentDialog />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setWizardOpen(true)}
+              className="gap-1.5 text-[13px]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Conectar nova VPS
+            </Button>
+            <AddAgentDialog />
+          </div>
         </header>
 
         {/* Sub-header com info */}
@@ -83,6 +96,9 @@ export default function AgentsPage() {
           )}
         </div>
       </div>
+
+      {/* Wizard "Conectar nova VPS" */}
+      <VpsInstallWizard open={wizardOpen} onOpenChange={setWizardOpen} />
 
       {/* Confirm delete dialog */}
       <Dialog
