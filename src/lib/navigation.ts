@@ -1,7 +1,6 @@
 import {
   Inbox,
   CircleDot,
-  Download,
   UserPlus,
   Plug,
   Users,
@@ -108,7 +107,6 @@ export const navSections: NavSection[] = [
     label: "Experimente",
     collapsible: true,
     items: [
-      { href: "/import", label: "Importar issues", icon: Download, stub: true },
       {
         action: "invite-people",
         label: "Convidar pessoas",
