@@ -103,7 +103,7 @@ export const agentsApi = {
     }>("/agents/install-token", body);
 
     const backendOrigin = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1").replace(/\/api\/v1\/?$/, "");
-    const oneLineInstall = `curl -fsSL ${backendOrigin}/api/v1/agent-dist/install.sh | INSTALL_TOKEN=${data.token} bash`;
+    const oneLineInstall = `curl -fsSL ${backendOrigin}/api/v1/agent-dist/install.sh | bash -s -- --backend=${backendOrigin} --token=${data.token}`;
 
     return {
       id: data.installTokenId,
