@@ -8,7 +8,6 @@ import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
 import { useAgents, useDeleteAgent } from "@/lib/hooks/use-agents";
 import { AgentStatusBadge } from "./components/agent-status-badge";
-import { AddAgentDialog } from "./components/add-agent-dialog";
 import { VpsInstallWizard } from "@/components/agents/VpsInstallWizard";
 import {
   DropdownMenu,
@@ -82,7 +81,6 @@ export default function AgentsPage() {
               <Plus className="h-3.5 w-3.5" />
               Conectar nova VPS
             </Button>
-            <AddAgentDialog />
           </div>
         </header>
 
