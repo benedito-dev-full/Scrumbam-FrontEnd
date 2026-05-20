@@ -39,6 +39,7 @@ import {
   Activity,
   Copy,
   Check,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -55,7 +56,7 @@ import {
 
 import { PageTransition } from "@/components/common/page-transition";
 import { usePageTitle } from "@/lib/hooks/use-page-title";
-import { useProject } from "@/lib/hooks/use-projects";
+import { useProject, useUpdateProject } from "@/lib/hooks/use-projects";
 import { useIntentions, useMoveStatus } from "@/lib/hooks/use-intentions";
 import { useProjectActivity } from "@/lib/hooks/use-activity";
 import { useOrgMembers } from "@/lib/hooks/use-organization";
@@ -85,6 +86,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
@@ -294,6 +302,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "settings" && (
               <SettingsTab
+                projectId={projectId}
                 project={project}
                 isLoading={isLoading}
                 issues={issuesList}
@@ -1394,6 +1403,7 @@ function ProjectRoleCell({
 // ============================================================
 
 function SettingsTab({
+  projectId,
   project,
   isLoading,
   issues,
@@ -1401,6 +1411,7 @@ function SettingsTab({
   onOpenProperties,
   onDeleteProject,
 }: {
+  projectId: string;
   project:
     | {
         chave?: string;
@@ -1421,6 +1432,25 @@ function SettingsTab({
   onDeleteProject: () => void;
 }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { data: projectMembers, isLoading: loadingMembers } =
+    useProjectMembers(projectId);
+  const updateProject = useUpdateProject();
+  const [savingOwner, setSavingOwner] = useState(false);
+
+  const currentOwnerId = project?.responsavel?.chave ?? "";
+
+  const handleChangeResponsavel = (value: string) => {
+    // Sentinel "__none__" representa "Sem responsavel" → backend recebe null
+    const nextOwnerId = value === "__none__" ? null : value;
+    const currentNormalized = currentOwnerId || null;
+    if (nextOwnerId === currentNormalized) return;
+    if (!projectId) return;
+    setSavingOwner(true);
+    updateProject.mutate(
+      { id: projectId, dto: { ownerId: nextOwnerId } },
+      { onSettled: () => setSavingOwner(false) },
+    );
+  };
 
   const copy = async (value: string, key: string) => {
     try {
@@ -1605,12 +1635,17 @@ function SettingsTab({
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <Shield className="h-3 w-3" />
-                Responsavel
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <Shield className="h-3 w-3" />
+                  Responsavel
+                </div>
+                {savingOwner && (
+                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                )}
               </div>
               <div className="mt-3 flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-[12px] font-semibold text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[12px] font-semibold text-white">
                   {(project.responsavel?.nome ?? "?")
                     .split(" ")
                     .map((w) => w[0])
@@ -1619,14 +1654,46 @@ function SettingsTab({
                     .join("")
                     .toUpperCase() || "?"}
                 </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium">
-                    {project.responsavel?.nome ?? "Sem responsavel"}
-                  </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {project.responsavel?.chave
-                      ? `ID ${project.responsavel.chave}`
-                      : "Atribua um responsavel"}
+                <div className="min-w-0 flex-1">
+                  <Select
+                    value={currentOwnerId || "__none__"}
+                    onValueChange={handleChangeResponsavel}
+                    disabled={!canManage || savingOwner || loadingMembers}
+                  >
+                    <SelectTrigger
+                      className="h-8 w-full text-[13px] bg-muted/30 border border-border"
+                      aria-label="Selecionar responsavel pelo projeto"
+                    >
+                      <SelectValue placeholder="Sem responsavel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sem responsavel</SelectItem>
+                      {(projectMembers ?? []).map((m) => (
+                        <SelectItem key={m.userId} value={m.userId}>
+                          {m.nome}
+                        </SelectItem>
+                      ))}
+                      {/* Caso o responsavel atual nao esteja na lista de membros
+                          (caso de borda — owner removido do projeto), ainda
+                          permite ver o nome para evitar SelectValue vazio. */}
+                      {currentOwnerId &&
+                        !(projectMembers ?? []).some(
+                          (m) => m.userId === currentOwnerId,
+                        ) && (
+                          <SelectItem value={currentOwnerId}>
+                            {project.responsavel?.nome ?? currentOwnerId}
+                          </SelectItem>
+                        )}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                    {loadingMembers
+                      ? "Carregando membros..."
+                      : !canManage
+                        ? "Apenas administradores podem alterar"
+                        : (projectMembers?.length ?? 0) === 0
+                          ? "Nenhum membro neste projeto"
+                          : "Membros do projeto"}
                   </p>
                 </div>
               </div>
