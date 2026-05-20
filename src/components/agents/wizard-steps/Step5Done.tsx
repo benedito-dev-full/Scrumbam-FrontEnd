@@ -1,6 +1,8 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { WizardState } from "../VpsInstallWizard";
 
 interface Step5DoneProps {
@@ -10,10 +12,9 @@ interface Step5DoneProps {
 
 /**
  * Step 5 — VPS conectada com sucesso.
- * Exibe ícone de check e resumo final.
- * Link para painel do agente e resumo completo vêm na Fase 5.
+ * Exibe ícone de check, resumo final e link para o painel do agente.
  */
-export function Step5Done({ state, onClose: _onClose }: Step5DoneProps) {
+export function Step5Done({ state, onClose }: Step5DoneProps) {
   return (
     <div className="space-y-4 py-2">
       <div className="flex flex-col items-center justify-center gap-3 py-6">
@@ -37,9 +38,21 @@ export function Step5Done({ state, onClose: _onClose }: Step5DoneProps) {
         </div>
       )}
 
-      <p className="text-[12px] text-muted-foreground text-center">
-        Link para painel do agente implementado na Fase 5.
-      </p>
+      {state.agentId && (
+        <div className="flex justify-center">
+          <Link href={`/vps/${state.agentId}`}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-[13px]"
+              onClick={onClose}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Ver painel do agente
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

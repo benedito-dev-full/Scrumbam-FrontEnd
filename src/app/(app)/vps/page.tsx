@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Server, Trash2, MoreHorizontal, Loader2, Plus } from "lucide-react";
 
 import { PageTransition } from "@/components/common/page-transition";
@@ -31,6 +31,14 @@ import { Button } from "@/components/ui/button";
  * Refresh automatico a cada 15s.
  * Visivel apenas para ADMIN.
  */
+const DRAFT_KEY = "scrumban_vps_wizard_draft";
+const DRAFT_TTL_MINUTES = 30;
+
+interface WizardDraftBanner {
+  vpsLabel: string;
+  step: string;
+}
+
 export default function AgentsPage() {
   usePageTitle("VPS");
   const { data: agents, isLoading } = useAgents();
@@ -40,6 +48,23 @@ export default function AgentsPage() {
     name: string;
   } | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [draftBanner, setDraftBanner] = useState<WizardDraftBanner | null>(null);
+
+  // Verificar draft salvo ao montar a página
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as { savedAt: string; vpsLabel?: string; step?: string };
+      const savedAt = new Date(draft.savedAt).getTime();
+      const diffMin = (Date.now() - savedAt) / 60000;
+      if (diffMin < DRAFT_TTL_MINUTES && draft.vpsLabel) {
+        setDraftBanner({ vpsLabel: draft.vpsLabel, step: draft.step ?? "" });
+      }
+    } catch {
+      // draft corrompido — ignorar
+    }
+  }, []);
 
   return (
     <PageTransition className="h-full">
@@ -68,6 +93,43 @@ export default function AgentsPage() {
             30s — offline após 90s sem ping.
           </p>
         </div>
+
+        {/* Banner de retomada de instalação em andamento */}
+        {draftBanner && (
+          <div className="flex items-center justify-between border-b border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-8 py-2.5">
+            <p className="text-[12px] text-amber-700 dark:text-amber-400">
+              Instalação de <strong>{draftBanner.vpsLabel}</strong> em andamento — retomar?
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-[12px] h-7"
+                onClick={() => {
+                  setDraftBanner(null);
+                  try {
+                    localStorage.removeItem(DRAFT_KEY);
+                  } catch {
+                    // ignorar
+                  }
+                }}
+              >
+                Descartar
+              </Button>
+              <Button
+                size="sm"
+                className="text-[12px] h-7"
+                onClick={() => {
+                  setDraftBanner(null);
+                  setWizardOpen(true);
+                  // O wizard vai ler o draft e restaurar o estado via useEffect no open
+                }}
+              >
+                Retomar
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Table */}
         <div className="flex-1 overflow-auto">

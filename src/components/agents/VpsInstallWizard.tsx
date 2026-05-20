@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +67,22 @@ const STEP_LABELS: Record<WizardStep, string> = {
 };
 
 // ============================================================
+// localStorage draft
+// ============================================================
+
+const DRAFT_KEY = "scrumban_vps_wizard_draft";
+const DRAFT_TTL_MINUTES = 30;
+
+interface WizardDraft {
+  step: WizardStep;
+  installTokenId: string | null;
+  agentId: string | null;
+  vpsHostname: string;
+  vpsLabel: string;
+  savedAt: string;
+}
+
+// ============================================================
 // Props
 // ============================================================
 
@@ -81,13 +97,72 @@ interface VpsInstallWizardProps {
 
 /**
  * Modal wizard step-by-step para conectar uma VPS ao Scrumban.
- *
  * Estado interno: WizardState (máquina de estados).
- * Lógica real de API é adicionada nas Fases 3-5.
- * Este scaffold (Fase 2) implementa apenas estrutura e navegação.
+ * Draft salvo no localStorage durante steps intermediários (TTL 30 min).
  */
 export function VpsInstallWizard({ open, onOpenChange }: VpsInstallWizardProps) {
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
+
+  // ── localStorage: salvar draft nos steps intermediários ───
+
+  useEffect(() => {
+    const savableSteps: WizardStep[] = [
+      "COMMAND_READY",
+      "WAITING_HANDSHAKE",
+      "CONFIGURING_ENV",
+    ];
+    if (savableSteps.includes(state.step)) {
+      const draft: WizardDraft = {
+        step: state.step,
+        installTokenId: state.installTokenId,
+        agentId: state.agentId,
+        vpsHostname: state.vpsHostname,
+        vpsLabel: state.vpsLabel,
+        savedAt: new Date().toISOString(),
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch {
+        // storage quota ou SSR — ignorar silenciosamente
+      }
+    } else if (
+      state.step === "DONE" ||
+      state.step === "COLLECTING_VPS_INFO"
+    ) {
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // ignorar
+      }
+    }
+  }, [state]);
+
+  // ── localStorage: restaurar draft quando o wizard abre ───
+
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft: WizardDraft = JSON.parse(raw);
+      const savedAt = new Date(draft.savedAt).getTime();
+      const diffMin = (Date.now() - savedAt) / 60000;
+      if (diffMin >= DRAFT_TTL_MINUTES) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      setState({
+        step: draft.step,
+        installTokenId: draft.installTokenId,
+        agentId: draft.agentId,
+        vpsHostname: draft.vpsHostname,
+        vpsLabel: draft.vpsLabel,
+        errorStep: null,
+      });
+    } catch {
+      // draft corrompido — ignorar
+    }
+  }, [open]);
 
   // ── helpers ──────────────────────────────────────────────
 
@@ -120,6 +195,14 @@ export function VpsInstallWizard({ open, onOpenChange }: VpsInstallWizardProps) 
     }));
   }
 
+  function handleWizardTimeout() {
+    setState((prev) => ({
+      ...prev,
+      step: "ERROR",
+      errorStep: "WAITING_HANDSHAKE",
+    }));
+  }
+
   function handleClose() {
     handleOpenChange(false);
   }
@@ -146,6 +229,7 @@ export function VpsInstallWizard({ open, onOpenChange }: VpsInstallWizardProps) 
           <Step3WaitingHandshake
             state={state}
             onAgentConnected={handleAgentConnected}
+            onTimeout={handleWizardTimeout}
           />
         );
       case "CONFIGURING_ENV":
@@ -175,7 +259,9 @@ export function VpsInstallWizard({ open, onOpenChange }: VpsInstallWizardProps) 
   const isWaiting = state.step === "WAITING_HANDSHAKE";
   const isError = state.step === "ERROR";
   const stepOwnsButton =
-    state.step === "COLLECTING_VPS_INFO" || state.step === "COMMAND_READY";
+    state.step === "COLLECTING_VPS_INFO" ||
+    state.step === "COMMAND_READY" ||
+    state.step === "CONFIGURING_ENV";
 
   function renderPrimaryButton() {
     if (isDone) {
