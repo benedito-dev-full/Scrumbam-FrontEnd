@@ -369,19 +369,13 @@ function MemberRow({ member }: { member: TeamMember }) {
 }
 
 function CargoBadge({ cargo }: { cargo: TeamMemberRole }) {
-  // Backend retorna LEAD/MEMBER; types antigos tinham ADMIN/MEMBER/VIEWER.
-  // Tratamos os casos conhecidos.
-  const config: Record<string, string> = {
+  const config: Record<TeamMemberRole, string> = {
     LEAD: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-    ADMIN: "bg-blue-500/15 text-blue-300 border-blue-500/30",
     MEMBER: "bg-muted text-foreground/80 border-border",
-    VIEWER: "bg-muted/60 text-muted-foreground border-border",
   };
-  const labelMap: Record<string, string> = {
+  const labelMap: Record<TeamMemberRole, string> = {
     LEAD: "Lead",
-    ADMIN: "Admin",
-    MEMBER: "Member",
-    VIEWER: "Viewer",
+    MEMBER: "Membro",
   };
   return (
     <span

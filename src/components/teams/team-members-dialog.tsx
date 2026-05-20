@@ -31,9 +31,8 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import type { Team, TeamMemberRole } from "@/types/team";
 
 const ROLES: { value: TeamMemberRole; label: string }[] = [
-  { value: "ADMIN", label: "Admin" },
+  { value: "LEAD", label: "Lead" },
   { value: "MEMBER", label: "Membro" },
-  { value: "VIEWER", label: "Viewer" },
 ];
 
 interface TeamMembersDialogProps {

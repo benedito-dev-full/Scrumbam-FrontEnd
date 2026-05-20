@@ -48,7 +48,7 @@ function mapMember(raw: any): TeamMember {
     userId: String(raw.userId ?? raw.id ?? raw.chave ?? ""),
     name: String(raw.name ?? raw.nome ?? ""),
     email: raw.email ?? null,
-    cargo: (raw.cargo ?? "MEMBER") as TeamMember["cargo"],
+    cargo: raw.cargo === "LEAD" ? "LEAD" : "MEMBER",
     joinedAt: String(raw.joinedAt ?? raw.criadoEm ?? raw.createdAt ?? ""),
   };
 }
@@ -134,8 +134,7 @@ export const teamsApi = {
     teamId: string,
     dto: AddTeamMemberDto,
   ): Promise<TeamMember> => {
-    const cargo: "LEAD" | "MEMBER" = dto.cargo === "ADMIN" ? "LEAD" : "MEMBER";
-    const payload = { userId: dto.userId, cargo };
+    const payload = { userId: dto.userId, cargo: dto.cargo ?? "MEMBER" };
     const { data } = await api.post(ENDPOINTS.TEAM_MEMBERS(teamId), payload);
     return mapMember(data);
   },
@@ -146,8 +145,7 @@ export const teamsApi = {
     userId: string,
     dto: UpdateTeamMemberRoleDto,
   ): Promise<void> => {
-    const cargo: "LEAD" | "MEMBER" = dto.cargo === "ADMIN" ? "LEAD" : "MEMBER";
-    await api.patch(ENDPOINTS.TEAM_MEMBER(teamId, userId), { cargo });
+    await api.patch(ENDPOINTS.TEAM_MEMBER(teamId, userId), { cargo: dto.cargo });
   },
 
   removeMember: async (teamId: string, userId: string): Promise<void> => {

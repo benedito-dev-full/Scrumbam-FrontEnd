@@ -1,7 +1,10 @@
 // Tipos do modulo Times — espelham backend `/api/v1/teams*`
 // Backend: src/teams/ (Scrumbam-Backend), schema DEntidade idClasse=-460
 
-export type TeamMemberRole = "ADMIN" | "MEMBER" | "VIEWER";
+// Backend V2 só tem dois cargos no escopo de time (DVincula -181, metaDados.cargo).
+// Quem gerencia o time é LEAD; demais são MEMBER. Override de ORG ADMIN é
+// resolvido no backend via `canEdit`/`canDelete`.
+export type TeamMemberRole = "LEAD" | "MEMBER";
 
 /**
  * Time da organizacao. Backend retorna `canEdit`/`canDelete` precomputados
