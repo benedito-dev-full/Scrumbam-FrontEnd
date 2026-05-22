@@ -12,6 +12,22 @@
 import api from "./client";
 import { ENDPOINTS } from "./endpoints";
 
+/**
+ * Chave numerica da DClasse PHASE (DTask agrupadora — ADR-V2-047).
+ *
+ * DIVIDA TECNICA: o backend (src/tasks/dto/list-tasks-query.dto.ts)
+ * exige `idClasse` como string numerica (@Matches(/^-?\d+$/)), entao
+ * mandamos a chave -200 em vez do codigo semantico "PHASE". Isso acopla
+ * o frontend ao ID interno do banco — boundary violado.
+ *
+ * A solucao correta a longo prazo eh o backend aceitar AMBOS:
+ *   - "PHASE"  → lookup em DClasse.codigo (cacheado)
+ *   - "-200"   → uso direto da chave
+ * Quando essa task for entregue no V2, trocar para o codigo textual
+ * e remover esta constante.
+ */
+const PHASE_CLASSE_KEY = "-200";
+
 // ============================================================
 // Tipos exportados
 // ============================================================
@@ -105,7 +121,7 @@ export const phasesApi = {
    */
   listByProject: async (projectId: string): Promise<Phase[]> => {
     const { data } = await api.get(ENDPOINTS.TASKS, {
-      params: { idClasse: "PHASE", idProject: projectId },
+      params: { idClasse: PHASE_CLASSE_KEY, idProject: projectId },
     });
     const items = Array.isArray(data) ? data : (data?.items ?? []);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
