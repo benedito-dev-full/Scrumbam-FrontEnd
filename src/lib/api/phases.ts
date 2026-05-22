@@ -175,4 +175,31 @@ export const phasesApi = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return items.map((item: any) => mapCriticalTask(item));
   },
+
+  /**
+   * Cria uma nova fase (DTask idClasse=-200 PHASE) — ADR-V2-050.
+   * Endpoint: POST /tasks com idClasse no body.
+   *
+   * Para sub-fase, passe `idPai` = id da fase pai (o backend valida
+   * que o pai existe, esta no mesmo projeto e tambem eh PHASE).
+   *
+   * Campos task-especificos (assigneeId, sprintId, priority, taskType)
+   * sao ignorados silenciosamente pelo backend quando idClasse=-200
+   * (com logger.warn na telemetria backend).
+   */
+  create: async (input: {
+    projectId: string;
+    nome: string;
+    descricao?: string;
+    idPai?: string;
+  }): Promise<Phase> => {
+    const { data } = await api.post(ENDPOINTS.TASKS, {
+      projectId: input.projectId,
+      nome: input.nome,
+      descricao: input.descricao,
+      idPai: input.idPai,
+      idClasse: PHASE_CLASSE_KEY,
+    });
+    return mapPhase(data);
+  },
 };

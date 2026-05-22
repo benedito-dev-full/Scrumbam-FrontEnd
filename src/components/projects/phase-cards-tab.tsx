@@ -30,6 +30,7 @@ import {
   Layers,
   ListChecks,
   Loader2,
+  Plus,
   Sparkles,
   Target,
   TrendingUp,
@@ -62,6 +63,7 @@ import {
 } from "@/lib/hooks/use-phases";
 import { QUERY_KEYS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CreatePhaseModal } from "@/components/projects/create-phase-modal";
 
 // ============================================================
 // Helpers
@@ -986,8 +988,10 @@ function PhaseDetailView({
 // ============================================================
 
 interface PhaseCardsTabProps {
-  /** Usado nos hrefs das task rows. */
+  /** Usado nos hrefs das task rows e no POST de criar bloco. */
   projectId?: string;
+  /** Nome do projeto — exibido no breadcrumb do CreatePhaseModal. */
+  projectName?: string;
   /** Mantido por compatibilidade. */
   issues?: unknown[];
 }
@@ -1013,10 +1017,10 @@ function SkeletonGrid() {
   );
 }
 
-function EmptyPhases() {
+function EmptyPhases({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-12 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-zinc-500">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-12 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
         <Layers className="h-5 w-5" />
       </div>
       <p className="text-[14px] font-medium text-zinc-300">
@@ -1026,6 +1030,14 @@ function EmptyPhases() {
         Crie blocos (fases) para organizar as tasks do projeto. Tasks sem bloco
         aparecerao no bloco &quot;Sem bloco&quot;.
       </p>
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Criar primeiro bloco
+      </button>
     </div>
   );
 }
@@ -1092,9 +1104,10 @@ function PhaseDetailConnected({
 // PhaseCardsTab — componente raiz (conectado ao backend)
 // ============================================================
 
-export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
+export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
   const [sortBy, setSortBy] = useState<SortKey>("urgency");
   const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   // 1. Lista de fases do projeto
   const {
@@ -1200,11 +1213,23 @@ export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
     );
   }
 
+  // Modal de criar bloco — montado uma vez, controlado por createOpen.
+  // Compartilhado entre os 2 ramos de render (vazio e com fases).
+  const createPhaseModal = projectId ? (
+    <CreatePhaseModal
+      open={createOpen}
+      onOpenChange={setCreateOpen}
+      projectId={projectId}
+      projectName={projectName}
+    />
+  ) : null;
+
   // Vazio
   if (topLevelPhases.length === 0) {
     return (
       <div className="space-y-6 p-4">
-        <EmptyPhases />
+        <EmptyPhases onCreate={() => setCreateOpen(true)} />
+        {createPhaseModal}
       </div>
     );
   }
@@ -1221,7 +1246,18 @@ export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
             {topLevelPhases.length === 1 ? "bloco" : "blocos"}
           </span>
         </h2>
-        <SortDropdown value={sortBy} onChange={setSortBy} />
+        <div className="flex items-center gap-2">
+          <SortDropdown value={sortBy} onChange={setSortBy} />
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            disabled={!projectId}
+            className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Novo bloco
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
@@ -1239,6 +1275,8 @@ export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
             adicionar, criar phasesApi.countOrphanTasks(projectId) e
             re-renderizar aqui condicional ao count > 0. */}
       </div>
+
+      {createPhaseModal}
     </div>
   );
 }

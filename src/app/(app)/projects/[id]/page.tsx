@@ -296,7 +296,11 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
             {activeTab === "issues" && (
-              <PhaseCardsTab projectId={projectId} issues={issuesList} />
+              <PhaseCardsTab
+                projectId={projectId}
+                projectName={project?.nome}
+                issues={issuesList}
+              />
             )}
             {activeTab === "members" && (
               <MembersTab
