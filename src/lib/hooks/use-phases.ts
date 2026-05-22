@@ -75,6 +75,62 @@ export function usePhaseAllTasks(
 }
 
 /**
+ * Soft-delete de uma fase (cascade automatico no backend) e invalidacao
+ * agressiva do cache: a listagem do projeto refetcha, e os queries
+ * especificos da fase deletada sao removidos (ja nao existem).
+ *
+ * Se a fase tinha pai (sub-fase), invalida tambem metricas e tasks do
+ * pai para refletir a queda imediata em "X sub-blocos".
+ */
+export function useDeletePhase(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { phaseId: string; idPai?: string | null }) =>
+      phasesApi.delete(input.phaseId),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.phases.list(projectId),
+      });
+      // Remove queries especificas da fase deletada (cache stale).
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.phases.metrics(vars.phaseId),
+      });
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.phases.allTasks(vars.phaseId),
+      });
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.phases.criticalTasks(vars.phaseId),
+      });
+      // Invalida pai se for sub-fase (contagem de sub-blocos muda).
+      if (vars.idPai) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.phases.metrics(vars.idPai),
+        });
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.phases.allTasks(vars.idPai),
+        });
+      }
+      toast.success("Bloco arquivado");
+    },
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+        message?: string;
+      };
+      const status = err.response?.status;
+      const msg = err.response?.data?.message;
+      if (status === 403) {
+        toast.error("Sem permissao para excluir este bloco.");
+      } else if (status === 404) {
+        toast.error("Bloco nao encontrado ou ja excluido.");
+      } else {
+        toast.error(msg || err.message || "Falha ao excluir bloco.");
+      }
+    },
+  });
+}
+
+/**
  * Cria uma nova fase (ADR-V2-050) e invalida a listagem do projeto.
  *
  * Mostra toast de sucesso/erro com mensagens claras por status code

@@ -30,9 +30,11 @@ import {
   Layers,
   ListChecks,
   Loader2,
+  MoreHorizontal,
   Plus,
   Sparkles,
   Target,
+  Trash2,
   TrendingUp,
   XCircle,
 } from "lucide-react";
@@ -41,6 +43,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -64,6 +67,7 @@ import {
 import { QUERY_KEYS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePhaseModal } from "@/components/projects/create-phase-modal";
+import { DeletePhaseDialog } from "@/components/projects/delete-phase-dialog";
 
 // ============================================================
 // Helpers
@@ -392,26 +396,40 @@ function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
 function PhaseCard({
   phase,
   onOpen,
+  onDelete,
 }: {
   phase: PhaseCardData;
   onOpen: (phase: PhaseCardData) => void;
+  /** Quando omitido, o menu de acoes nao eh renderizado. */
+  onDelete?: (phase: PhaseCardData) => void;
 }) {
   const deadline = deadlineLabel(phase.deadline);
   const isAtRisk = phase.status === "at-risk" || phase.status === "blocked";
 
+  // Refatorado de <button> para <div role="button">: evita HTML invalido
+  // (button dentro de button) ao aninhar o DropdownMenuTrigger.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen(phase);
+    }
+  };
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(phase)}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "group relative flex flex-col gap-3 rounded-xl border bg-zinc-950/60 p-5 text-left",
+        "group relative flex cursor-pointer flex-col gap-3 rounded-xl border bg-zinc-950/60 p-5 text-left",
         "transition-all duration-200",
         "hover:border-zinc-700 hover:bg-zinc-900/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
         isAtRisk ? "border-rose-500/20" : "border-zinc-800",
       )}
     >
-      {/* Linha 1: status + sub-fases badge */}
+      {/* Linha 1: status + sub-fases badge + menu acoes (hover) */}
       <div className="flex items-center justify-between gap-2">
         <StatusPill status={phase.status} />
         <div className="flex items-center gap-2">
@@ -426,6 +444,43 @@ function PhaseCard({
               <Layers className="h-3 w-3" />
               {phase.subPhasesCount}
             </span>
+          )}
+          {onDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Acoes do bloco ${phase.name}`}
+                  title="Acoes"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded text-zinc-500",
+                    "opacity-0 transition-opacity hover:bg-zinc-800 hover:text-zinc-200",
+                    "group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
+                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50",
+                  )}
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onClick={(e) => e.stopPropagation()}
+                className="w-44"
+              >
+                <DropdownMenuItem
+                  className="text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(phase);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  Excluir bloco
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -467,7 +522,7 @@ function PhaseCard({
           <ChevronRight className="h-4 w-4 text-zinc-700 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-zinc-400" />
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -822,10 +877,12 @@ function PhaseDetailView({
   phase,
   projectId,
   onBack,
+  onDelete,
 }: {
   phase: PhaseCardData;
   projectId?: string;
   onBack: () => void;
+  onDelete?: (phase: PhaseCardData) => void;
 }) {
   const deadline = deadlineLabel(phase.deadline);
   const grouped = useMemo(() => {
@@ -840,7 +897,7 @@ function PhaseDetailView({
 
   return (
     <div className="space-y-5 p-4">
-      {/* Breadcrumb + back */}
+      {/* Breadcrumb + back + acoes */}
       <div className="flex items-center gap-2 text-[12px] text-zinc-500">
         <button
           type="button"
@@ -852,6 +909,29 @@ function PhaseDetailView({
         </button>
         <span className="text-zinc-700">/</span>
         <span className="text-zinc-300">{phase.name}</span>
+        {onDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Acoes do bloco ${phase.name}`}
+                title="Acoes"
+                className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 data-[state=open]:bg-zinc-900 data-[state=open]:text-zinc-200"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem
+                className="text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                onClick={() => onDelete(phase)}
+              >
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                Excluir bloco
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Hero do bloco */}
@@ -1051,12 +1131,14 @@ interface PhaseCardConnectedProps {
   subPhasesCount: number;
   projectId?: string;
   onOpen: (phase: Phase) => void;
+  onDelete?: (phase: Phase) => void;
 }
 
 function PhaseCardConnected({
   phase,
   subPhasesCount,
   onOpen,
+  onDelete,
 }: PhaseCardConnectedProps) {
   // Metrics ja foram pre-fetchadas no parent via useQueries — esta query
   // hita o cache instantaneamente.
@@ -1069,7 +1151,13 @@ function PhaseCardConnected({
     [phase, metrics, tasks, subPhasesCount],
   );
 
-  return <PhaseCard phase={cardData} onOpen={() => onOpen(phase)} />;
+  return (
+    <PhaseCard
+      phase={cardData}
+      onOpen={() => onOpen(phase)}
+      onDelete={onDelete ? () => onDelete(phase) : undefined}
+    />
+  );
 }
 
 // ============================================================
@@ -1081,11 +1169,13 @@ function PhaseDetailConnected({
   subPhasesCount,
   projectId,
   onBack,
+  onDelete,
 }: {
   phase: Phase;
   subPhasesCount: number;
   projectId?: string;
   onBack: () => void;
+  onDelete?: (phase: Phase) => void;
 }) {
   const { data: metrics } = usePhaseMetrics(phase.id);
   const { data: allTasks } = usePhaseAllTasks(phase.id);
@@ -1096,7 +1186,12 @@ function PhaseDetailConnected({
   );
 
   return (
-    <PhaseDetailView phase={cardData} projectId={projectId} onBack={onBack} />
+    <PhaseDetailView
+      phase={cardData}
+      projectId={projectId}
+      onBack={onBack}
+      onDelete={onDelete ? () => onDelete(phase) : undefined}
+    />
   );
 }
 
@@ -1108,6 +1203,9 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
   const [sortBy, setSortBy] = useState<SortKey>("urgency");
   const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  // Quando != null, o DeletePhaseDialog abre. Compartilhado por todos
+  // os triggers (cards no grid + botao no drill-in).
+  const [deletePhase, setDeletePhase] = useState<Phase | null>(null);
 
   // 1. Lista de fases do projeto
   const {
@@ -1180,14 +1278,42 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
     ? (allPhases ?? []).find((p) => p.id === openPhaseId)
     : null;
 
+  // Dialog de delete — montado uma vez, controlado por deletePhase.
+  // Compartilhado entre todos os triggers (cards no grid + botao no drill-in).
+  const deletePhaseDialog =
+    projectId && deletePhase ? (
+      <DeletePhaseDialog
+        open={!!deletePhase}
+        onOpenChange={(o) => !o && setDeletePhase(null)}
+        projectId={projectId}
+        phase={{
+          id: deletePhase.id,
+          nome: deletePhase.nome,
+          idPai: deletePhase.idPai,
+        }}
+        subPhasesCount={subPhasesByParent.get(deletePhase.id) ?? 0}
+        onDeleted={() => {
+          // Se a fase deletada esta aberta no drill-in, volta pro grid.
+          if (openPhaseId === deletePhase.id) {
+            setOpenPhaseId(null);
+          }
+          setDeletePhase(null);
+        }}
+      />
+    ) : null;
+
   if (openPhase) {
     return (
-      <PhaseDetailConnected
-        phase={openPhase}
-        subPhasesCount={subPhasesByParent.get(openPhase.id) ?? 0}
-        projectId={projectId}
-        onBack={() => setOpenPhaseId(null)}
-      />
+      <>
+        <PhaseDetailConnected
+          phase={openPhase}
+          subPhasesCount={subPhasesByParent.get(openPhase.id) ?? 0}
+          projectId={projectId}
+          onBack={() => setOpenPhaseId(null)}
+          onDelete={(p) => setDeletePhase(p)}
+        />
+        {deletePhaseDialog}
+      </>
     );
   }
 
@@ -1260,6 +1386,7 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
         </div>
       </div>
 
+      {deletePhaseDialog}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
         {sortedPhases.map(({ phase, data }) => (
           <PhaseCardConnected
@@ -1268,6 +1395,7 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
             subPhasesCount={data.subPhasesCount}
             projectId={projectId}
             onOpen={(p) => setOpenPhaseId(p.id)}
+            onDelete={(p) => setDeletePhase(p)}
           />
         ))}
         {/* OrphanCard removido na v1 conectada: backend ainda nao expoe

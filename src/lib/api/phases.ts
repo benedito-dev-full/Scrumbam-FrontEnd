@@ -202,4 +202,23 @@ export const phasesApi = {
     });
     return mapPhase(data);
   },
+
+  /**
+   * Soft-delete de uma fase (ADR-V2-047 / ADR-V2-050).
+   *
+   * Backend (`TasksService.delete`) detecta automaticamente que a task eh
+   * uma PHASE (idClasse=-200) e aplica cascata via `phaseHierarchy.
+   * softDeleteCascade(taskId)` — marca a fase + TODOS os descendentes
+   * (sub-fases e tasks folha) como `excluido=true`. Emite evento
+   * `phase.deleted` (webhook) com `{ phaseId, projectId, cascade,
+   * affected }` apos commit.
+   *
+   * Endpoint retorna 204 No Content (void) — frontend nao recebe a
+   * contagem de afetados. Para mostrar previa de impacto antes de
+   * deletar, o componente DeletePhaseDialog combina metricas
+   * (usePhaseMetrics) + contagem de sub-fases ja calculada no parent.
+   */
+  delete: async (phaseId: string): Promise<void> => {
+    await api.delete(`${ENDPOINTS.TASKS}/${phaseId}`);
+  },
 };
