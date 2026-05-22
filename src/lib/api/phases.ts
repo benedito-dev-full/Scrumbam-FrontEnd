@@ -1,0 +1,141 @@
+/**
+ * API layer para Fases (DTask idClasse=-200 PHASE).
+ *
+ * ADR-V2-047: DTask fases via idPai. O backend expoe:
+ *   GET /tasks?idClasse=PHASE&idProject={projectId}  — lista fases
+ *   GET /tasks/{id}/metrics                          — metricas da fase
+ *   GET /tasks?idPai={phaseId}&limit=10              — tasks criticas (lazy)
+ *
+ * Nenhum endpoint novo foi criado — apenas consumo canonico (Pilar 2).
+ */
+
+import api from "./client";
+import { ENDPOINTS } from "./endpoints";
+
+// ============================================================
+// Tipos exportados
+// ============================================================
+
+export interface Phase {
+  /** ID da fase (DTask.chave como string). */
+  id: string;
+  /** Nome da fase (DTask.nome). */
+  nome: string;
+  /** Descricao livre. */
+  descricao?: string | null;
+  /** Ordem de exibicao (DTask.ordem). */
+  ordem?: number | null;
+  /** ID da task pai (DTask.idPai), null em fases de topo. */
+  idPai?: string | null;
+}
+
+export interface PhaseMetrics {
+  total: number;
+  done: number;
+  failed: number;
+  /** Tasks em execucao (EXECUTING). */
+  inProgress: number;
+  /** Percentual concluido (0-100). */
+  percent: number;
+}
+
+export interface PhaseCriticalTask {
+  id: string;
+  title: string;
+  /** Status V3 (EXECUTING, FAILED, etc.). */
+  status: string;
+  assigneeName?: string | null;
+  updatedAt: string;
+}
+
+// ============================================================
+// Mappers internos
+// ============================================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPhase(raw: any): Phase {
+  return {
+    id: String(raw.chave ?? raw.id ?? ""),
+    nome: String(raw.nome ?? raw.name ?? raw.titulo ?? ""),
+    descricao: raw.descricao ?? raw.description ?? null,
+    ordem: raw.ordem != null ? Number(raw.ordem) : null,
+    idPai:
+      raw.idPai != null || raw.idParentTask != null
+        ? String(raw.idPai ?? raw.idParentTask)
+        : null,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCriticalTask(raw: any): PhaseCriticalTask {
+  // O status pode vir como string enum (EXECUTING) ou como objeto { codigo, nome }
+  let status = "inbox";
+  if (raw.status) {
+    if (typeof raw.status === "string") {
+      status = raw.status.toLowerCase();
+    } else if (raw.status.codigo) {
+      status = String(raw.status.codigo).toLowerCase();
+    } else if (raw.status.code) {
+      status = String(raw.status.code).toLowerCase();
+    }
+  }
+
+  const assigneeName =
+    raw.assignee?.nome ?? raw.assignee?.name ?? raw.assigneeName ?? null;
+
+  return {
+    id: String(raw.chave ?? raw.id ?? ""),
+    title: String(raw.titulo ?? raw.name ?? raw.nome ?? ""),
+    status,
+    assigneeName: assigneeName ? String(assigneeName) : null,
+    updatedAt: String(raw.atualizadoEm ?? raw.updatedAt ?? new Date().toISOString()),
+  };
+}
+
+// ============================================================
+// API client
+// ============================================================
+
+export const phasesApi = {
+  /**
+   * Lista todas as fases de um projeto.
+   * Usa idClasse=PHASE (codigo canonico ADR-V2-047, chave=-200).
+   */
+  listByProject: async (projectId: string): Promise<Phase[]> => {
+    const { data } = await api.get(ENDPOINTS.TASKS, {
+      params: { idClasse: "PHASE", idProject: projectId },
+    });
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return items.map((item: any) => mapPhase(item));
+  },
+
+  /**
+   * Retorna metricas de progresso de uma fase.
+   * Endpoint: GET /tasks/{phaseId}/metrics
+   */
+  getMetrics: async (phaseId: string): Promise<PhaseMetrics> => {
+    const { data } = await api.get(ENDPOINTS.TASK_METRICS(phaseId));
+    return {
+      total: Number(data.total ?? 0),
+      done: Number(data.done ?? 0),
+      failed: Number(data.failed ?? 0),
+      inProgress: Number(data.inProgress ?? data.in_progress ?? 0),
+      percent: Number(data.percent ?? 0),
+    };
+  },
+
+  /**
+   * Retorna tasks criticas (EXECUTING + FAILED) de uma fase.
+   * Carregado de forma lazy — apenas quando o bloco e expandido.
+   * Endpoint: GET /tasks?idPai={phaseId}&limit=10
+   */
+  getCriticalTasks: async (phaseId: string): Promise<PhaseCriticalTask[]> => {
+    const { data } = await api.get(ENDPOINTS.TASKS, {
+      params: { idPai: phaseId, limit: 10 },
+    });
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return items.map((item: any) => mapCriticalTask(item));
+  },
+};

@@ -300,4 +300,10 @@ export const QUERY_KEYS = {
     projects: (folderId: string) => ["folder", folderId, "projects"] as const,
     unassigned: (orgId: string) => ["folders", "unassigned", orgId] as const,
   },
+  phases: {
+    list: (projectId: string) => ["phases", projectId] as const,
+    metrics: (phaseId: string) => ["phases", phaseId, "metrics"] as const,
+    criticalTasks: (phaseId: string) =>
+      ["phases", phaseId, "critical-tasks"] as const,
+  },
 } as const;

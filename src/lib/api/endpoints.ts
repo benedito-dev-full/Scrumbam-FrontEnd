@@ -41,6 +41,7 @@ export const ENDPOINTS = {
   TASKS: "/tasks",
   TASK: (id: string) => `/tasks/${id}`,
   TASK_STATUS: (id: string) => `/tasks/${id}/status`,
+  TASK_METRICS: (id: string) => `/tasks/${id}/metrics`,
   TASK_SPRINT: (id: string) => `/tasks/${id}/sprint`,
   TASK_TAGS: (id: string) => `/tasks/${id}/tags`,
   TASK_TAG: (id: string, tagId: string) => `/tasks/${id}/tags/${tagId}`,
