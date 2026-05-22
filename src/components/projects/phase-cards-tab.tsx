@@ -62,6 +62,8 @@ import {
   usePhaseMetrics,
   usePhaseAllTasks,
 } from "@/lib/hooks/use-phases";
+import { useProjectViewPreference } from "@/lib/hooks/use-project-view-preference";
+import { ViewToggle } from "@/components/projects/view-toggle";
 import { QUERY_KEYS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePhaseModal } from "@/components/projects/create-phase-modal";
@@ -1177,6 +1179,10 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
   // Quando != null, o DeletePhaseDialog abre. Compartilhado por todos
   // os triggers (cards no grid + botao no drill-in).
   const [deletePhase, setDeletePhase] = useState<Phase | null>(null);
+  // Visao escolhida (cards|kanban|tree|list). Persistida em localStorage
+  // por projeto. Hoje so 'cards' esta implementado; outras renderizam
+  // placeholder "Em breve".
+  const { view, setView } = useProjectViewPreference(projectId);
 
   // 1. Lista de fases do projeto
   const {
@@ -1331,18 +1337,28 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
     );
   }
 
+  // Placeholder pra visoes ainda nao implementadas (Kanban/Hierarquia/Lista).
+  // Se acidentalmente o localStorage tiver um valor nao-cards, mostra
+  // mensagem clara em vez de tela em branco. Toggle ja desabilita os
+  // botoes, mas isso e cinto de seguranca extra.
+  const viewComingSoon = view !== "cards";
+
   return (
     <div className="space-y-6 p-4">
       <KpiHero phases={kpiInput} />
 
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-400">
-          Blocos do projeto
-          <span className="ml-2 text-[11px] font-normal normal-case text-zinc-500">
-            {topLevelPhases.length}{" "}
-            {topLevelPhases.length === 1 ? "bloco" : "blocos"}
-          </span>
-        </h2>
+      {/* Toggle de visao + barra de controles na mesma linha visual */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <ViewToggle value={view} onChange={setView} />
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-400">
+            Blocos
+            <span className="ml-2 text-[11px] font-normal normal-case text-zinc-500">
+              {topLevelPhases.length}{" "}
+              {topLevelPhases.length === 1 ? "bloco" : "blocos"}
+            </span>
+          </h2>
+        </div>
         <div className="flex items-center gap-2">
           <SortDropdown value={sortBy} onChange={setSortBy} />
           <button
@@ -1358,22 +1374,34 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
       </div>
 
       {deletePhaseDialog}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
-        {sortedPhases.map(({ phase, data }) => (
-          <PhaseCardConnected
-            key={phase.id}
-            phase={phase}
-            subPhasesCount={data.subPhasesCount}
-            projectId={projectId}
-            onOpen={(p) => setOpenPhaseId(p.id)}
-            onDelete={(p) => setDeletePhase(p)}
-          />
-        ))}
-        {/* OrphanCard removido na v1 conectada: backend ainda nao expoe
-            contagem de tasks orfas (sem idPai) em endpoint dedicado. Para
-            adicionar, criar phasesApi.countOrphanTasks(projectId) e
-            re-renderizar aqui condicional ao count > 0. */}
-      </div>
+
+      {viewComingSoon ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-12 text-center">
+          <p className="text-[13px] font-medium text-zinc-300">
+            Esta visao chega em breve
+          </p>
+          <p className="max-w-md text-[12px] text-zinc-500">
+            Por enquanto, volte para a visao &quot;Cards&quot; no toggle acima.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+          {sortedPhases.map(({ phase, data }) => (
+            <PhaseCardConnected
+              key={phase.id}
+              phase={phase}
+              subPhasesCount={data.subPhasesCount}
+              projectId={projectId}
+              onOpen={(p) => setOpenPhaseId(p.id)}
+              onDelete={(p) => setDeletePhase(p)}
+            />
+          ))}
+          {/* OrphanCard removido na v1 conectada: backend ainda nao expoe
+              contagem de tasks orfas (sem idPai) em endpoint dedicado. Para
+              adicionar, criar phasesApi.countOrphanTasks(projectId) e
+              re-renderizar aqui condicional ao count > 0. */}
+        </div>
+      )}
 
       {createPhaseModal}
     </div>
