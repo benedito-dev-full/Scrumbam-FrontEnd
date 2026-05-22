@@ -30,7 +30,6 @@ import {
   Layers,
   ListChecks,
   Loader2,
-  MoreHorizontal,
   Plus,
   Sparkles,
   Target,
@@ -43,7 +42,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -446,41 +444,25 @@ function PhaseCard({
             </span>
           )}
           {onDelete && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Acoes do bloco ${phase.name}`}
-                  title="Acoes"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded text-zinc-500",
-                    "opacity-0 transition-opacity hover:bg-zinc-800 hover:text-zinc-200",
-                    "group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
-                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50",
-                  )}
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                onClick={(e) => e.stopPropagation()}
-                className="w-44"
-              >
-                <DropdownMenuItem
-                  className="text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(phase);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-3.5 w-3.5" />
-                  Excluir bloco
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              type="button"
+              aria-label={`Excluir bloco ${phase.name}`}
+              title="Excluir bloco"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(phase);
+              }}
+              onKeyDown={(e) => e.stopPropagation()}
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded text-zinc-500",
+                "opacity-0 transition-all",
+                "hover:bg-rose-500/10 hover:text-rose-400",
+                "group-hover:opacity-100 focus-visible:opacity-100",
+                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500/50",
+              )}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </div>
@@ -910,27 +892,16 @@ function PhaseDetailView({
         <span className="text-zinc-700">/</span>
         <span className="text-zinc-300">{phase.name}</span>
         {onDelete && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label={`Acoes do bloco ${phase.name}`}
-                title="Acoes"
-                className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 data-[state=open]:bg-zinc-900 data-[state=open]:text-zinc-200"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                className="text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
-                onClick={() => onDelete(phase)}
-              >
-                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Excluir bloco
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            type="button"
+            aria-label={`Excluir bloco ${phase.name}`}
+            title="Excluir bloco"
+            onClick={() => onDelete(phase)}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-rose-500/20 bg-rose-500/5 px-2.5 py-1 text-[12px] font-medium text-rose-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500/50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Excluir bloco
+          </button>
         )}
       </div>
 
