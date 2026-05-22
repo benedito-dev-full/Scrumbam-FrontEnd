@@ -88,7 +88,9 @@ function mapCriticalTask(raw: any): PhaseCriticalTask {
     title: String(raw.titulo ?? raw.name ?? raw.nome ?? ""),
     status,
     assigneeName: assigneeName ? String(assigneeName) : null,
-    updatedAt: String(raw.atualizadoEm ?? raw.updatedAt ?? new Date().toISOString()),
+    updatedAt: String(
+      raw.atualizadoEm ?? raw.updatedAt ?? new Date().toISOString(),
+    ),
   };
 }
 
@@ -133,6 +135,25 @@ export const phasesApi = {
   getCriticalTasks: async (phaseId: string): Promise<PhaseCriticalTask[]> => {
     const { data } = await api.get(ENDPOINTS.TASKS, {
       params: { idPai: phaseId, limit: 10 },
+    });
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return items.map((item: any) => mapCriticalTask(item));
+  },
+
+  /**
+   * Retorna TODAS as tasks filhas de uma fase (sem filtro de status).
+   * Usado no drill-in (PhaseDetailView) para listar tasks agrupadas por status.
+   * Endpoint: GET /tasks?idPai={phaseId}&limit=200
+   *
+   * Limite alto (200) cobre fases razoaveis. Se uma fase tiver mais que isso,
+   * trocar para paginacao cursor.
+   */
+  listAllTasksOfPhase: async (
+    phaseId: string,
+  ): Promise<PhaseCriticalTask[]> => {
+    const { data } = await api.get(ENDPOINTS.TASKS, {
+      params: { idPai: phaseId, limit: 200 },
     });
     const items = Array.isArray(data) ? data : (data?.items ?? []);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

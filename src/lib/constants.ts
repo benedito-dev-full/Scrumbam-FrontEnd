@@ -305,5 +305,6 @@ export const QUERY_KEYS = {
     metrics: (phaseId: string) => ["phases", phaseId, "metrics"] as const,
     criticalTasks: (phaseId: string) =>
       ["phases", phaseId, "critical-tasks"] as const,
+    allTasks: (phaseId: string) => ["phases", phaseId, "all-tasks"] as const,
   },
 } as const;

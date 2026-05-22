@@ -44,16 +44,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useQueries } from "@tanstack/react-query";
 import {
   aggregateKpis,
-  MOCK_ORPHAN_COUNT,
-  MOCK_PHASE_CARDS,
   type PhaseCardData,
   type PhasePriority,
   type PhaseStatus,
   type PhaseTaskMock,
   type TaskStatus,
 } from "@/lib/mocks/phase-cards-mock";
+import { phasesApi, type Phase } from "@/lib/api/phases";
+import { buildPhaseCardData } from "@/lib/api/phase-card-adapter";
+import {
+  usePhases,
+  usePhaseMetrics,
+  usePhaseAllTasks,
+} from "@/lib/hooks/use-phases";
+import { QUERY_KEYS } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ============================================================
 // Helpers
@@ -465,6 +473,7 @@ function PhaseCard({
 // OrphanCard
 // ============================================================
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- mantido para quando backend expor count de tasks orfas
 function OrphanCard({ count, onOpen }: { count: number; onOpen: () => void }) {
   if (count <= 0) return null;
   return (
@@ -983,53 +992,252 @@ interface PhaseCardsTabProps {
   issues?: unknown[];
 }
 
+// ============================================================
+// SkeletonGrid + EmptyState
+// ============================================================
+
+function SkeletonGrid() {
+  return (
+    <div className="space-y-6 p-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-lg" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-56 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyPhases() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-12 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-zinc-500">
+        <Layers className="h-5 w-5" />
+      </div>
+      <p className="text-[14px] font-medium text-zinc-300">
+        Nenhum bloco neste projeto ainda
+      </p>
+      <p className="max-w-md text-[12px] text-zinc-500">
+        Crie blocos (fases) para organizar as tasks do projeto. Tasks sem bloco
+        aparecerao no bloco &quot;Sem bloco&quot;.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================
+// PhaseCardConnected — wrapper que liga 1 card aos hooks
+// ============================================================
+
+interface PhaseCardConnectedProps {
+  phase: Phase;
+  subPhasesCount: number;
+  projectId?: string;
+  onOpen: (phase: Phase) => void;
+}
+
+function PhaseCardConnected({
+  phase,
+  subPhasesCount,
+  onOpen,
+}: PhaseCardConnectedProps) {
+  // Metrics ja foram pre-fetchadas no parent via useQueries — esta query
+  // hita o cache instantaneamente.
+  const { data: metrics } = usePhaseMetrics(phase.id);
+  // Tasks usadas apenas para extrair assignees + lastActivity (display).
+  const { data: tasks } = usePhaseAllTasks(phase.id);
+
+  const cardData = useMemo(
+    () => buildPhaseCardData(phase, metrics, tasks ?? [], subPhasesCount),
+    [phase, metrics, tasks, subPhasesCount],
+  );
+
+  return <PhaseCard phase={cardData} onOpen={() => onOpen(phase)} />;
+}
+
+// ============================================================
+// PhaseDetailConnected — wrapper do drill-in
+// ============================================================
+
+function PhaseDetailConnected({
+  phase,
+  subPhasesCount,
+  projectId,
+  onBack,
+}: {
+  phase: Phase;
+  subPhasesCount: number;
+  projectId?: string;
+  onBack: () => void;
+}) {
+  const { data: metrics } = usePhaseMetrics(phase.id);
+  const { data: allTasks } = usePhaseAllTasks(phase.id);
+
+  const cardData = useMemo(
+    () => buildPhaseCardData(phase, metrics, allTasks ?? [], subPhasesCount),
+    [phase, metrics, allTasks, subPhasesCount],
+  );
+
+  return (
+    <PhaseDetailView phase={cardData} projectId={projectId} onBack={onBack} />
+  );
+}
+
+// ============================================================
+// PhaseCardsTab — componente raiz (conectado ao backend)
+// ============================================================
+
 export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
-  const phases = MOCK_PHASE_CARDS;
   const [sortBy, setSortBy] = useState<SortKey>("urgency");
   const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
 
-  const sorted = useMemo(() => sortPhases(phases, sortBy), [phases, sortBy]);
+  // 1. Lista de fases do projeto
+  const {
+    data: allPhases,
+    isLoading: phasesLoading,
+    error: phasesError,
+  } = usePhases(projectId ?? "");
+
+  // 2. So fases de topo (idPai null) vao no grid. Sub-fases aparecem
+  //    no drill-in da fase pai.
+  const topLevelPhases = useMemo(
+    () => (allPhases ?? []).filter((p) => !p.idPai),
+    [allPhases],
+  );
+
+  // 3. Pre-fetch de metricas para TODAS as fases de topo — necessario
+  //    para sort (urgencia/percent/prioridade dependem de metrics).
+  //    Mesma queryKey de usePhaseMetrics → cache compartilhado, os cards
+  //    nao refazem fetch.
+  const metricsQueries = useQueries({
+    queries: topLevelPhases.map((p) => ({
+      queryKey: QUERY_KEYS.phases.metrics(p.id),
+      queryFn: () => phasesApi.getMetrics(p.id),
+      staleTime: 30 * 1000,
+      enabled: !!p.id,
+    })),
+  });
+
+  // 4. Conta sub-fases por id de pai (1 pass, O(N)).
+  const subPhasesByParent = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of allPhases ?? []) {
+      if (!p.idPai) continue;
+      map.set(p.idPai, (map.get(p.idPai) ?? 0) + 1);
+    }
+    return map;
+  }, [allPhases]);
+
+  // 5. Sort: enriquece cada fase com metricas pre-fetchadas, ordena, e
+  //    devolve apenas a Phase original (cards refazem o adapter internamente).
+  const sortedPhases = useMemo(() => {
+    const enriched = topLevelPhases.map((p, i) => ({
+      phase: p,
+      data: buildPhaseCardData(
+        p,
+        metricsQueries[i]?.data,
+        [], // tasks nao precisa para sort
+        subPhasesByParent.get(p.id) ?? 0,
+      ),
+    }));
+    const sortedData = sortPhases(
+      enriched.map((e) => e.data),
+      sortBy,
+    );
+    // Reordena `phases` originais pela ordem de sortedData (match por id).
+    const order = new Map(sortedData.map((d, i) => [d.id, i]));
+    return [...enriched].sort(
+      (a, b) => (order.get(a.phase.id) ?? 0) - (order.get(b.phase.id) ?? 0),
+    );
+  }, [topLevelPhases, metricsQueries, subPhasesByParent, sortBy]);
+
+  // KPIs agregados: usa as PhaseCardData enriquecidas (com metricas).
+  const kpiInput = useMemo(
+    () => sortedPhases.map((e) => e.data),
+    [sortedPhases],
+  );
+
+  // Drill-in
   const openPhase = openPhaseId
-    ? phases.find((p) => p.id === openPhaseId)
+    ? (allPhases ?? []).find((p) => p.id === openPhaseId)
     : null;
 
-  // Drill-in view
   if (openPhase) {
     return (
-      <PhaseDetailView
+      <PhaseDetailConnected
         phase={openPhase}
+        subPhasesCount={subPhasesByParent.get(openPhase.id) ?? 0}
         projectId={projectId}
         onBack={() => setOpenPhaseId(null)}
       />
     );
   }
 
+  // Loading inicial
+  if (phasesLoading && !allPhases) {
+    return <SkeletonGrid />;
+  }
+
+  // Erro
+  if (phasesError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-8 text-center">
+        <AlertTriangle className="h-5 w-5 text-rose-400" />
+        <p className="text-[13px] font-medium text-rose-300">
+          Erro ao carregar blocos
+        </p>
+        <p className="text-[11.5px] text-rose-400/70">
+          {phasesError instanceof Error
+            ? phasesError.message
+            : "Tente recarregar a pagina."}
+        </p>
+      </div>
+    );
+  }
+
+  // Vazio
+  if (topLevelPhases.length === 0) {
+    return (
+      <div className="space-y-6 p-4">
+        <EmptyPhases />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-4">
-      {/* Hero KPIs */}
-      <KpiHero phases={sorted} />
+      <KpiHero phases={kpiInput} />
 
-      {/* Barra de controles */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-400">
           Blocos do projeto
           <span className="ml-2 text-[11px] font-normal normal-case text-zinc-500">
-            {sorted.length} {sorted.length === 1 ? "bloco" : "blocos"}
+            {topLevelPhases.length}{" "}
+            {topLevelPhases.length === 1 ? "bloco" : "blocos"}
           </span>
         </h2>
         <SortDropdown value={sortBy} onChange={setSortBy} />
       </div>
 
-      {/* Grid de cards — gap-5 (mais respiravel), max 2 colunas no XL pra cards
-          maiores em vez de 3 colunas densas; em telas 2xl+ cresce p/ 3. */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
-        {sorted.map((p) => (
-          <PhaseCard key={p.id} phase={p} onOpen={() => setOpenPhaseId(p.id)} />
+        {sortedPhases.map(({ phase, data }) => (
+          <PhaseCardConnected
+            key={phase.id}
+            phase={phase}
+            subPhasesCount={data.subPhasesCount}
+            projectId={projectId}
+            onOpen={(p) => setOpenPhaseId(p.id)}
+          />
         ))}
-        <OrphanCard
-          count={MOCK_ORPHAN_COUNT}
-          onOpen={() => console.log("[PhaseCardsTab] open orphans")}
-        />
+        {/* OrphanCard removido na v1 conectada: backend ainda nao expoe
+            contagem de tasks orfas (sem idPai) em endpoint dedicado. Para
+            adicionar, criar phasesApi.countOrphanTasks(projectId) e
+            re-renderizar aqui condicional ao count > 0. */}
       </div>
     </div>
   );

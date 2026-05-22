@@ -56,3 +56,19 @@ export function usePhaseTasksCritical(
     staleTime: 15 * 1000,
   });
 }
+
+/**
+ * Todas as tasks de uma fase (sem filtro de status).
+ * Usado no drill-in para agrupar tasks por status.
+ */
+export function usePhaseAllTasks(
+  phaseId: string,
+  options: { enabled: boolean } = { enabled: true },
+) {
+  return useQuery({
+    queryKey: QUERY_KEYS.phases.allTasks(phaseId),
+    queryFn: () => phasesApi.listAllTasksOfPhase(phaseId),
+    enabled: options.enabled && !!phaseId,
+    staleTime: 15 * 1000,
+  });
+}
