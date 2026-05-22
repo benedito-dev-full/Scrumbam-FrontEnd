@@ -64,6 +64,7 @@ import {
 } from "@/lib/hooks/use-phases";
 import { useProjectViewPreference } from "@/lib/hooks/use-project-view-preference";
 import { ViewToggle } from "@/components/projects/view-toggle";
+import { PhaseViewTree } from "@/components/projects/phase-view-tree";
 import { QUERY_KEYS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePhaseModal } from "@/components/projects/create-phase-modal";
@@ -1176,8 +1177,13 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
   const [sortBy, setSortBy] = useState<SortKey>("urgency");
   const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  // Quando != null, o CreatePhaseModal cria sub-bloco DESSE pai em vez
+  // de bloco raiz. Acionado pelo botao "+ Sub-bloco" da Hierarquia.
+  const [createParentPhase, setCreateParentPhase] = useState<Phase | null>(
+    null,
+  );
   // Quando != null, o DeletePhaseDialog abre. Compartilhado por todos
-  // os triggers (cards no grid + botao no drill-in).
+  // os triggers (cards no grid + botao no drill-in + tree).
   const [deletePhase, setDeletePhase] = useState<Phase | null>(null);
   // Visao escolhida (cards|kanban|tree|list). Persistida em localStorage
   // por projeto. Hoje so 'cards' esta implementado; outras renderizam
@@ -1317,13 +1323,19 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
   }
 
   // Modal de criar bloco — montado uma vez, controlado por createOpen.
-  // Compartilhado entre os 2 ramos de render (vazio e com fases).
+  // Compartilhado entre todos os ramos de render. Quando createParentPhase
+  // != null, vira modo "criar sub-bloco" (passa parentPhaseId/Name).
   const createPhaseModal = projectId ? (
     <CreatePhaseModal
       open={createOpen}
-      onOpenChange={setCreateOpen}
+      onOpenChange={(o) => {
+        setCreateOpen(o);
+        if (!o) setCreateParentPhase(null);
+      }}
       projectId={projectId}
       projectName={projectName}
+      parentPhaseId={createParentPhase?.id}
+      parentPhaseName={createParentPhase?.nome}
     />
   ) : null;
 
@@ -1337,11 +1349,15 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
     );
   }
 
-  // Placeholder pra visoes ainda nao implementadas (Kanban/Hierarquia/Lista).
-  // Se acidentalmente o localStorage tiver um valor nao-cards, mostra
-  // mensagem clara em vez de tela em branco. Toggle ja desabilita os
-  // botoes, mas isso e cinto de seguranca extra.
-  const viewComingSoon = view !== "cards";
+  // Visoes ainda nao implementadas (Kanban/Lista). Cards e Tree estao
+  // ativos. Se localStorage tiver valor invalido, cai no placeholder.
+  const viewComingSoon = view !== "cards" && view !== "tree";
+
+  // Handler compartilhado pra criar sub-bloco: setar parent + abrir modal.
+  const handleCreateSubPhase = (parent: Phase) => {
+    setCreateParentPhase(parent);
+    setCreateOpen(true);
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -1375,16 +1391,19 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
 
       {deletePhaseDialog}
 
-      {viewComingSoon ? (
+      {viewComingSoon && (
         <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-12 text-center">
           <p className="text-[13px] font-medium text-zinc-300">
             Esta visao chega em breve
           </p>
           <p className="max-w-md text-[12px] text-zinc-500">
-            Por enquanto, volte para a visao &quot;Cards&quot; no toggle acima.
+            Por enquanto, escolha &quot;Cards&quot; ou &quot;Hierarquia&quot; no
+            toggle acima.
           </p>
         </div>
-      ) : (
+      )}
+
+      {view === "cards" && (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
           {sortedPhases.map(({ phase, data }) => (
             <PhaseCardConnected
@@ -1401,6 +1420,15 @@ export function PhaseCardsTab({ projectId, projectName }: PhaseCardsTabProps) {
               adicionar, criar phasesApi.countOrphanTasks(projectId) e
               re-renderizar aqui condicional ao count > 0. */}
         </div>
+      )}
+
+      {view === "tree" && (
+        <PhaseViewTree
+          allPhases={allPhases ?? []}
+          projectId={projectId}
+          onDelete={(p) => setDeletePhase(p)}
+          onCreateChild={handleCreateSubPhase}
+        />
       )}
 
       {createPhaseModal}
