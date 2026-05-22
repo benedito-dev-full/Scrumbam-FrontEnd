@@ -23,7 +23,7 @@ interface ViewOption {
 const OPTIONS: ViewOption[] = [
   { key: "cards", label: "Cards", icon: LayoutGrid, enabled: true },
   { key: "kanban", label: "Kanban", icon: Kanban, enabled: false },
-  { key: "tree", label: "Hierarquia", icon: ListTree, enabled: false },
+  { key: "tree", label: "Hierarquia", icon: ListTree, enabled: true },
   { key: "list", label: "Lista", icon: List, enabled: false },
 ];
 
