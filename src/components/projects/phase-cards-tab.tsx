@@ -3,26 +3,32 @@
 /**
  * PhaseCardsTab — visao macro do projeto em grid de cards.
  *
- * Versao V0 com dados MOCKADOS (src/lib/mocks/phase-cards-mock.ts).
+ * Versao V0.2 com dados MOCKADOS (src/lib/mocks/phase-cards-mock.ts).
  * Quando aprovado, trocar para hooks reais (usePhases + usePhaseMetrics).
  *
- * Design:
- *   - Hero strip com KPIs agregados (% projeto, totais, em risco, deadline).
- *   - Grid responsivo de PhaseCards (1/2/3 colunas).
- *   - Cada card: status pill, progress ring, stats inline, assignees, deadline.
- *   - Card "Sem bloco" para tasks orfas (idPai null).
- *   - Clique no card = drill-in (placeholder por enquanto — console.log).
+ * Mudancas v0.2:
+ *   - Espacamento maior entre cards (gap-5), cards mais respiraveis (ring 72,
+ *     descricao 1 linha) — menos densidade visual.
+ *   - Dropdown de ordenacao (urgencia, deadline, %, prioridade, nome).
+ *   - Drill-in real: clique no card substitui o grid por uma tela de detalhe
+ *     com header, KPIs do bloco e lista de tasks agrupadas por status.
  */
 
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
+  ArrowUpDown,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
+  CircleDashed,
   CircleDot,
+  Flag,
+  Flame,
   Inbox,
   Layers,
+  ListChecks,
   Loader2,
   Sparkles,
   Target,
@@ -31,11 +37,22 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   aggregateKpis,
   MOCK_ORPHAN_COUNT,
   MOCK_PHASE_CARDS,
   type PhaseCardData,
+  type PhasePriority,
   type PhaseStatus,
+  type PhaseTaskMock,
+  type TaskStatus,
 } from "@/lib/mocks/phase-cards-mock";
 
 // ============================================================
@@ -80,36 +97,40 @@ function deadlineLabel(iso?: string): {
 }
 
 // ============================================================
-// StatusPill — chip de status no canto superior do card
+// StatusPill
 // ============================================================
 
 const STATUS_META: Record<
   PhaseStatus,
-  { label: string; color: string; bg: string; border: string }
+  { label: string; color: string; bg: string; border: string; dot: string }
 > = {
   "on-track": {
     label: "No prazo",
     color: "text-emerald-300",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/30",
+    dot: "bg-emerald-400",
   },
   "at-risk": {
     label: "Em risco",
     color: "text-amber-300",
     bg: "bg-amber-500/10",
     border: "border-amber-500/30",
+    dot: "bg-amber-400",
   },
   blocked: {
     label: "Bloqueado",
     color: "text-rose-300",
     bg: "bg-rose-500/10",
     border: "border-rose-500/30",
+    dot: "bg-rose-400 animate-pulse",
   },
   done: {
     label: "Concluido",
     color: "text-zinc-300",
     bg: "bg-zinc-500/10",
     border: "border-zinc-500/30",
+    dot: "bg-zinc-400",
   },
 };
 
@@ -124,40 +145,84 @@ function StatusPill({ status }: { status: PhaseStatus }) {
         meta.border,
       )}
     >
-      <span
-        className={cn(
-          "h-1.5 w-1.5 rounded-full",
-          status === "on-track" && "bg-emerald-400",
-          status === "at-risk" && "bg-amber-400",
-          status === "blocked" && "bg-rose-400 animate-pulse",
-          status === "done" && "bg-zinc-400",
-        )}
-      />
+      <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
       {meta.label}
     </span>
   );
 }
 
 // ============================================================
-// ProgressRing — SVG circular grande (focal do card)
+// PriorityChip
+// ============================================================
+
+const PRIORITY_META: Record<
+  PhasePriority,
+  { label: string; color: string; bg: string }
+> = {
+  low: { label: "Baixa", color: "text-zinc-400", bg: "bg-zinc-500/10" },
+  medium: { label: "Media", color: "text-sky-300", bg: "bg-sky-500/10" },
+  high: { label: "Alta", color: "text-amber-300", bg: "bg-amber-500/10" },
+  urgent: { label: "Urgente", color: "text-rose-300", bg: "bg-rose-500/10" },
+};
+
+function PriorityChip({
+  priority,
+  compact = false,
+}: {
+  priority: PhasePriority;
+  compact?: boolean;
+}) {
+  const meta = PRIORITY_META[priority];
+  if (compact) {
+    return (
+      <span
+        title={`Prioridade: ${meta.label}`}
+        className={cn(
+          "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+          meta.color,
+          meta.bg,
+        )}
+      >
+        <Flame className="h-2.5 w-2.5" />
+        {meta.label}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium",
+        meta.color,
+        meta.bg,
+      )}
+    >
+      <Flag className="h-3 w-3" />
+      {meta.label}
+    </span>
+  );
+}
+
+// ============================================================
+// ProgressRing
 // ============================================================
 
 function ProgressRing({
   percent,
   status,
-  size = 84,
-  stroke = 7,
+  size = 72,
+  stroke = 6,
+  showLabel = true,
 }: {
   percent: number;
   status: PhaseStatus;
   size?: number;
   stroke?: number;
+  showLabel?: boolean;
 }) {
   const pct = Math.min(100, Math.max(0, percent));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dashoffset = circumference - (pct / 100) * circumference;
-
   const ringColor =
     status === "done"
       ? "stroke-emerald-400"
@@ -194,36 +259,47 @@ function ProgressRing({
           className={cn(ringColor, "transition-all duration-500 ease-out")}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[18px] font-semibold tabular-nums text-zinc-100">
-          {pct}
-          <span className="text-[11px] text-zinc-500">%</span>
-        </span>
-      </div>
+      {showLabel && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[15px] font-semibold tabular-nums text-zinc-100">
+            {pct}
+            <span className="text-[10px] text-zinc-500">%</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 }
 
 // ============================================================
-// AvatarStack — empilha avatares com +N
+// AvatarStack
 // ============================================================
 
 function AvatarStack({
   assignees,
   max = 3,
+  size = 6,
 }: {
   assignees: PhaseCardData["assignees"];
   max?: number;
+  /** Tailwind h-*/
+  size?: 5 | 6 | 7;
 }) {
   const shown = assignees.slice(0, max);
   const overflow = assignees.length - shown.length;
+  const sizeClass = size === 5 ? "h-5 w-5" : size === 7 ? "h-7 w-7" : "h-6 w-6";
+  const fontClass = size === 5 ? "text-[9px]" : "text-[10px]";
   return (
     <div className="flex -space-x-1.5">
       {shown.map((a) => (
         <span
           key={a.id}
           title={a.name}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-2 ring-zinc-950"
+          className={cn(
+            "flex items-center justify-center rounded-full font-semibold text-white ring-2 ring-zinc-950",
+            sizeClass,
+            fontClass,
+          )}
           style={{ backgroundColor: a.color }}
         >
           {a.initials}
@@ -232,7 +308,11 @@ function AvatarStack({
       {overflow > 0 && (
         <span
           title={`+${overflow} responsaveis`}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-medium text-zinc-300 ring-2 ring-zinc-950"
+          className={cn(
+            "flex items-center justify-center rounded-full bg-zinc-800 font-medium text-zinc-300 ring-2 ring-zinc-950",
+            sizeClass,
+            fontClass,
+          )}
         >
           +{overflow}
         </span>
@@ -242,7 +322,7 @@ function AvatarStack({
 }
 
 // ============================================================
-// MiniStats — linha compacta com counters
+// MiniStats
 // ============================================================
 
 function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
@@ -251,6 +331,7 @@ function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
     value: number;
     color: string;
     title: string;
+    spin?: boolean;
   }> = [
     {
       icon: CheckCircle2,
@@ -263,6 +344,7 @@ function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
       value: m.executing,
       color: "text-amber-400",
       title: "Em execucao",
+      spin: m.executing > 0,
     },
     {
       icon: XCircle,
@@ -285,12 +367,7 @@ function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
           title={i.title}
           className={cn("inline-flex items-center gap-1", i.color)}
         >
-          <i.icon
-            className={cn(
-              "h-3 w-3",
-              i.icon === Loader2 && i.value > 0 && "animate-spin",
-            )}
-          />
+          <i.icon className={cn("h-3 w-3", i.spin && "animate-spin")} />
           {i.value}
         </span>
       ))}
@@ -299,7 +376,7 @@ function MiniStats({ m }: { m: PhaseCardData["metrics"] }) {
 }
 
 // ============================================================
-// PhaseCard — cartao individual de fase
+// PhaseCard — cartao individual
 // ============================================================
 
 function PhaseCard({
@@ -317,59 +394,51 @@ function PhaseCard({
       type="button"
       onClick={() => onOpen(phase)}
       className={cn(
-        "group relative flex flex-col gap-3 rounded-xl border bg-zinc-950/60 p-4 text-left",
+        "group relative flex flex-col gap-3 rounded-xl border bg-zinc-950/60 p-5 text-left",
         "transition-all duration-200",
         "hover:border-zinc-700 hover:bg-zinc-900/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
         isAtRisk ? "border-rose-500/20" : "border-zinc-800",
       )}
     >
-      {/* Linha 1: status pill + sub-fases badge */}
+      {/* Linha 1: status + sub-fases badge */}
       <div className="flex items-center justify-between gap-2">
         <StatusPill status={phase.status} />
-        {phase.subPhasesCount > 0 && (
-          <span
-            className="inline-flex items-center gap-1 text-[10.5px] font-medium text-zinc-500"
-            title={`${phase.subPhasesCount} sub-blocos`}
-          >
-            <Layers className="h-3 w-3" />
-            {phase.subPhasesCount}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {phase.priority === "urgent" && (
+            <PriorityChip priority={phase.priority} compact />
+          )}
+          {phase.subPhasesCount > 0 && (
+            <span
+              className="inline-flex items-center gap-1 text-[10.5px] font-medium text-zinc-500"
+              title={`${phase.subPhasesCount} sub-blocos`}
+            >
+              <Layers className="h-3 w-3" />
+              {phase.subPhasesCount}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Linha 2: ring + nome/descricao */}
       <div className="flex items-start gap-4">
         <ProgressRing percent={phase.metrics.percent} status={phase.status} />
-        <div className="min-w-0 flex-1 space-y-1">
+        <div className="min-w-0 flex-1 space-y-1.5">
           <h3 className="truncate text-[14px] font-semibold tracking-tight text-zinc-100">
             {phase.name}
           </h3>
           {phase.description && (
-            <p className="line-clamp-2 text-[11.5px] leading-relaxed text-zinc-500">
+            <p className="line-clamp-1 text-[11.5px] leading-relaxed text-zinc-500">
               {phase.description}
             </p>
           )}
-          <div className="pt-1">
+          <div className="pt-0.5">
             <MiniStats m={phase.metrics} />
           </div>
         </div>
       </div>
 
-      {/* Linha 3: atividade recente */}
-      <div className="flex items-start gap-2 rounded-md bg-zinc-900/40 px-2.5 py-1.5">
-        <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-violet-400/60" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[11.5px] text-zinc-400">
-            {phase.lastActivity.taskTitle}
-          </p>
-          <p className="text-[10px] text-zinc-600">
-            ha {relativeTime(phase.lastActivity.timestamp)}
-          </p>
-        </div>
-      </div>
-
-      {/* Linha 4: footer com assignees + deadline + chevron */}
+      {/* Linha 3: footer com assignees + deadline + chevron */}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         <AvatarStack assignees={phase.assignees} />
         <div className="flex items-center gap-2">
@@ -393,7 +462,7 @@ function PhaseCard({
 }
 
 // ============================================================
-// OrphanCard — tasks soltas sem fase
+// OrphanCard
 // ============================================================
 
 function OrphanCard({ count, onOpen }: { count: number; onOpen: () => void }) {
@@ -406,7 +475,7 @@ function OrphanCard({ count, onOpen }: { count: number; onOpen: () => void }) {
         "group flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-700/60 bg-zinc-950/40 p-5 text-center",
         "transition-all hover:border-zinc-600 hover:bg-zinc-900/40 hover:-translate-y-0.5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
-        "min-h-[260px]",
+        "min-h-[240px]",
       )}
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-zinc-500 group-hover:text-zinc-300">
@@ -416,15 +485,12 @@ function OrphanCard({ count, onOpen }: { count: number; onOpen: () => void }) {
       <p className="text-[11px] text-zinc-500">
         {count} {count === 1 ? "task" : "tasks"} sem fase associada
       </p>
-      <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-violet-400 opacity-0 transition-opacity group-hover:opacity-100">
-        Organizar agora <ChevronRight className="h-3 w-3" />
-      </span>
     </button>
   );
 }
 
 // ============================================================
-// KpiHero — strip de KPIs agregados no topo
+// KpiHero
 // ============================================================
 
 function KpiTile({
@@ -461,7 +527,7 @@ function KpiTile({
         <p className="text-[10.5px] font-medium uppercase tracking-wide text-zinc-500">
           {label}
         </p>
-        <p className="text-[18px] font-semibold tabular-nums leading-tight text-zinc-100">
+        <p className="text-[18px] font-semibold leading-tight tabular-nums text-zinc-100">
           {value}
         </p>
         {hint && <p className="text-[10.5px] text-zinc-500">{hint}</p>}
@@ -538,83 +604,433 @@ function KpiHero({ phases }: { phases: PhaseCardData[] }) {
 }
 
 // ============================================================
+// Sort dropdown
+// ============================================================
+
+type SortKey =
+  | "urgency"
+  | "deadline"
+  | "percent-desc"
+  | "percent-asc"
+  | "priority"
+  | "name";
+
+const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
+  { key: "urgency", label: "Urgencia (bloqueado primeiro)" },
+  { key: "deadline", label: "Proximo deadline" },
+  { key: "percent-asc", label: "Menos concluido" },
+  { key: "percent-desc", label: "Mais concluido" },
+  { key: "priority", label: "Prioridade (urgente primeiro)" },
+  { key: "name", label: "Nome (A-Z)" },
+];
+
+function sortPhases(phases: PhaseCardData[], sortBy: SortKey): PhaseCardData[] {
+  const statusOrder: Record<PhaseStatus, number> = {
+    blocked: 0,
+    "at-risk": 1,
+    "on-track": 2,
+    done: 3,
+  };
+  const priorityOrder: Record<PhasePriority, number> = {
+    urgent: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+  };
+  const arr = [...phases];
+  switch (sortBy) {
+    case "urgency":
+      arr.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+      break;
+    case "deadline":
+      arr.sort((a, b) => {
+        const ta = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const tb = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        return ta - tb;
+      });
+      break;
+    case "percent-desc":
+      arr.sort((a, b) => b.metrics.percent - a.metrics.percent);
+      break;
+    case "percent-asc":
+      arr.sort((a, b) => a.metrics.percent - b.metrics.percent);
+      break;
+    case "priority":
+      arr.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+      break;
+    case "name":
+      arr.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      break;
+  }
+  return arr;
+}
+
+function SortDropdown({
+  value,
+  onChange,
+}: {
+  value: SortKey;
+  onChange: (v: SortKey) => void;
+}) {
+  const current = SORT_OPTIONS.find((o) => o.key === value)?.label ?? "Ordenar";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-1.5 text-[12px] text-zinc-300 transition-colors hover:border-zinc-700 hover:bg-zinc-900/80"
+        >
+          <ArrowUpDown className="h-3.5 w-3.5 text-zinc-500" />
+          <span className="text-zinc-500">Ordenar por:</span>
+          <span className="font-medium">{current}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-zinc-500">
+          Ordenar blocos por
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {SORT_OPTIONS.map((opt) => (
+          <DropdownMenuCheckboxItem
+            key={opt.key}
+            checked={value === opt.key}
+            onCheckedChange={() => onChange(opt.key)}
+          >
+            {opt.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ============================================================
+// PhaseDetailView — drill-in (substitui o grid)
+// ============================================================
+
+const TASK_STATUS_META: Record<
+  TaskStatus,
+  { label: string; color: string; bg: string; glyph: React.ReactNode }
+> = {
+  executing: {
+    label: "Em execucao",
+    color: "text-amber-300",
+    bg: "bg-amber-500/10",
+    glyph: <Loader2 className="h-3 w-3 animate-spin" />,
+  },
+  failed: {
+    label: "Falharam",
+    color: "text-rose-300",
+    bg: "bg-rose-500/10",
+    glyph: <XCircle className="h-3 w-3" />,
+  },
+  inbox: {
+    label: "Inbox",
+    color: "text-zinc-400",
+    bg: "bg-zinc-500/10",
+    glyph: <CircleDashed className="h-3 w-3" />,
+  },
+  ready: {
+    label: "Prontas",
+    color: "text-sky-300",
+    bg: "bg-sky-500/10",
+    glyph: <ListChecks className="h-3 w-3" />,
+  },
+  done: {
+    label: "Concluidas",
+    color: "text-emerald-300",
+    bg: "bg-emerald-500/10",
+    glyph: <CheckCircle2 className="h-3 w-3" />,
+  },
+  cancelled: {
+    label: "Canceladas",
+    color: "text-zinc-500",
+    bg: "bg-zinc-500/10",
+    glyph: <XCircle className="h-3 w-3" />,
+  },
+};
+
+const TASK_STATUS_ORDER: TaskStatus[] = [
+  "executing",
+  "failed",
+  "ready",
+  "inbox",
+  "done",
+  "cancelled",
+];
+
+function TaskRow({
+  task,
+  projectId,
+}: {
+  task: PhaseTaskMock;
+  projectId?: string;
+}) {
+  const meta = TASK_STATUS_META[task.status];
+  const href = projectId
+    ? `/projects/${projectId}/issues/${task.id}`
+    : undefined;
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    href ? (
+      <a
+        href={href}
+        className="group flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-zinc-900/60"
+      >
+        {children}
+      </a>
+    ) : (
+      <div className="group flex items-center gap-3 rounded-md px-3 py-2">
+        {children}
+      </div>
+    );
+
+  return (
+    <Wrapper>
+      <span className={cn("shrink-0", meta.color)}>{meta.glyph}</span>
+      <span className="flex-1 min-w-0 truncate text-[13px] text-zinc-200 group-hover:text-zinc-50">
+        {task.title}
+      </span>
+      {task.assignee && (
+        <span
+          title={task.assignee.name}
+          className="hidden sm:flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white ring-2 ring-zinc-950"
+          style={{ backgroundColor: task.assignee.color }}
+        >
+          {task.assignee.initials}
+        </span>
+      )}
+      <span className="shrink-0 text-[11px] tabular-nums text-zinc-500">
+        {relativeTime(task.updatedAt)}
+      </span>
+      <ChevronRight className="hidden sm:block h-3.5 w-3.5 shrink-0 text-zinc-700 group-hover:text-zinc-400" />
+    </Wrapper>
+  );
+}
+
+function PhaseDetailView({
+  phase,
+  projectId,
+  onBack,
+}: {
+  phase: PhaseCardData;
+  projectId?: string;
+  onBack: () => void;
+}) {
+  const deadline = deadlineLabel(phase.deadline);
+  const grouped = useMemo(() => {
+    const map = new Map<TaskStatus, PhaseTaskMock[]>();
+    for (const t of phase.tasks) {
+      const arr = map.get(t.status) ?? [];
+      arr.push(t);
+      map.set(t.status, arr);
+    }
+    return map;
+  }, [phase.tasks]);
+
+  return (
+    <div className="space-y-5 p-4">
+      {/* Breadcrumb + back */}
+      <div className="flex items-center gap-2 text-[12px] text-zinc-500">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-200"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Blocos
+        </button>
+        <span className="text-zinc-700">/</span>
+        <span className="text-zinc-300">{phase.name}</span>
+      </div>
+
+      {/* Hero do bloco */}
+      <div
+        className={cn(
+          "rounded-xl border bg-zinc-950/60 p-5",
+          phase.status === "blocked" || phase.status === "at-risk"
+            ? "border-rose-500/20"
+            : "border-zinc-800",
+        )}
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <ProgressRing
+            percent={phase.metrics.percent}
+            status={phase.status}
+            size={96}
+            stroke={8}
+          />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[17px] font-semibold tracking-tight text-zinc-100">
+                {phase.name}
+              </h2>
+              <StatusPill status={phase.status} />
+              <PriorityChip priority={phase.priority} />
+              {phase.subPhasesCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-zinc-900 px-2 py-0.5 text-[11px] text-zinc-400">
+                  <Layers className="h-3 w-3" />
+                  {phase.subPhasesCount} sub-blocos
+                </span>
+              )}
+            </div>
+            {phase.description && (
+              <p className="text-[12.5px] text-zinc-400">{phase.description}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              <MiniStats m={phase.metrics} />
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[12px]",
+                  deadline.tone === "late" && "text-rose-300",
+                  deadline.tone === "warn" && "text-amber-300",
+                  deadline.tone === "ok" && "text-zinc-400",
+                  deadline.tone === "muted" && "text-zinc-600",
+                )}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                {deadline.text}
+              </span>
+              <AvatarStack assignees={phase.assignees} size={6} max={5} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Atividade recente */}
+      <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-3">
+        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-400/70" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-medium uppercase tracking-wide text-zinc-500">
+            Atividade mais recente
+          </p>
+          <p className="truncate text-[12.5px] text-zinc-300">
+            {phase.lastActivity.taskTitle}
+          </p>
+          <p className="text-[11px] text-zinc-500">
+            ha {relativeTime(phase.lastActivity.timestamp)}
+          </p>
+        </div>
+      </div>
+
+      {/* Lista de tasks agrupadas por status */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-400">
+            Tasks deste bloco
+          </h3>
+          <span className="text-[11px] tabular-nums text-zinc-500">
+            {phase.tasks.length} {phase.tasks.length === 1 ? "task" : "tasks"}
+          </span>
+        </div>
+
+        {phase.tasks.length === 0 ? (
+          <p className="rounded-md border border-dashed border-zinc-800 px-4 py-6 text-center text-[12px] text-zinc-500">
+            Nenhuma task neste bloco ainda.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {TASK_STATUS_ORDER.map((status) => {
+              const tasks = grouped.get(status) ?? [];
+              if (tasks.length === 0) return null;
+              const meta = TASK_STATUS_META[status];
+              return (
+                <div
+                  key={status}
+                  className="rounded-lg border border-zinc-800 bg-zinc-950/40"
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 border-b border-zinc-800 px-4 py-2",
+                      meta.bg,
+                    )}
+                  >
+                    <span className={meta.color}>{meta.glyph}</span>
+                    <span
+                      className={cn(
+                        "text-[11px] font-semibold uppercase tracking-wide",
+                        meta.color,
+                      )}
+                    >
+                      {meta.label}
+                    </span>
+                    <span className="ml-auto text-[11px] tabular-nums text-zinc-500">
+                      {tasks.length}
+                    </span>
+                  </div>
+                  <div className="p-1.5">
+                    {tasks.map((t) => (
+                      <TaskRow key={t.id} task={t} projectId={projectId} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // PhaseCardsTab — componente raiz
 // ============================================================
 
 interface PhaseCardsTabProps {
-  /** Mantido por compatibilidade com a assinatura do PhaseIssuesTab. Nao usado na v0 mockada. */
+  /** Usado nos hrefs das task rows. */
   projectId?: string;
-  /** Mantido por compatibilidade. Substituido por mock no momento. */
+  /** Mantido por compatibilidade. */
   issues?: unknown[];
 }
 
-export function PhaseCardsTab(_props: PhaseCardsTabProps) {
+export function PhaseCardsTab({ projectId }: PhaseCardsTabProps) {
   const phases = MOCK_PHASE_CARDS;
-  const [selectedPhase, setSelectedPhase] = useState<PhaseCardData | null>(
-    null,
-  );
+  const [sortBy, setSortBy] = useState<SortKey>("urgency");
+  const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
 
-  // Ordenar: em risco primeiro, depois on-track, depois done.
-  const sorted = useMemo(() => {
-    const order: Record<PhaseStatus, number> = {
-      blocked: 0,
-      "at-risk": 1,
-      "on-track": 2,
-      done: 3,
-    };
-    return [...phases].sort((a, b) => order[a.status] - order[b.status]);
-  }, [phases]);
+  const sorted = useMemo(() => sortPhases(phases, sortBy), [phases, sortBy]);
+  const openPhase = openPhaseId
+    ? phases.find((p) => p.id === openPhaseId)
+    : null;
 
-  const handleOpen = (p: PhaseCardData) => {
-    setSelectedPhase(p);
-    // Placeholder: futuramente router.push(`/projects/${id}/phases/${p.id}`)
-    // ou abrir um drawer com a arvore detalhada.
-    console.log("[PhaseCardsTab] open", p.id, p.name);
-  };
+  // Drill-in view
+  if (openPhase) {
+    return (
+      <PhaseDetailView
+        phase={openPhase}
+        projectId={projectId}
+        onBack={() => setOpenPhaseId(null)}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-5 p-4">
+    <div className="space-y-6 p-4">
       {/* Hero KPIs */}
       <KpiHero phases={sorted} />
 
-      {/* Grid de cards */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {/* Barra de controles */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-400">
+          Blocos do projeto
+          <span className="ml-2 text-[11px] font-normal normal-case text-zinc-500">
+            {sorted.length} {sorted.length === 1 ? "bloco" : "blocos"}
+          </span>
+        </h2>
+        <SortDropdown value={sortBy} onChange={setSortBy} />
+      </div>
+
+      {/* Grid de cards — gap-5 (mais respiravel), max 2 colunas no XL pra cards
+          maiores em vez de 3 colunas densas; em telas 2xl+ cresce p/ 3. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
         {sorted.map((p) => (
-          <PhaseCard key={p.id} phase={p} onOpen={handleOpen} />
+          <PhaseCard key={p.id} phase={p} onOpen={() => setOpenPhaseId(p.id)} />
         ))}
         <OrphanCard
           count={MOCK_ORPHAN_COUNT}
           onOpen={() => console.log("[PhaseCardsTab] open orphans")}
         />
       </div>
-
-      {/* Modal/drawer placeholder — quando aprovado, virar componente real */}
-      {selectedPhase && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setSelectedPhase(null)}
-        >
-          <div
-            className="max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-[15px] font-semibold text-zinc-100">
-              {selectedPhase.name}
-            </h3>
-            <p className="mt-1 text-[12px] text-zinc-500">
-              Drill-down em construcao. Em breve: arvore de sub-blocos, lista
-              completa de tasks com filtros, timeline e relatorio de fase.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSelectedPhase(null)}
-              className="mt-4 rounded-md bg-zinc-800 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:bg-zinc-700"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

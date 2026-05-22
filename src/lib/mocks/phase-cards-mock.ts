@@ -7,6 +7,14 @@
  */
 
 export type PhaseStatus = "on-track" | "at-risk" | "blocked" | "done";
+export type PhasePriority = "low" | "medium" | "high" | "urgent";
+export type TaskStatus =
+  | "inbox"
+  | "ready"
+  | "executing"
+  | "done"
+  | "failed"
+  | "cancelled";
 
 export interface PhaseAssignee {
   id: string;
@@ -22,11 +30,22 @@ export interface PhaseRecentActivity {
   timestamp: string;
 }
 
+export interface PhaseTaskMock {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  assignee?: PhaseAssignee;
+  /** ISO timestamp. */
+  updatedAt: string;
+}
+
 export interface PhaseCardData {
   id: string;
   name: string;
   description?: string;
   status: PhaseStatus;
+  /** Prioridade definida pelo PO/lider. Usado para ordenacao. */
+  priority: PhasePriority;
   metrics: {
     total: number;
     done: number;
@@ -40,6 +59,8 @@ export interface PhaseCardData {
   /** ISO date. */
   deadline?: string;
   subPhasesCount: number;
+  /** Tasks da fase (mockadas para drill-in). */
+  tasks: PhaseTaskMock[];
 }
 
 const NOW = Date.now();
@@ -67,12 +88,33 @@ const USERS = {
   carla: u("u6", "Carla Mendes", "#3b82f6"),
 };
 
+function makeTasks(
+  phaseId: string,
+  rows: Array<
+    [
+      title: string,
+      status: TaskStatus,
+      hoursAgo: number,
+      assignee?: PhaseAssignee,
+    ]
+  >,
+): PhaseTaskMock[] {
+  return rows.map(([title, status, hoursAgo, assignee], i) => ({
+    id: `${phaseId}-t${i + 1}`,
+    title,
+    status,
+    assignee,
+    updatedAt: new Date(NOW - hoursAgo * HOUR).toISOString(),
+  }));
+}
+
 export const MOCK_PHASE_CARDS: PhaseCardData[] = [
   {
     id: "phase-1",
     name: "Setup e Infraestrutura",
     description: "Provisionamento Dokploy, CI/CD, secrets, healthchecks.",
     status: "done",
+    priority: "low",
     metrics: {
       total: 18,
       done: 18,
@@ -88,12 +130,20 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW - 5 * DAY).toISOString(),
     subPhasesCount: 0,
+    tasks: makeTasks("phase-1", [
+      ["Provisionar VPS e Dokploy", "done", 72, USERS.bene],
+      ["Configurar pipelines de CI no GitHub Actions", "done", 60, USERS.ana],
+      ["Subir Postgres com backups automaticos", "done", 48, USERS.bene],
+      ["Definir secrets via Doppler", "done", 30, USERS.ana],
+      ["Healthcheck do worker BullMQ em producao", "done", 24, USERS.bene],
+    ]),
   },
   {
     id: "phase-2",
     name: "Backend — Auth & RBAC",
     description: "JWT, refresh tokens, DVincula duplo, guards e middlewares.",
     status: "on-track",
+    priority: "medium",
     metrics: {
       total: 32,
       done: 25,
@@ -109,6 +159,29 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 7 * DAY).toISOString(),
     subPhasesCount: 2,
+    tasks: makeTasks("phase-2", [
+      [
+        "Refresh token rotation com blacklist no Redis",
+        "executing",
+        2,
+        USERS.bene,
+      ],
+      [
+        "JwtAuthGuard com tenant context propagation",
+        "executing",
+        4,
+        USERS.pedro,
+      ],
+      [
+        "DVincula duplo: papel global + papel por projeto",
+        "executing",
+        8,
+        USERS.ana,
+      ],
+      ["Endpoint /auth/me com claims canonicos", "done", 26, USERS.bene],
+      ["Login com magic link via Telegram", "ready", 14, USERS.pedro],
+      ["Rate limit de login por IP", "inbox", 12, USERS.ana],
+    ]),
   },
   {
     id: "phase-3",
@@ -116,6 +189,7 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     description:
       "Endpoints genericos: /entidades, /tabelas, /tasks, /projects.",
     status: "on-track",
+    priority: "high",
     metrics: {
       total: 64,
       done: 33,
@@ -131,12 +205,21 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 18 * DAY).toISOString(),
     subPhasesCount: 4,
+    tasks: makeTasks("phase-3", [
+      ["Filtro idClasse polimorfico no /entidades", "executing", 1, USERS.bene],
+      ["CRUD /tabelas com paginacao cursor", "executing", 3, USERS.marina],
+      ["Soft delete em /tasks com auditoria", "done", 28, USERS.pedro],
+      ["Falha intermitente no /projects/:id/tree", "failed", 6, USERS.ana],
+      ["Validacao Zod no DTO de criacao", "ready", 18, USERS.marina],
+      ["Webhook signature validation", "inbox", 30, USERS.bene],
+    ]),
   },
   {
     id: "phase-4",
     name: "Backend — Integracoes",
     description: "Telegram, MCP, webhooks HMAC, automation Claude Code.",
     status: "at-risk",
+    priority: "urgent",
     metrics: {
       total: 41,
       done: 9,
@@ -152,12 +235,22 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 4 * DAY).toISOString(),
     subPhasesCount: 3,
+    tasks: makeTasks("phase-4", [
+      ["Risk gate F13 — 58 testes adversariais", "executing", 6, USERS.lucas],
+      ["Worker MCP travando em concurrency=4", "failed", 10, USERS.bene],
+      ["Telegram listener com voz Groq Whisper", "failed", 22, USERS.lucas],
+      ["Webhook outbound HMAC com retry expo", "executing", 14, USERS.bene],
+      ["Falha no parse de JSON do MCP /resources", "failed", 28, USERS.lucas],
+      ["Automation Claude Code — sandbox initial", "inbox", 40, USERS.bene],
+      ["Reentry de webhook bloqueado", "failed", 50, USERS.lucas],
+    ]),
   },
   {
     id: "phase-5",
     name: "Frontend — Foundation",
     description: "Next.js 15, design system, autenticacao, layout app shell.",
     status: "on-track",
+    priority: "medium",
     metrics: {
       total: 27,
       done: 16,
@@ -173,12 +266,25 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 11 * DAY).toISOString(),
     subPhasesCount: 1,
+    tasks: makeTasks("phase-5", [
+      [
+        "Side nav colapsavel com badges por projeto",
+        "executing",
+        1,
+        USERS.carla,
+      ],
+      ["Auth flow com refresh transparente", "executing", 3, USERS.bene],
+      ["Tema dark/light com tokens semanticos", "done", 36, USERS.carla],
+      ["Layout shell com breadcrumb dinamico", "done", 50, USERS.bene],
+      ["Configurar Tailwind 4 com plugin custom", "ready", 24, USERS.carla],
+    ]),
   },
   {
     id: "phase-6",
     name: "Frontend — Paineis",
     description: "Workspace, projetos, intentions, flow metrics, hill chart.",
     status: "on-track",
+    priority: "high",
     metrics: {
       total: 38,
       done: 13,
@@ -194,12 +300,23 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 22 * DAY).toISOString(),
     subPhasesCount: 5,
+    tasks: makeTasks("phase-6", [
+      ["Aba Issues como dashboard de cards", "executing", 0.5, USERS.bene],
+      ["Drill-in de fase com lista de tasks", "executing", 1, USERS.bene],
+      ["Hill chart com drag interactivo", "executing", 8, USERS.carla],
+      ["Flow metrics com cycle time chart", "executing", 12, USERS.marina],
+      ["Modal de criar intention via voz", "failed", 24, USERS.carla],
+      ["Tela de detalhe da intention", "done", 48, USERS.bene],
+      ["Filtros avancados em /intentions", "ready", 30, USERS.marina],
+      ["Telegram bot inline no painel", "inbox", 60, USERS.carla],
+    ]),
   },
   {
     id: "phase-7",
     name: "QA & Polishing",
     description: "Golden tests, performance budgets, acessibilidade, docs.",
     status: "blocked",
+    priority: "urgent",
     metrics: {
       total: 22,
       done: 1,
@@ -215,6 +332,13 @@ export const MOCK_PHASE_CARDS: PhaseCardData[] = [
     },
     deadline: new Date(NOW + 35 * DAY).toISOString(),
     subPhasesCount: 0,
+    tasks: makeTasks("phase-7", [
+      ["Bloqueado: aguarda Backend — Integracoes", "failed", 48, USERS.ana],
+      ["Performance budget no Lighthouse CI", "failed", 70, USERS.ana],
+      ["Configurar Playwright para golden tests", "done", 96, USERS.ana],
+      ["Acessibilidade WCAG 2.1 AA", "inbox", 100, USERS.ana],
+      ["Documentar API com OpenAPI 3.1", "inbox", 110, USERS.ana],
+    ]),
   },
 ];
 
