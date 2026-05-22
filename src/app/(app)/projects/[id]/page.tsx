@@ -69,7 +69,9 @@ import type { ProjectMember, ProjectRole } from "@/lib/api/project-members";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ProjectPropertiesPanel } from "@/components/projects/project-properties-panel";
 import { ProjectStatusList } from "@/components/projects/project-status-list";
-import { PhaseIssuesTab } from "@/components/projects/phase-issues-tab";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- mantido para rollback rapido
+import { PhaseIssuesTab as _PhaseIssuesTab } from "@/components/projects/phase-issues-tab";
+import { PhaseCardsTab } from "@/components/projects/phase-cards-tab";
 import { AddProjectMemberModal } from "@/components/projects/add-project-member-modal";
 import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { NewIssueModal } from "@/components/intentions/new-issue-modal";
@@ -294,7 +296,7 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
             {activeTab === "activity" && <ActivityTab projectId={projectId} />}
             {activeTab === "issues" && (
-              <PhaseIssuesTab projectId={projectId} issues={issuesList} />
+              <PhaseCardsTab projectId={projectId} issues={issuesList} />
             )}
             {activeTab === "members" && (
               <MembersTab
@@ -1077,6 +1079,7 @@ function ActivityTab({ projectId }: { projectId: string }) {
 // Issues tab — reusa visual da /intentions
 // ============================================================
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- mantido para rollback rapido
 function IssuesTab({ issues }: { issues: IntentionDocument[] }) {
   if (issues.length === 0) {
     return (
