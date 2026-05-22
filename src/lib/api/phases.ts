@@ -121,7 +121,7 @@ export const phasesApi = {
    */
   listByProject: async (projectId: string): Promise<Phase[]> => {
     const { data } = await api.get(ENDPOINTS.TASKS, {
-      params: { idClasse: PHASE_CLASSE_KEY, idProject: projectId },
+      params: { idClasse: PHASE_CLASSE_KEY, projectId: projectId },
     });
     const items = Array.isArray(data) ? data : (data?.items ?? []);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
